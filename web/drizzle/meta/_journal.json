@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1702033790765,
+      "tag": "0000_quiet_ulik",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1702034015507,
+      "tag": "0001_silly_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1702044546478,
+      "tag": "0002_clean_khan",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+import { db } from "./db/db";
+import { usersTable } from "./db/schema";
+import { authMiddleware, redirectToSignIn, clerkClient } from "@clerk/nextjs";
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+
+// This example protects all routes including api/trpc routes
+// Please edit this to allow other routes to be public as needed.
+// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
+export default authMiddleware({
+  publicRoutes: ["/api/(.*)"],
+  // publicRoutes: ["/", "/(.*)"],
+  async afterAuth(auth, req, evt) {
+    // redirect them to organization selection page
+    const userId = auth.userId;
+
+    // Parse the URL to get the pathname
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+
+    if (
+      !auth.userId &&
+      !auth.isPublicRoute
+      // ||
+      // pathname === "/create" ||
+      // pathname === "/history" ||
+      // pathname.startsWith("/edit")
+    ) {
+      const url = new URL(req.url);
+      return redirectToSignIn({ returnBackUrl: url.origin });
+    }
+  },
+});
+
+export const config = {
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/" , "/(api|trpc)(.*)"],
+  // matcher: ['/','/create', '/api/(twitter|generation|init|voice-cloning)'],
+};
