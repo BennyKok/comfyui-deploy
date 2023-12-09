@@ -13,5 +13,7 @@
       "[\"'`]([^\"'`]*).*?[\"'`]"
     ]
   ],
-  "eslint.workingDirectories": ["web"]
+  // "eslint.workingDirectories": [
+  //   { "mode": "auto" }
+  // ],
 }

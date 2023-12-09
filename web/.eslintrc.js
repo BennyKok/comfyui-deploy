@@ -4,6 +4,7 @@ module.exports = {
   extends: [
     // "plugin:playwright/playwright-test",
     "next",
+    // "next/core-web-vitals",
     "plugin:prettier/recommended",
     // "turbo",
     // "plugin:you-dont-need-lodash-underscore/compatible-warn",
