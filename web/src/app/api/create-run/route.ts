@@ -78,6 +78,8 @@ export async function POST(request: Request) {
       });
     });
 
+  console.log(result);
+
   // return the error
   if (result instanceof Response) {
     return result;
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
     .insert(workflowRunsTable)
     .values({
       id: result.prompt_id,
+      workflow_id: workflow_version_data.workflow_id,
       workflow_version_id: workflow_version_data.id,
       machine_id,
     })

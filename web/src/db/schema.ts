@@ -75,6 +75,11 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
     .references(() => workflowVersionTable.id, {
       onDelete: "no action",
     }),
+  workflow_id: uuid("workflow_id")
+    .notNull()
+    .references(() => workflowTable.id, {
+      onDelete: "no action",
+    }),
   machine_id: uuid("machine_id")
     .notNull()
     .references(() => machinesTable.id, {

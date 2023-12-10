@@ -121,7 +121,7 @@ function addButton() {
     deploy.textContent = "Deploying...";
     deploy.style.color = "orange";
 
-    const apiRoute = "http://localhost:3001/api/upload";
+    const apiRoute = "http://localhost:3000/api/upload";
     const userId = "user_2ZA6vuKD3IJXju16oJVQGLBcWwg";
     try {
       let data = await fetch(apiRoute, {

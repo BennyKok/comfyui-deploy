@@ -39,16 +39,8 @@ export async function findFirstTableWithVersion(workflow_id: string) {
 }
 
 export async function findAllRuns(workflow_id: string) {
-  const workflowVersion = await db.query.workflowVersionTable.findFirst({
-    where: eq(workflowVersionTable.workflow_id, workflow_id),
-  });
-
-  if (!workflowVersion) {
-    return [];
-  }
-
   return await db.query.workflowRunsTable.findMany({
-    where: eq(workflowRunsTable.workflow_version_id, workflowVersion?.id),
+    where: eq(workflowRunsTable.workflow_id, workflow_id),
     orderBy: desc(workflowRunsTable.created_at),
     with: {
       machine: {
@@ -77,7 +69,7 @@ export default async function Page({
 
   return (
     <div className="mt-4 w-full flex flex-col lg:flex-row gap-4">
-      <Card className="w-full lg:w-fit lg:min-w-[500px]">
+      <Card className="w-full lg:w-fit lg:min-w-[500px] h-fit">
         <CardHeader>
           <CardTitle>{workflow?.name}</CardTitle>
           <CardDescription suppressHydrationWarning={true}>
