@@ -1,14 +1,9 @@
 import { parseDataSafe } from "../../../lib/parseDataSafe";
 import { db } from "@/db/db";
-import {
-  workflowRunStatus,
-  workflowRunsTable,
-  workflowTable,
-  workflowVersionTable,
-} from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { workflowRunsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { ZodFormattedError, z } from "zod";
+import { z } from "zod";
 
 const Request = z.object({
   run_id: z.string(),
@@ -30,7 +25,7 @@ export async function POST(request: Request) {
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 
-  let { run_id, status } = data;
+  const { run_id, status } = data;
 
   const workflow_run = await db
     .update(workflowRunsTable)
@@ -50,6 +45,6 @@ export async function POST(request: Request) {
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
-    },
+    }
   );
 }

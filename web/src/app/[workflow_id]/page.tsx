@@ -11,7 +11,7 @@ import { db } from "@/db/db";
 import { workflowTable, workflowVersionTable } from "@/db/schema";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { getMachines } from "@/server/curdMachine";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { Play } from "lucide-react";
 
 export async function findFirstTableWithVersion(workflow_id: string) {
@@ -57,7 +57,7 @@ export default async function Page({
           <CardTitle>Run</CardTitle>
         </CardHeader>
 
-        <CardContent></CardContent>
+        <CardContent />
       </Card>
     </div>
   );
