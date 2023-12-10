@@ -1,8 +1,10 @@
+import { LoadingIcon } from "@/components/LoadingIcon";
 import {
   MachineSelect,
   RunWorkflowButton,
   VersionSelect,
 } from "@/components/VersionSelect";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -47,6 +49,7 @@ export async function findAllRuns(workflow_id: string) {
 
   return await db.query.workflowRunsTable.findMany({
     where: eq(workflowRunsTable.workflow_version_id, workflowVersion?.id),
+    orderBy: desc(workflowRunsTable.created_at),
     with: {
       machine: {
         columns: {
@@ -123,10 +126,32 @@ async function RunsTable(props: { workflow_id: string }) {
             <TableCell>{run.version.version}</TableCell>
             <TableCell className="font-medium">{run.machine.name}</TableCell>
             <TableCell>{getRelativeTime(run.created_at)}</TableCell>
-            <TableCell className="text-right">{run.status}</TableCell>
+            <TableCell className="text-right">
+              <StatusBadge run={run} />
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   );
+}
+
+function StatusBadge({
+  run,
+}: {
+  run: Awaited<ReturnType<typeof findAllRuns>>[0];
+}) {
+  switch (run.status) {
+    case "running":
+      return (
+        <Badge variant="secondary">
+          {run.status} <LoadingIcon />
+        </Badge>
+      );
+    case "success":
+      return <Badge variant="success">{run.status}</Badge>;
+    case "failed":
+      return <Badge variant="destructive">{run.status}</Badge>;
+  }
+  return <Badge variant="secondary">{run.status}</Badge>;
 }
