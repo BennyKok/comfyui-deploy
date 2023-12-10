@@ -15,13 +15,14 @@ import execution
 import random
 
 import uuid
-import websockets
 import asyncio
 import atexit
 import logging
+from enum import Enum
 
 api = None
 api_task = None
+prompt_metadata = {}
 
 load_dotenv()
 
@@ -73,20 +74,15 @@ def randomSeed(num_digits=15):
 
 @server.PromptServer.instance.routes.post("/comfy-deploy/run")
 async def comfy_deploy_run(request):
+    print("hi")
     prompt_server = server.PromptServer.instance
     data = await request.json()
 
-    for key in data:
-        if 'inputs' in data[key] and 'seed' in data[key]['inputs']:
-            data[key]['inputs']['seed'] = randomSeed()
-
-    if api is None:
-        connect_to_websocket()
-        while api.client_id is None:
-            await asyncio.sleep(0.1)
-
     workflow_api = data.get("workflow_api")
-    # print(workflow_api)
+
+    for key in workflow_api:
+        if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
+            workflow_api[key]['inputs']['seed'] = randomSeed()
 
     prompt = {
         "prompt": workflow_api,
@@ -95,7 +91,9 @@ async def comfy_deploy_run(request):
 
     res = post_prompt(prompt)
 
-    # print(prompt)
+    prompt_metadata[res['prompt_id']] = {
+        'status_endpoint': data.get('status_endpoint'),
+    }
 
     status = 200
     if "error" in res:
@@ -105,69 +103,41 @@ async def comfy_deploy_run(request):
 
 logging.basicConfig(level=logging.INFO)
 
-class ComfyApi:
-    def __init__(self):
-        self.websocket = None
-        self.client_id = None
-
-    async def connect(self, uri):
-        self.websocket = await websockets.connect(uri)
-
-        # Event listeners
-        await self.on_open()
-        await self.on_message()
-        await self.on_close()
-
-    async def close(self):
-        await self.websocket.close()
-
-    async def on_open(self):
-        print("Connection opened")
-
-    async def on_message(self):
-        async for message in self.websocket:
-            if isinstance(message, bytes):
-                print("Received binary message, skipping...")
-                continue  # skip to the next message
-            logging.info(f"Received message: {message}")
-            
-            try:
-                message_data = json.loads(message)
-
-                msg_type = message_data["type"]
-
-                if msg_type == "status" and message_data["data"]["sid"] is not None:
-                    self.client_id = message_data["data"]["sid"]
-                    logging.info(f"Received client_id: {self.client_id}")
-
-            except json.JSONDecodeError:
-                logging.info(f"Failed to parse message as JSON: {message}")
-
-    async def on_close(self):
-        print("Connection closed")
-
-    async def run(self, uri):
-        await self.connect(uri)
-
-def connect_to_websocket():
-    global api, api_task
-    api = ComfyApi()
-    api_task = asyncio.create_task(api.run('ws://localhost:8188/ws'))
-
 prompt_server = server.PromptServer.instance
 
 send_json = prompt_server.send_json
 async def send_json_override(self, event, data, sid=None):
+    print("INTERNAL:", event, data, sid)
+
+    prompt_id = data.get('prompt_id')
+
+    if event == 'execution_start':
+        update_run(prompt_id, Status.RUNNING)
+
+    # if event == 'executing':
+    #     update_run(prompt_id, Status.RUNNING)
+
+    if event == 'executed':
+        update_run(prompt_id, Status.SUCCESS)
+
     await self.send_json_original(event, data, sid)
-    print("Sending event:", sid, event, data)
+
+
+class Status(Enum):
+    NOT_STARTED = "not-started"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+def update_run(prompt_id, status: Status):
+    if prompt_id in prompt_metadata and ('status' not in prompt_metadata[prompt_id] or prompt_metadata[prompt_id]['status'] != status):
+        status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
+        body = {
+            "run_id": prompt_id,
+            "status": status.value,
+        }
+        prompt_metadata[prompt_id]['status'] = status
+        requests.post(status_endpoint, json=body)
 
 prompt_server.send_json_original = prompt_server.send_json
 prompt_server.send_json = send_json_override.__get__(prompt_server, server.PromptServer)
-
-@atexit.register
-def close_websocket():
-    print("Got close_websocket")
-
-    global api, api_task
-    if api_task:
-        api_task.cancel()

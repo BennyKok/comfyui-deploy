@@ -17,20 +17,7 @@ export const usersTable = dbSchema.table("users", {
   name: text("name").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-  // primary_avatar_id: uuid("primary_avatar_id").references(
-  //   () => chatAvatarTable.id,
-  // ),
-  // twitter_initial_json: jsonb("twitter_initial_json").$type<
-  //   Omit<UserV2Result, "errors">
-  // >(),
-  // initial_prompt: text("initial_prompt"),
-  // payment_status: text("payment_status"),
-  // early_access: boolean("early_access").default(false),
 });
-
-// export const usersRelations = relations(userTable, ({ many }) => ({
-//   chat_avatars: many(chatAvatarTable),
-// }));
 
 export const workflowTable = dbSchema.table("workflows", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -70,7 +57,7 @@ export const workflowVersionRelations = relations(
       fields: [workflowVersionTable.workflow_id],
       references: [workflowTable.id],
     }),
-  }),
+  })
 );
 
 export const workflowRunStatus = pgEnum("workflow_run_status", [
@@ -98,45 +85,30 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const workflowRunRelations = relations(workflowRunsTable, ({ one }) => ({
+  machine: one(machinesTable, {
+    fields: [workflowRunsTable.machine_id],
+    references: [machinesTable.id],
+  }),
+  version: one(workflowVersionTable, {
+    fields: [workflowRunsTable.workflow_version_id],
+    references: [workflowVersionTable.id],
+  }),
+}));
+
 // when user delete, also delete all the workflow versions
 export const machinesTable = dbSchema.table("machines", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
-  user_id: text("user_id").references(() => usersTable.id, {
-    onDelete: "no action",
-  }).notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "no action",
+    })
+    .notNull(),
   name: text("name").notNull(),
   endpoint: text("endpoint").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// export const chatAvatarRelations = relations(chatAvatarTable, ({ one }) => ({
-//   author: one(userTable, {
-//     fields: [chatAvatarTable.user_id],
-//     references: [userTable.id],
-//   }),
-// }));
-
-// export const subscriptionTable = dbSchema.table("subscription", {
-//   id: text("id").primaryKey().notNull(),
-//   email: text("email"),
-//   user_id: text("user_id"),
-//   status: text("status"),
-//   created_at: timestamp("created_at").defaultNow(),
-//   updated_at: timestamp("updated_at").defaultNow(),
-// });
-
-// export const subscriptionRelations = relations(
-//   subscriptionTable,
-//   ({ one }) => ({
-//     user: one(userTable, {
-//       fields: [subscriptionTable.user_id],
-//       references: [userTable.id],
-//     }),
-//   }),
-// );
-
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
-// export type ChatAvatarType = InferSelectModel<typeof chatAvatarTable>;
-// export type SubscriptionType = InferSelectModel<typeof subscriptionTable>;

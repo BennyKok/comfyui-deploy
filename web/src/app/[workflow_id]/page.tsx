@@ -1,5 +1,8 @@
-import { MachineSelect, VersionSelect } from "@/components/VersionSelect";
-import { Button } from "@/components/ui/button";
+import {
+  MachineSelect,
+  RunWorkflowButton,
+  VersionSelect,
+} from "@/components/VersionSelect";
 import {
   Card,
   CardContent,
@@ -7,17 +10,55 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { db } from "@/db/db";
-import { workflowTable, workflowVersionTable } from "@/db/schema";
+import {
+  workflowRunsTable,
+  workflowTable,
+  workflowVersionTable,
+} from "@/db/schema";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { getMachines } from "@/server/curdMachine";
 import { desc, eq } from "drizzle-orm";
-import { Play } from "lucide-react";
 
 export async function findFirstTableWithVersion(workflow_id: string) {
   return await db.query.workflowTable.findFirst({
     with: { versions: { orderBy: desc(workflowVersionTable.version) } },
     where: eq(workflowTable.id, workflow_id),
+  });
+}
+
+export async function findAllRuns(workflow_id: string) {
+  const workflowVersion = await db.query.workflowVersionTable.findFirst({
+    where: eq(workflowVersionTable.workflow_id, workflow_id),
+  });
+
+  if (!workflowVersion) {
+    return [];
+  }
+
+  return await db.query.workflowRunsTable.findMany({
+    where: eq(workflowRunsTable.workflow_version_id, workflowVersion?.id),
+    with: {
+      machine: {
+        columns: {
+          name: true,
+        },
+      },
+      version: {
+        columns: {
+          version: true,
+        },
+      },
+    },
   });
 }
 
@@ -45,9 +86,7 @@ export default async function Page({
           <div className="flex gap-2 ">
             <VersionSelect workflow={workflow} />
             <MachineSelect machines={machines} />
-            <Button className="gap-2">
-              Run <Play size={14} />
-            </Button>
+            <RunWorkflowButton workflow={workflow} machines={machines} />
           </div>
         </CardContent>
       </Card>
@@ -57,8 +96,37 @@ export default async function Page({
           <CardTitle>Run</CardTitle>
         </CardHeader>
 
-        <CardContent />
+        <CardContent>
+          <RunsTable workflow_id={workflow_id} />
+        </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function RunsTable(props: { workflow_id: string }) {
+  const allRuns = await findAllRuns(props.workflow_id);
+  return (
+    <Table>
+      <TableCaption>A list of your recent runs.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[100px]">Version</TableHead>
+          <TableHead>Machine</TableHead>
+          <TableHead>Time</TableHead>
+          <TableHead className="text-right">Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {allRuns.map((run) => (
+          <TableRow key={run.id}>
+            <TableCell>{run.version.version}</TableCell>
+            <TableCell className="font-medium">{run.machine.name}</TableCell>
+            <TableCell>{getRelativeTime(run.created_at)}</TableCell>
+            <TableCell className="text-right">{run.status}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { ZodError, ZodType, z } from "zod";
+import type { ZodType, z } from "zod";
+import { ZodError } from "zod";
 
 export async function parseDataSafe<T extends ZodType<any, any, any>>(
   schema: T,
   request: Request,
-  headers?: HeadersInit,
+  headers?: HeadersInit
 ): Promise<[z.infer<T> | undefined, NextResponse | undefined]> {
   let data: z.infer<T> | undefined = undefined;
   try {
@@ -30,7 +31,7 @@ export async function parseDataSafe<T extends ZodType<any, any, any>>(
         {
           message: "Invalid request",
         },
-        { status: 500, statusText: "Invalid request", headers: headers },
+        { status: 500, statusText: "Invalid request", headers: headers }
       ),
     ];
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { getRelativeTime } from "../lib/getRelativeTime";
+import { LoadingIcon } from "./LoadingIcon";
 import {
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,15 +23,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -41,7 +38,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { addMachine, deleteMachine } from "@/server/curdMachine";
-import { deleteWorkflow } from "@/server/deleteWorkflow";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ColumnDef,
@@ -57,14 +53,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  LoaderIcon,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
-import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -145,7 +135,9 @@ export const columns: ColumnDef<Machine>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="capitalize text-right">{getRelativeTime(row.original.date)}</div>
+      <div className="capitalize text-right">
+        {getRelativeTime(row.original.date)}
+      </div>
     ),
   },
 
@@ -187,7 +179,7 @@ export const columns: ColumnDef<Machine>[] = [
 export function MachineList({ data }: { data: Machine[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -265,7 +257,7 @@ export function MachineList({ data }: { data: Machine[] }) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -284,7 +276,7 @@ export function MachineList({ data }: { data: Machine[] }) {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}
@@ -418,8 +410,7 @@ function AddWorkflowButton({ pending }: { pending: boolean }) {
   // const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      Save changes{" "}
-      {pending && <LoaderIcon size={14} className="ml-2 animate-spin" />}
+      Save changes {pending && <LoadingIcon />}
     </Button>
   );
 }

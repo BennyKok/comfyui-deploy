@@ -2,7 +2,7 @@ import { WorkflowList } from "@/components/WorkflowList";
 import { db } from "@/db/db";
 import { usersTable, workflowTable, workflowVersionTable } from "@/db/schema";
 import { auth, clerkClient } from "@clerk/nextjs";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export default function Home() {
   return <WorkflowServer />;
