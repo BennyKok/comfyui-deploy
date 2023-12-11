@@ -1,4 +1,6 @@
+import { RunDisplay } from "../../components/RunDisplay";
 import { LoadingIcon } from "@/components/LoadingIcon";
+import { MachinesWSMain } from "@/components/MachinesWS";
 import {
   MachineSelect,
   RunWorkflowButton,
@@ -16,7 +18,6 @@ import {
   Table,
   TableBody,
   TableCaption,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -83,6 +84,8 @@ export default async function Page({
             <MachineSelect machines={machines} />
             <RunWorkflowButton workflow={workflow} machines={machines} />
           </div>
+
+          <MachinesWSMain machines={machines} />
         </CardContent>
       </Card>
 
@@ -109,26 +112,20 @@ async function RunsTable(props: { workflow_id: string }) {
           <TableHead className="w-[100px]">Version</TableHead>
           <TableHead>Machine</TableHead>
           <TableHead>Time</TableHead>
+          <TableHead>Live Status</TableHead>
           <TableHead className="text-right">Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {allRuns.map((run) => (
-          <TableRow key={run.id}>
-            <TableCell>{run.version.version}</TableCell>
-            <TableCell className="font-medium">{run.machine.name}</TableCell>
-            <TableCell>{getRelativeTime(run.created_at)}</TableCell>
-            <TableCell className="text-right">
-              <StatusBadge run={run} />
-            </TableCell>
-          </TableRow>
+          <RunDisplay run={run} key={run.id} />
         ))}
       </TableBody>
     </Table>
   );
 }
 
-function StatusBadge({
+export function StatusBadge({
   run,
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];

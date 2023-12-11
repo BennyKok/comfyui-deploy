@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createRun } from "@/server/createRun";
 import type { getMachines } from "@/server/curdMachine";
 import { Play } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
@@ -101,17 +102,15 @@ export function RunWorkflowButton({
       className="gap-2"
       disabled={isLoading}
       onClick={async () => {
+        const workflow_version_id = workflow?.versions.find(
+          (x) => x.version === version
+        )?.id;
+        if (!workflow_version_id) return;
+
         setIsLoading(true);
         try {
-          await fetch(`/api/create-run`, {
-            method: "POST",
-            body: JSON.stringify({
-              workflow_version_id: workflow?.versions.find(
-                (x) => x.version === version
-              )?.id,
-              machine_id: machine,
-            }),
-          });
+          const origin = window.location.origin;
+          await createRun(origin, workflow_version_id, machine);
           setIsLoading(false);
         } catch (error) {
           setIsLoading(false);

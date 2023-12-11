@@ -20,6 +20,9 @@ import atexit
 import logging
 from enum import Enum
 
+import aiohttp
+from aiohttp import web
+
 api = None
 api_task = None
 prompt_metadata = {}
@@ -101,6 +104,41 @@ async def comfy_deploy_run(request):
 
     return web.json_response(res, status=status)
 
+sockets = dict()
+
+@server.PromptServer.instance.routes.get('/comfy-deploy/ws')
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    sid = request.rel_url.query.get('clientId', '')
+    if sid:
+        # Reusing existing session, remove old
+        sockets.pop(sid, None)
+    else:
+        sid = uuid.uuid4().hex
+
+    sockets[sid] = ws
+
+    try:
+        # Send initial state to the new client
+        await send("status", { 'sid': sid }, sid)
+            
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.ERROR:
+                print('ws connection closed with exception %s' % ws.exception())
+    finally:
+        sockets.pop(sid, None)
+    return ws
+
+async def send(event, data, sid=None):
+    if sid:
+        ws = sockets.get(sid)
+        if ws:
+            await ws.send_json({ 'event': event, 'data': data })
+    else:
+        for ws in sockets.values():
+            await ws.send_json({ 'event': event, 'data': data })
+
 logging.basicConfig(level=logging.INFO)
 
 prompt_server = server.PromptServer.instance
@@ -110,6 +148,9 @@ async def send_json_override(self, event, data, sid=None):
     print("INTERNAL:", event, data, sid)
 
     prompt_id = data.get('prompt_id')
+
+    # now we send everything
+    await send(event, data)
 
     if event == 'execution_start':
         update_run(prompt_id, Status.RUNNING)
