@@ -70,21 +70,22 @@ export const workflowRunStatus = pgEnum("workflow_run_status", [
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
-  workflow_version_id: uuid("workflow_version_id")
-    .notNull()
-    .references(() => workflowVersionTable.id, {
-      onDelete: "no action",
-    }),
+  // when workflow version deleted, still want to keep this record
+  workflow_version_id: uuid("workflow_version_id").references(
+    () => workflowVersionTable.id,
+    {
+      onDelete: "set null",
+    }
+  ),
   workflow_id: uuid("workflow_id")
     .notNull()
     .references(() => workflowTable.id, {
-      onDelete: "no action",
+      onDelete: "cascade",
     }),
-  machine_id: uuid("machine_id")
-    .notNull()
-    .references(() => machinesTable.id, {
-      onDelete: "no action",
-    }),
+  // when machine deleted, still want to keep this record
+  machine_id: uuid("machine_id").references(() => machinesTable.id, {
+    onDelete: "set null",
+  }),
   status: workflowRunStatus("status").notNull().default("not-started"),
   ended_at: timestamp("ended_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
@@ -101,12 +102,26 @@ export const workflowRunRelations = relations(workflowRunsTable, ({ one }) => ({
   }),
 }));
 
+// We still want to keep the workflow run record.
+export const workflowRunOutputs = dbSchema.table("workflow_run_outputs", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  run_id: uuid("run_id")
+    .notNull()
+    .references(() => workflowRunsTable.id, {
+      onDelete: "cascade",
+    }),
+  data: jsonb("data").$type<any>(),
+
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // when user delete, also delete all the workflow versions
 export const machinesTable = dbSchema.table("machines", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   user_id: text("user_id")
     .references(() => usersTable.id, {
-      onDelete: "no action",
+      onDelete: "cascade",
     })
     .notNull(),
   name: text("name").notNull(),

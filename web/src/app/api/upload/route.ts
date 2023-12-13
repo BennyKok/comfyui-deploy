@@ -1,9 +1,9 @@
 import { parseDataSafe } from "../../../lib/parseDataSafe";
 import { db } from "@/db/db";
 import { workflowTable, workflowVersionTable } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { ZodFormattedError, z } from "zod";
+import { z } from "zod";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const [data, error] = await parseDataSafe(
     UploadRequest,
     request,
-    corsHeaders,
+    corsHeaders
   );
 
   if (!data || error) return error;
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
           status: 500,
           statusText: "Invalid request",
           headers: corsHeaders,
-        },
+        }
       );
     }
   } catch (error: any) {
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         status: 500,
         statusText: "Invalid request",
         headers: corsHeaders,
-      },
+      }
     );
   }
 
@@ -120,6 +120,6 @@ export async function POST(request: Request) {
     {
       status: 200,
       headers: corsHeaders,
-    },
+    }
   );
 }

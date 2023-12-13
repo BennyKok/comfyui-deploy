@@ -9,8 +9,16 @@ export async function parseDataSafe<T extends ZodType<any, any, any>>(
 ): Promise<[z.infer<T> | undefined, NextResponse | undefined]> {
   let data: z.infer<T> | undefined = undefined;
   try {
-    data = await schema.parseAsync(await request.json());
-  } catch (e: any) {
+    if (request.method === "GET") {
+      // Parse data from query parameters for GET requests
+      const url = new URL(request.url);
+      const params = Object.fromEntries(url.searchParams);
+      data = await schema.parseAsync(params);
+    } else {
+      // Parse data from request body for other types of requests
+      data = await schema.parseAsync(await request.json());
+    }
+  } catch (e: unknown) {
     if (e instanceof ZodError) {
       const message = e.flatten().fieldErrors;
       return [

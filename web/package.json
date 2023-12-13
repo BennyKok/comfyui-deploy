@@ -15,6 +15,8 @@
     "db-dev": "bun run db-up && bun run migrate-local"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.472.0",
+    "@aws-sdk/s3-request-presigner": "^3.472.0",
     "@clerk/nextjs": "^4.27.4",
     "@hookform/resolvers": "^3.3.2",
     "@neondatabase/serverless": "^0.6.0",
@@ -26,6 +28,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
     "@tanstack/react-table": "^8.10.7",
+    "@types/uuid": "^9.0.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "dayjs": "^1.11.10",
@@ -36,8 +39,10 @@
     "react-dom": "^18",
     "react-hook-form": "^7.48.2",
     "react-use-websocket": "^4.5.0",
+    "sonner": "^1.2.4",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^9.0.1",
     "zod": "^3.22.4",
     "zustand": "^4.4.7"
   },

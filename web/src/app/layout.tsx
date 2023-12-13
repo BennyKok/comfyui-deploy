@@ -2,6 +2,7 @@ import "./globals.css";
 import { NavbarRight } from "@/components/NavbarRight";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({
           <div className="md:px-10 px-6 w-full flex items-start">
             {children}
           </div>
+          <Toaster richColors />
         </main>
       </body>
     </html>

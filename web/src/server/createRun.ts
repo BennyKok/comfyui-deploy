@@ -1,11 +1,10 @@
 "use server";
 
-import { ComfyAPI_Run } from "../app/api/create-run/route";
 import { db } from "@/db/db";
 import { workflowRunsTable } from "@/db/schema";
+import { ComfyAPI_Run } from "@/types/ComfyAPI_Run";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { NextResponse } from "next/server";
 import "server-only";
 
 export async function createRun(
@@ -18,9 +17,10 @@ export async function createRun(
   });
 
   if (!machine) {
-    return new Response("Machine not found", {
-      status: 404,
-    });
+    throw new Error("Machine not found");
+    // return new Response("Machine not found", {
+    //   status: 404,
+    // });
   }
 
   const workflow_version_data =
@@ -38,9 +38,10 @@ export async function createRun(
   //   })
   // : null;
   if (!workflow_version_data) {
-    return new Response("Workflow version not found", {
-      status: 404,
-    });
+    throw new Error("Workflow version not found");
+    // return new Response("Workflow version not found", {
+    //   status: 404,
+    // });
   }
 
   const comfyui_endpoint = `${machine.endpoint}/comfy-deploy/run`;
@@ -54,22 +55,22 @@ export async function createRun(
     body: JSON.stringify({
       workflow_api: workflow_version_data.workflow_api,
       status_endpoint: `${origin}/api/update-run`,
+      file_upload_endpoint: `${origin}/api/file-upload`,
     }),
-  })
-    .then(async (res) => ComfyAPI_Run.parseAsync(await res.json()))
-    .catch((error) => {
-      console.error(error);
-      return new Response(error.details, {
-        status: 500,
-      });
-    });
+  }).then(async (res) => ComfyAPI_Run.parseAsync(await res.json()));
+  // .catch((error) => {
+  //   console.error(error);
+  //   return new Response(error.details, {
+  //     status: 500,
+  //   });
+  // });
 
-  console.log(result);
+  // console.log(result);
 
-  // return the error
-  if (result instanceof Response) {
-    return result;
-  }
+  // // return the error
+  // if (result instanceof Response) {
+  //   return result;
+  // }
 
   // Add to our db
   const workflow_run = await db
@@ -84,12 +85,14 @@ export async function createRun(
 
   revalidatePath(`/${workflow_version_data.workflow_id}`);
 
-  return NextResponse.json(
-    {
-      workflow_run_id: workflow_run[0].id,
-    },
-    {
-      status: 200,
-    }
-  );
+  return workflow_run[0].id;
+
+  // return NextResponse.json(
+  //   {
+  //     workflow_run_id: workflow_run[0].id,
+  //   },
+  //   {
+  //     status: 200,
+  //   }
+  // );
 }

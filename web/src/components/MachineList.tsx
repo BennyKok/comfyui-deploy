@@ -56,6 +56,7 @@ import {
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 export type Machine = {
@@ -159,9 +160,8 @@ export const columns: ColumnDef<Machine>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               className="text-destructive"
-              onClick={() => {
-                deleteMachine(workflow.id);
-                // navigator.clipboard.writeText(payment.id)
+              onClick={async () => {
+                callServerWithToast(await deleteMachine(workflow.id));
               }}
             >
               Delete Machine
@@ -175,6 +175,17 @@ export const columns: ColumnDef<Machine>[] = [
     },
   },
 ];
+
+async function callServerWithToast(result: {
+  message: string;
+  error?: boolean;
+}) {
+  if (result.error) {
+    toast.error(result.message);
+  } else {
+    toast.success(result.message);
+  }
+}
 
 export function MachineList({ data }: { data: Machine[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -333,8 +344,8 @@ function AddMachinesDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      endpoint: "",
+      name: "My Local Machine",
+      endpoint: "http://127.0.0.1:8188",
     },
   });
 

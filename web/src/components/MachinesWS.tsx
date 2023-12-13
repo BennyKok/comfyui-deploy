@@ -8,6 +8,7 @@ import { create } from "zustand";
 type State = {
   data: {
     id: string;
+    timestamp: number;
     json: {
       event: string;
       data: any;
@@ -27,7 +28,7 @@ export const useStore = create<State>((set) => ({
   addData: (id, json) =>
     set((state) => ({
       ...state,
-      data: [...state.data, { id, json }],
+      data: [...state.data, { id, json, timestamp: Date.now() }],
     })),
 }));
 

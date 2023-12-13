@@ -1,6 +1,5 @@
 "use client";
 
-import type { findFirstTableWithVersion } from "@/app/[workflow_id]/page";
 import { LoadingIcon } from "@/components/LoadingIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { createRun } from "@/server/createRun";
 import type { getMachines } from "@/server/curdMachine";
+import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
 import { Play } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
 import { useState } from "react";
@@ -56,7 +56,7 @@ export function MachineSelect({
   machines: Awaited<ReturnType<typeof getMachines>>;
 }) {
   const [machine, setMachine] = useQueryState("machine", {
-    defaultValue: machines[0].id ?? "",
+    defaultValue: machines?.[0].id ?? "",
   });
   return (
     <Select
@@ -111,6 +111,7 @@ export function RunWorkflowButton({
         try {
           const origin = window.location.origin;
           await createRun(origin, workflow_version_id, machine);
+          // console.log(res.json());
           setIsLoading(false);
         } catch (error) {
           setIsLoading(false);

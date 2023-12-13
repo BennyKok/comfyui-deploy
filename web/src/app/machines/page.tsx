@@ -1,14 +1,8 @@
 import { MachineList } from "@/components/MachineList";
-import { WorkflowList } from "@/components/WorkflowList";
 import { db } from "@/db/db";
-import {
-  machinesTable,
-  usersTable,
-  workflowTable,
-  workflowVersionTable,
-} from "@/db/schema";
+import { machinesTable, usersTable } from "@/db/schema";
 import { auth, clerkClient } from "@clerk/nextjs";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export default function Page() {
   return <MachineListServer />;

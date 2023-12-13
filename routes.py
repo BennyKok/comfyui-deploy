@@ -22,6 +22,7 @@ from enum import Enum
 
 import aiohttp
 from aiohttp import web
+import boto3
 
 api = None
 api_task = None
@@ -96,6 +97,7 @@ async def comfy_deploy_run(request):
 
     prompt_metadata[res['prompt_id']] = {
         'status_endpoint': data.get('status_endpoint'),
+        'file_upload_endpoint': data.get('file_upload_endpoint'),
     }
 
     status = 200
@@ -151,17 +153,18 @@ async def send_json_override(self, event, data, sid=None):
 
     # now we send everything
     await send(event, data)
+    await self.send_json_original(event, data, sid)
 
     if event == 'execution_start':
         update_run(prompt_id, Status.RUNNING)
 
-    # if event == 'executing':
-    #     update_run(prompt_id, Status.RUNNING)
-
-    if event == 'executed':
+    # the last executing event is none, then the workflow is finished
+    if event == 'executing' and data.get('node') is None:
         update_run(prompt_id, Status.SUCCESS)
 
-    await self.send_json_original(event, data, sid)
+    if event == 'executed' and 'node' in data and 'output' in data:
+        asyncio.create_task(update_run_with_output(prompt_id, data.get('output')))
+        # update_run_with_output(prompt_id, data.get('output'))
 
 
 class Status(Enum):
@@ -171,13 +174,76 @@ class Status(Enum):
     FAILED = "failed"
 
 def update_run(prompt_id, status: Status):
-    if prompt_id in prompt_metadata and ('status' not in prompt_metadata[prompt_id] or prompt_metadata[prompt_id]['status'] != status):
+    if prompt_id not in prompt_metadata:
+        return
+
+    if ('status' not in prompt_metadata[prompt_id] or prompt_metadata[prompt_id]['status'] != status):
         status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
         body = {
             "run_id": prompt_id,
             "status": status.value,
         }
         prompt_metadata[prompt_id]['status'] = status
+        requests.post(status_endpoint, json=body)
+
+
+async def upload_file(prompt_id, filename, subfolder=None):
+    """
+    Uploads file to S3 bucket using S3 client object
+    :return: None
+    """
+    filename,output_dir = folder_paths.annotated_filepath(filename)
+
+    # validation for security: prevent accessing arbitrary path
+    if filename[0] == '/' or '..' in filename:
+        return
+
+    if output_dir is None:
+        output_dir = folder_paths.get_directory_by_type("output")
+
+    if output_dir is None:
+        return 
+
+    if subfolder != None:
+        full_output_dir = os.path.join(output_dir, subfolder)
+        if os.path.commonpath((os.path.abspath(full_output_dir), output_dir)) != output_dir:
+            return
+        output_dir = full_output_dir
+
+    filename = os.path.basename(filename)
+    file = os.path.join(output_dir, filename)
+
+    print("uploading file", file)
+
+    file_upload_endpoint = prompt_metadata[prompt_id]['file_upload_endpoint']
+
+    content_type = "image/png"
+
+    result = requests.get(f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}")
+    ok = result.json()
+    
+    with open(file, 'rb') as f:
+        data = f.read()
+        headers = {
+            "x-amz-acl": "public-read",
+            "Content-Type": content_type,
+            "Content-Length": str(len(data)),
+        }
+        response = requests.put(ok.get("url"), headers=headers, data=data)
+        print("upload file response", response.status_code)
+
+async def update_run_with_output(prompt_id, data):
+    if prompt_id in prompt_metadata:
+        status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
+
+        images = data.get('images', [])
+        for image in images:
+            await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"))
+
+        body = {
+            "run_id": prompt_id,
+            "output_data": data
+        }
         requests.post(status_endpoint, json=body)
 
 prompt_server.send_json_original = prompt_server.send_json
