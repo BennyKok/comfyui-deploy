@@ -21,28 +21,32 @@ curl --request POST \
 }'
 `;
 
+const curlTemplate_checkStatus = `
+curl --request GET \
+  --url 'http://localhost:3000/api/run?run_id=xxx' \
+  --header 'Content-Type: application/json'
+`;
+
 const jsTemplate = `
-const options = {
+fetch('<URL>', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
-  body: '{"deployment_id":"<ID>"}'
-};
-
-fetch('<URL>', options)
+  body: JSON.stringify({
+    deployment_id: '<ID>',
+  }),
+})
   .then(response => response.json())
   .then(response => console.log(response))
   .catch(err => console.error(err));
 `;
 
 const jsTemplate_checkStatus = `
-const options = {
-  method: 'GET',
-  headers: {'Content-Type': 'application/json'},
-};
-
 const run_id = '<RUN_ID>';
 
-fetch('<URL>?run_id=' + run_id, options)
+fetch('<URL>?run_id=' + run_id, {
+  method: 'GET',
+  headers: {'Content-Type': 'application/json'},
+})
   .then(response => response.json())
   .then(response => console.log(response))
   .catch(err => console.error(err));
@@ -82,16 +86,22 @@ export function DeploymentDisplay({
             <TabsTrigger value="curl">curl</TabsTrigger>
           </TabsList>
           <TabsContent className="flex flex-col gap-2" value="js">
+            Trigger the workflow
             <CodeBlock lang="js" code={formatCode(jsTemplate, deployment)} />
+            Check the status of the run, and retrieve the outputs
             <CodeBlock
               lang="js"
               code={formatCode(jsTemplate_checkStatus, deployment)}
             />
           </TabsContent>
-          <TabsContent value="curl">
+          <TabsContent className="flex flex-col gap-2" value="curl">
             <CodeBlock
               lang="bash"
               code={formatCode(curlTemplate, deployment)}
+            />
+            <CodeBlock
+              lang="bash"
+              code={formatCode(curlTemplate_checkStatus, deployment)}
             />
           </TabsContent>
         </Tabs>

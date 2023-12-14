@@ -1,5 +1,5 @@
-import { DeploymentsTable, RunsTable } from "../../components/RunsTable";
-import { findFirstTableWithVersion } from "../../server/findFirstTableWithVersion";
+import { DeploymentsTable, RunsTable } from "../../../components/RunsTable";
+import { findFirstTableWithVersion } from "../../../server/findFirstTableWithVersion";
 import { MachinesWSMain } from "@/components/MachinesWS";
 import {
   CreateDeploymentButton,
@@ -49,7 +49,7 @@ export default async function Page({
             <MachinesWSMain machines={machines} />
           </CardContent>
         </Card>
-        <Card className="w-full ">
+        <Card className="w-full h-fit">
           <CardHeader>
             <CardTitle>Deployments</CardTitle>
           </CardHeader>
@@ -60,7 +60,7 @@ export default async function Page({
         </Card>
       </div>
 
-      <Card className="w-full ">
+      <Card className="w-full h-fit">
         <CardHeader>
           <CardTitle>Run</CardTitle>
         </CardHeader>

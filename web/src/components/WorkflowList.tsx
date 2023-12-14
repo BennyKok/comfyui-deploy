@@ -9,7 +9,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -85,7 +84,7 @@ export const columns: ColumnDef<Payment>[] = [
     },
     cell: ({ row }) => {
       return (
-        <a className="hover:underline" href={`/${row.original.id}`}>
+        <a className="hover:underline" href={`/workflow/${row.original.id}`}>
           {row.getValue("email")}
         </a>
       );
@@ -167,7 +166,7 @@ export const columns: ColumnDef<Payment>[] = [
 export function WorkflowList({ data }: { data: Payment[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -242,7 +241,7 @@ export function WorkflowList({ data }: { data: Payment[] }) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -261,7 +260,7 @@ export function WorkflowList({ data }: { data: Payment[] }) {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

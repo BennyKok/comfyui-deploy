@@ -70,7 +70,7 @@ export function OutputRender(props: { run_id: string; filename: string }) {
     return (
       <img
         alt={props.filename}
-        src={`api/view?file=${encodeURIComponent(
+        src={`/api/view?file=${encodeURIComponent(
           `outputs/runs/${props.run_id}/${props.filename}`
         )}`}
       />

@@ -23,7 +23,7 @@ export function RunOutputs({ run_id }: { run_id: string }) {
     //   .then((x) => x.json())
     //   .then((x) => setOutputs(x));
     callServerPromise(getRunsOutput(run_id).then((x) => setOutputs(x)));
-  }, [run_id, outputs]);
+  }, [run_id]);
 
   return (
     <Table>
