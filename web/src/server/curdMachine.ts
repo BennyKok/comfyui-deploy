@@ -43,14 +43,7 @@ export async function addMachine(name: string, endpoint: string) {
 export async function deleteMachine(
   machine_id: string
 ): Promise<{ message: string; error?: boolean }> {
-  try {
-    await db.delete(machinesTable).where(eq(machinesTable.id, machine_id));
-    revalidatePath("/machines");
-    return { message: "Machine Deleted" };
-  } catch (error: unknown) {
-    return {
-      message: `Error: ${error.detail}`,
-      error: true,
-    };
-  }
+  await db.delete(machinesTable).where(eq(machinesTable.id, machine_id));
+  revalidatePath("/machines");
+  return { message: "Machine Deleted" };
 }

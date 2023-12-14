@@ -1,0 +1,1 @@
+ALTER TABLE "comfy_deploy"."deployments" ALTER COLUMN "machine_id" SET NOT NULL;

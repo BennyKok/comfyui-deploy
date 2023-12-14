@@ -65,6 +65,18 @@
     --ring: 212.7 26.8% 83.9%;
   }
 }
+
+.shiki>code>span {
+  /* text-wrap: wrap; */
+  /* word-wrap: break-word; */
+  /* @apply break-all ; */
+  text-wrap: wrap;
+}
+
+.shiki {
+  /* @apply rounded-lg p-2 overflow-x-scroll */
+  @apply rounded-lg p-2 overflow-hidden
+}
  
 @layer base {
   * {

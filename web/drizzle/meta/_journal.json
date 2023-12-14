@@ -36,6 +36,20 @@
       "when": 1702357291227,
       "tag": "0004_zippy_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1702545286004,
+      "tag": "0005_worthless_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1702556119574,
+      "tag": "0006_chief_mariko_yashida",
+      "breakpoints": true
     }
   ]
 }

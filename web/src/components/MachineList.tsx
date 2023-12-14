@@ -161,7 +161,7 @@ export const columns: ColumnDef<Machine>[] = [
             <DropdownMenuItem
               className="text-destructive"
               onClick={async () => {
-                callServerWithToast(await deleteMachine(workflow.id));
+                callServerPromise(deleteMachine(workflow.id));
               }}
             >
               Delete Machine
@@ -176,15 +176,16 @@ export const columns: ColumnDef<Machine>[] = [
   },
 ];
 
-async function callServerWithToast(result: {
-  message: string;
-  error?: boolean;
-}) {
-  if (result.error) {
-    toast.error(result.message);
-  } else {
-    toast.success(result.message);
-  }
+export async function callServerPromise<T>(result: Promise<T>) {
+  return result
+    .then((x) => {
+      if ((x as { message: string })?.message !== undefined) {
+        toast.success((x as { message: string }).message);
+      }
+    })
+    .catch((error) => {
+      toast.error(error.message);
+    });
 }
 
 export function MachineList({ data }: { data: Machine[] }) {

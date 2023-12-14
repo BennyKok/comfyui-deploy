@@ -1,13 +1,10 @@
-import { db } from "./db/db";
-import { usersTable } from "./db/schema";
-import { authMiddleware, redirectToSignIn, clerkClient } from "@clerk/nextjs";
-import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
 // See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
 export default authMiddleware({
+  // debug: true,
   publicRoutes: ["/api/(.*)"],
   // publicRoutes: ["/", "/(.*)"],
   async afterAuth(auth, req, evt) {
@@ -33,6 +30,6 @@ export default authMiddleware({
 });
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/" , "/(api|trpc)(.*)"],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
   // matcher: ['/','/create', '/api/(twitter|generation|init|voice-cloning)'],
 };

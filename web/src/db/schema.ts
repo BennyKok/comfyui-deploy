@@ -67,6 +67,11 @@ export const workflowRunStatus = pgEnum("workflow_run_status", [
   "failed",
 ]);
 
+export const deploymentEnvironment = pgEnum("deployment_environment", [
+  "staging",
+  "production",
+]);
+
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -91,16 +96,20 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const workflowRunRelations = relations(workflowRunsTable, ({ one }) => ({
-  machine: one(machinesTable, {
-    fields: [workflowRunsTable.machine_id],
-    references: [machinesTable.id],
-  }),
-  version: one(workflowVersionTable, {
-    fields: [workflowRunsTable.workflow_version_id],
-    references: [workflowVersionTable.id],
-  }),
-}));
+export const workflowRunRelations = relations(
+  workflowRunsTable,
+  ({ one, many }) => ({
+    machine: one(machinesTable, {
+      fields: [workflowRunsTable.machine_id],
+      references: [machinesTable.id],
+    }),
+    version: one(workflowVersionTable, {
+      fields: [workflowRunsTable.workflow_version_id],
+      references: [workflowVersionTable.id],
+    }),
+    outputs: many(workflowRunOutputs),
+  })
+);
 
 // We still want to keep the workflow run record.
 export const workflowRunOutputs = dbSchema.table("workflow_run_outputs", {
@@ -116,6 +125,16 @@ export const workflowRunOutputs = dbSchema.table("workflow_run_outputs", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const workflowOutputRelations = relations(
+  workflowRunOutputs,
+  ({ one }) => ({
+    run: one(workflowRunsTable, {
+      fields: [workflowRunOutputs.run_id],
+      references: [workflowRunsTable.id],
+    }),
+  })
+);
+
 // when user delete, also delete all the workflow versions
 export const machinesTable = dbSchema.table("machines", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -129,6 +148,38 @@ export const machinesTable = dbSchema.table("machines", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const deploymentsTable = dbSchema.table("deployments", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  workflow_version_id: uuid("workflow_version_id")
+    .notNull()
+    .references(() => workflowVersionTable.id),
+  workflow_id: uuid("workflow_id")
+    .notNull()
+    .references(() => workflowTable.id),
+  machine_id: uuid("machine_id")
+    .notNull()
+    .references(() => machinesTable.id),
+  environment: deploymentEnvironment("environment").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const deploymentsRelations = relations(deploymentsTable, ({ one }) => ({
+  machine: one(machinesTable, {
+    fields: [deploymentsTable.machine_id],
+    references: [machinesTable.id],
+  }),
+  version: one(workflowVersionTable, {
+    fields: [deploymentsTable.workflow_version_id],
+    references: [workflowVersionTable.id],
+  }),
+}));
 
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;

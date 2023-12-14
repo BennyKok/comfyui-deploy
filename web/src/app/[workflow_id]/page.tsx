@@ -1,7 +1,8 @@
-import { RunsTable } from "../../components/RunsTable";
+import { DeploymentsTable, RunsTable } from "../../components/RunsTable";
 import { findFirstTableWithVersion } from "../../server/findFirstTableWithVersion";
 import { MachinesWSMain } from "@/components/MachinesWS";
 import {
+  CreateDeploymentButton,
   MachineSelect,
   RunWorkflowButton,
   VersionSelect,
@@ -28,24 +29,36 @@ export default async function Page({
 
   return (
     <div className="mt-4 w-full flex flex-col lg:flex-row gap-4 max-h-[calc(100dvh-100px)]">
-      <Card className="w-full lg:w-fit lg:min-w-[500px] h-fit">
-        <CardHeader>
-          <CardTitle>{workflow?.name}</CardTitle>
-          <CardDescription suppressHydrationWarning={true}>
-            {getRelativeTime(workflow?.updated_at)}
-          </CardDescription>
-        </CardHeader>
+      <div className="flex gap-4 flex-col">
+        <Card className="w-full lg:w-fit lg:min-w-[500px] h-fit">
+          <CardHeader>
+            <CardTitle>{workflow?.name}</CardTitle>
+            <CardDescription suppressHydrationWarning={true}>
+              {getRelativeTime(workflow?.updated_at)}
+            </CardDescription>
+          </CardHeader>
 
-        <CardContent>
-          <div className="flex gap-2 ">
-            <VersionSelect workflow={workflow} />
-            <MachineSelect machines={machines} />
-            <RunWorkflowButton workflow={workflow} machines={machines} />
-          </div>
+          <CardContent>
+            <div className="flex gap-2 ">
+              <VersionSelect workflow={workflow} />
+              <MachineSelect machines={machines} />
+              <RunWorkflowButton workflow={workflow} machines={machines} />
+              <CreateDeploymentButton workflow={workflow} machines={machines} />
+            </div>
 
-          <MachinesWSMain machines={machines} />
-        </CardContent>
-      </Card>
+            <MachinesWSMain machines={machines} />
+          </CardContent>
+        </Card>
+        <Card className="w-full ">
+          <CardHeader>
+            <CardTitle>Deployments</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <DeploymentsTable workflow_id={workflow_id} />
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="w-full ">
         <CardHeader>

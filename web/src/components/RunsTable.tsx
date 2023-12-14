@@ -1,4 +1,5 @@
-import { findAllRuns } from "../server/findAllRuns";
+import { findAllDeployments, findAllRuns } from "../server/findAllRuns";
+import { DeploymentDisplay } from "./DeploymentDisplay";
 import { RunDisplay } from "./RunDisplay";
 import {
   Table,
@@ -27,6 +28,30 @@ export async function RunsTable(props: { workflow_id: string }) {
         <TableBody>
           {allRuns.map((run) => (
             <RunDisplay run={run} key={run.id} />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+export async function DeploymentsTable(props: { workflow_id: string }) {
+  const allRuns = await findAllDeployments(props.workflow_id);
+  return (
+    <div className="overflow-auto h-[400px] w-full">
+      <Table className="">
+        <TableCaption>A list of your deployments</TableCaption>
+        <TableHeader className="bg-background top-0 sticky">
+          <TableRow>
+            <TableHead className=" w-[100px]">Environment</TableHead>
+            <TableHead className=" w-[100px]">Version</TableHead>
+            <TableHead className="">Machine</TableHead>
+            <TableHead className=" text-right">Updated At</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {allRuns.map((run) => (
+            <DeploymentDisplay deployment={run} key={run.id} />
           ))}
         </TableBody>
       </Table>

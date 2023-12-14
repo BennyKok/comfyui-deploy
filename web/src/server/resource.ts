@@ -17,7 +17,7 @@ const s3Client = new S3({
   forcePathStyle: true,
 });
 
-function replaceCDNUrl(url: string) {
+export function replaceCDNUrl(url: string) {
   url = url.replace(
     process.env.SPACES_ENDPOINT!,
     process.env.SPACES_ENDPOINT_CDN!
