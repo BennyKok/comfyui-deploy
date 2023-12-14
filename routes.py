@@ -76,7 +76,7 @@ def randomSeed(num_digits=15):
     range_end = (10**num_digits) - 1
     return random.randint(range_start, range_end)
 
-@server.PromptServer.instance.routes.post("/comfy-deploy/run")
+@server.PromptServer.instance.routes.post("/comfyui-deploy/run")
 async def comfy_deploy_run(request):
     print("hi")
     prompt_server = server.PromptServer.instance
@@ -108,7 +108,7 @@ async def comfy_deploy_run(request):
 
 sockets = dict()
 
-@server.PromptServer.instance.routes.get('/comfy-deploy/ws')
+@server.PromptServer.instance.routes.get('/comfyui-deploy/ws')
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)

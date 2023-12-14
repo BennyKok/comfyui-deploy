@@ -1,6 +1,6 @@
 """
 @author: BennyKok
-@title: comfy-deploy
+@title: comfyui-deploy
 @nickname: Comfy Deploy
 @description: 
 """

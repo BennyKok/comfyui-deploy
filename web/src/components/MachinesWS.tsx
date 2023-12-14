@@ -53,7 +53,7 @@ function MachineWS({
   const { addData } = useStore();
   const wsEndpoint = machine.endpoint.replace(/^http/, "ws");
   const { lastMessage, readyState } = useWebSocket(
-    `${wsEndpoint}/comfy-deploy/ws`,
+    `${wsEndpoint}/comfyui-deploy/ws`,
     {
       reconnectAttempts: 10,
       reconnectInterval: 1000,

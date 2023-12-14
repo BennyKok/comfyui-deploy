@@ -44,7 +44,7 @@ export async function createRun(
     // });
   }
 
-  const comfyui_endpoint = `${machine.endpoint}/comfy-deploy/run`;
+  const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
 
   // Sending to comfyui
   const result = await fetch(comfyui_endpoint, {
