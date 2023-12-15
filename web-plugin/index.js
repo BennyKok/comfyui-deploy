@@ -191,7 +191,7 @@ function addButton() {
 
   const config = document.createElement("button");
   config.textContent = "Config";
-  config.className = "configbtn";
+  deploy.className = "sharebtn";
   config.onclick = () => {
     configDialog.show();
   };
