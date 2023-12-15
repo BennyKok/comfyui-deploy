@@ -118,7 +118,9 @@ export function RunWorkflowButton({
         setIsLoading(true);
         try {
           const origin = window.location.origin;
-          await createRun(origin, workflow_version_id, machine);
+          await callServerPromise(
+            createRun(origin, workflow_version_id, machine)
+          );
           // console.log(res.json());
           setIsLoading(false);
         } catch (error) {

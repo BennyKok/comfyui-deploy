@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        run_id: run_id,
+        run_id: run_id.workflow_run_id,
       },
       {
         status: 200,

@@ -102,7 +102,10 @@ export async function createRun(
 
   revalidatePath(`/${workflow_version_data.workflow_id}`);
 
-  return workflow_run[0].id;
+  return {
+    workflow_run_id: workflow_run[0].id,
+    message: "Successfully workflow run",
+  };
 
   // return NextResponse.json(
   //   {
