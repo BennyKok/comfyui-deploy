@@ -22,7 +22,6 @@ from enum import Enum
 
 import aiohttp
 from aiohttp import web
-import boto3
 
 api = None
 api_task = None
