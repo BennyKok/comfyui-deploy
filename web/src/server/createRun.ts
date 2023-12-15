@@ -65,26 +65,24 @@ export async function createRun(
     status_endpoint: `${origin}/api/update-run`,
     file_upload_endpoint: `${origin}/api/file-upload`,
   };
-  console.log(body);
+  // console.log(body);
   const bodyJson = JSON.stringify(body);
-  console.log(bodyJson);
+  // console.log(bodyJson);
 
   // Sending to comfyui
-  const result = await fetch(comfyui_endpoint, {
+  const _result = await fetch(comfyui_endpoint, {
     method: "POST",
     body: bodyJson,
     cache: "no-store",
-  })
-    .then(async (res) => {
-      const text = await res.text();
-      console.log(text);
-      return text;
-    })
-    .then(async (res) => ComfyAPI_Run.parseAsync(JSON.parse(res)))
-    .catch((err) => {
-      console.log("Some went wrong in parsing the response");
-      throw new Error(err);
-    });
+  });
+
+  if (!_result.ok) {
+    throw new Error(`Error creating run, ${_result.statusText}`);
+  }
+
+  console.log(_result);
+
+  const result = await ComfyAPI_Run.parseAsync(await _result.json());
 
   console.log(result);
 
