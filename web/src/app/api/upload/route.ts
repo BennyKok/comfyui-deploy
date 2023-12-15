@@ -1,6 +1,11 @@
-import { parseDataSafe } from "../../../lib/parseDataSafe";
 import { db } from "@/db/db";
-import { workflowTable, workflowVersionTable } from "@/db/schema";
+import {
+  workflowAPIType,
+  workflowTable,
+  workflowType,
+  workflowVersionTable,
+} from "@/db/schema";
+import { parseDataSafe } from "@/lib/parseDataSafe";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -15,8 +20,8 @@ const UploadRequest = z.object({
   user_id: z.string(),
   workflow_id: z.string().optional(),
   workflow_name: z.string().optional(),
-  workflow: z.any(),
-  workflow_api: z.any(),
+  workflow: workflowType,
+  workflow_api: workflowAPIType,
 });
 
 export async function OPTIONS(request: Request) {
@@ -41,7 +46,15 @@ export async function POST(request: Request) {
 
   if (!data || error) return error;
 
-  let { user_id, workflow, workflow_api, workflow_id, workflow_name } = data;
+  const {
+    user_id,
+    workflow,
+    workflow_api,
+    workflow_id: _workflow_id,
+    workflow_name,
+  } = data;
+
+  let workflow_id = _workflow_id;
 
   let version = -1;
 
@@ -49,7 +62,7 @@ export async function POST(request: Request) {
   try {
     if ((!workflow_id || workflow_id.length == 0) && workflow_name) {
       // Create a new parent workflow
-      const workflow = await db
+      const workflow_parent = await db
         .insert(workflowTable)
         .values({
           user_id,
@@ -57,7 +70,7 @@ export async function POST(request: Request) {
         })
         .returning();
 
-      workflow_id = workflow[0].id;
+      workflow_id = workflow_parent[0].id;
 
       // Create a new version
       const data = await db
@@ -76,7 +89,7 @@ export async function POST(request: Request) {
         .insert(workflowVersionTable)
         .values({
           workflow_id,
-          workflow,
+          workflow: workflow,
           workflow_api,
           // version: sql`${workflowVersionTable.version} + 1`,
           version: sql`(

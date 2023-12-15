@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { z } from "zod";
 
 export const dbSchema = pgSchema("comfyui_deploy");
 
@@ -35,21 +36,25 @@ export const workflowRelations = relations(workflowTable, ({ many }) => ({
   versions: many(workflowVersionTable),
 }));
 
-export type WorkflowJSONType = {
-  nodes: {
-    id: string;
-    type: string;
-    widgets_values: any[];
-  }[];
-};
+export const workflowType = z.any();
+// export const workflowType = z.object({
+//   last_node_id: z.number(),
+//   last_link_id: z.number(),
+//   nodes: z.array(
+//     z.object({
+//       id: z.number(),
+//       type: z.string(),
+//       widgets_values: z.array(z.any()),
+//     })
+//   ),
+// });
 
-export type WorkflowAPIType = Record<
-  string,
-  {
-    inputs: Record<string, string>;
-    class_type: string;
-  }
->;
+export const workflowAPIType = z.record(
+  z.object({
+    inputs: z.record(z.any()),
+    class_type: z.string(),
+  })
+);
 
 export const workflowVersionTable = dbSchema.table("workflow_versions", {
   workflow_id: uuid("workflow_id")
@@ -58,8 +63,8 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
       onDelete: "cascade",
     }),
   id: uuid("id").primaryKey().defaultRandom().notNull(),
-  workflow: jsonb("workflow").$type<WorkflowJSONType>(),
-  workflow_api: jsonb("workflow_api").$type<WorkflowAPIType>(),
+  workflow: jsonb("workflow").$type<z.infer<typeof workflowType>>(),
+  workflow_api: jsonb("workflow_api").$type<z.infer<typeof workflowAPIType>>(),
   version: integer("version").notNull(),
 
   created_at: timestamp("created_at").defaultNow().notNull(),
