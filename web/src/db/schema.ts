@@ -35,6 +35,22 @@ export const workflowRelations = relations(workflowTable, ({ many }) => ({
   versions: many(workflowVersionTable),
 }));
 
+export type WorkflowJSONType = {
+  nodes: {
+    id: string;
+    type: string;
+    widgets_values: any[];
+  }[];
+};
+
+export type WorkflowAPIType = Record<
+  string,
+  {
+    inputs: Record<string, string>;
+    class_type: string;
+  }
+>;
+
 export const workflowVersionTable = dbSchema.table("workflow_versions", {
   workflow_id: uuid("workflow_id")
     .notNull()
@@ -42,8 +58,8 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
       onDelete: "cascade",
     }),
   id: uuid("id").primaryKey().defaultRandom().notNull(),
-  workflow: jsonb("workflow").$type<any>(),
-  workflow_api: jsonb("workflow_api").$type<any>(),
+  workflow: jsonb("workflow").$type<WorkflowJSONType>(),
+  workflow_api: jsonb("workflow_api").$type<WorkflowAPIType>(),
   version: integer("version").notNull(),
 
   created_at: timestamp("created_at").defaultNow().notNull(),

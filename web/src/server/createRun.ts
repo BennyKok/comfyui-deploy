@@ -47,12 +47,16 @@ export async function createRun(
 
   const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
 
-  let workflow_api = workflow_version_data.workflow_api;
+  const workflow_api = workflow_version_data.workflow_api;
 
   // Replace the inputs
-  if (inputs) {
+  if (inputs && workflow_api) {
     for (const key in inputs) {
-      workflow_api = workflow_api.replace(`"${key}"`, `"${inputs[key]}"`);
+      Object.entries(workflow_api).forEach(([_, node]) => {
+        if (node.inputs["name"] === key) {
+          node.inputs["name"] = inputs[key];
+        }
+      });
     }
   }
 
@@ -66,7 +70,6 @@ export async function createRun(
       workflow_api: workflow_api,
       status_endpoint: `${origin}/api/update-run`,
       file_upload_endpoint: `${origin}/api/file-upload`,
-      inputs: inputs,
     }),
   }).then(async (res) => ComfyAPI_Run.parseAsync(await res.json()));
   // .catch((error) => {
