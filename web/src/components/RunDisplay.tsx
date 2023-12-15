@@ -1,8 +1,6 @@
 "use client";
 
-import { RunOutputs } from "./RunOutputs";
-import { useStore } from "@/components/MachinesWS";
-import { StatusBadge } from "@/components/StatusBadge";
+import { LiveStatus } from "./LiveStatus";
 import {
   Dialog,
   DialogContent,
@@ -14,52 +12,44 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
+import { getRunsOutputDisplay } from "@/server/getRunsOutput";
+import { useState } from "react";
 
 export function RunDisplay({
   run,
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];
 }) {
-  const data = useStore(
-    (state) =>
-      state.data
-        .filter((x) => x.id === run.id)
-        .sort((a, b) => b.timestamp - a.timestamp)?.[0]
-  );
-
-  let status = run.status;
-
-  if (data?.json.event == "executing" && data.json.data.node == undefined) {
-    status = "success";
-  } else if (data?.json.event == "executing") {
-    status = "running";
-  }
-
+  const [view, setView] = useState<any>();
   return (
     <Dialog>
-      <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
+      <DialogTrigger
+        asChild
+        className="appearance-none hover:cursor-pointer"
+        onClick={async () => {
+          if (view) return;
+          const _view = await getRunsOutputDisplay(run.id);
+          setView(_view);
+        }}
+      >
         <TableRow>
           <TableCell>{run.version?.version}</TableCell>
           <TableCell className="font-medium">{run.machine?.name}</TableCell>
           <TableCell>{getRelativeTime(run.created_at)}</TableCell>
-          <TableCell>
-            {data && status != "success"
-              ? `${data.json.event} - ${data.json.data.node}`
-              : "-"}
-          </TableCell>
-          <TableCell className="text-right">
-            <StatusBadge status={status} />
-          </TableCell>
+          <LiveStatus run={run} />
         </TableRow>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Run outputs</DialogTitle>
           <DialogDescription>
             You can view your run&apos;s outputs here
           </DialogDescription>
         </DialogHeader>
-        <RunOutputs run_id={run.id} />
+        {/* <Suspense>
+          <RunOutputs run_id={run.id} />
+        </Suspense> */}
+        {view}
       </DialogContent>
     </Dialog>
   );

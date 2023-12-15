@@ -162,6 +162,10 @@ async def send_json_override(self, event, data, sid=None):
     if event == 'executing' and data.get('node') is None:
         update_run(prompt_id, Status.SUCCESS)
 
+    if event == 'execution_error':
+        update_run(prompt_id, Status.FAILED)
+        asyncio.create_task(update_run_with_output(prompt_id, data))
+
     if event == 'executed' and 'node' in data and 'output' in data:
         asyncio.create_task(update_run_with_output(prompt_id, data.get('output')))
         # update_run_with_output(prompt_id, data.get('output'))
@@ -178,6 +182,11 @@ def update_run(prompt_id, status: Status):
         return
 
     if ('status' not in prompt_metadata[prompt_id] or prompt_metadata[prompt_id]['status'] != status):
+
+        # when the status is already failed, we don't want to update it to success
+        if ('status' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id]['status'] == Status.FAILED):
+            return
+
         status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
         body = {
             "run_id": prompt_id,

@@ -60,6 +60,8 @@ export async function createRun(
     }
   }
 
+  console.log(workflow_api);
+
   // Sending to comfyui
   const result = await fetch(comfyui_endpoint, {
     method: "POST",

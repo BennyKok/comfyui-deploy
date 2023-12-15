@@ -8,12 +8,12 @@ export async function CodeBlock(props: { code: string; lang: Lang }) {
   });
 
   return (
-    <div className="relative w-full max-w-full text-sm">
+    <div className="relative w-full text-sm">
       {/* max-w-[calc(32rem-1.5rem-1.5rem)] */}
       {/* <div className=""> */}
       <p
         // tabIndex={1}
-        className="[&>pre]:p-4 rounded-sm "
+        className="[&>pre]:p-4 rounded-lg max-h-96 overflow-auto w-full"
         style={{
           overflowWrap: "break-word",
         }}

@@ -75,7 +75,7 @@
 
 .shiki {
   /* @apply rounded-lg p-2 overflow-x-scroll */
-  @apply rounded-lg p-2 overflow-hidden
+  @apply  p-2 max-w-full overflow-auto w-full
 }
  
 @layer base {
