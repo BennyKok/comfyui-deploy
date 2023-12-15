@@ -75,7 +75,11 @@ export async function createRun(
     body: bodyJson,
     cache: "no-store",
   })
-    .then((res) => res.text())
+    .then(async (res) => {
+      const text = await res.text();
+      console.log(text);
+      return text;
+    })
     .then(async (res) => ComfyAPI_Run.parseAsync(JSON.parse(res)))
     .catch((err) => {
       console.log("Some went wrong in parsing the response");
