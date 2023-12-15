@@ -104,13 +104,4 @@ export async function createRun(
     workflow_run_id: workflow_run[0].id,
     message: "Successfully workflow run",
   };
-
-  // return NextResponse.json(
-  //   {
-  //     workflow_run_id: workflow_run[0].id,
-  //   },
-  //   {
-  //     status: 200,
-  //   }
-  // );
 }
