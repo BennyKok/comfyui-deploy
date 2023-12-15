@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       for (let j = 0; j < output.data?.images.length; j++) {
         const element = output.data?.images[j];
         element.url = replaceCDNUrl(
-          `${process.env.SPACES_ENDPOINT}/comfyui-deploy/outputs/runs/${run.id}/${element.filename}`
+          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
         );
       }
     }

@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   try {
     const uploadUrl = await handleResourceUpload({
-      resourceBucket: "comfyui-deploy",
+      resourceBucket: process.env.SPACES_BUCKET,
       resourceId: `outputs/runs/${run_id}/${file_name}`,
       resourceType: type,
       isPublic: true,
