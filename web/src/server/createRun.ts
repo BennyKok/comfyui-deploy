@@ -60,33 +60,29 @@ export async function createRun(
     }
   }
 
-  console.log(workflow_api);
+  const body = {
+    workflow_api: workflow_api,
+    status_endpoint: `${origin}/api/update-run`,
+    file_upload_endpoint: `${origin}/api/file-upload`,
+  };
+  console.log(body);
+  const bodyJson = JSON.stringify(body);
+  console.log(bodyJson);
 
   // Sending to comfyui
   const result = await fetch(comfyui_endpoint, {
     method: "POST",
-    // headers: {
-    //   "Content-Type": "application/json",
-    // },
-    body: JSON.stringify({
-      workflow_api: workflow_api,
-      status_endpoint: `${origin}/api/update-run`,
-      file_upload_endpoint: `${origin}/api/file-upload`,
-    }),
-  }).then(async (res) => ComfyAPI_Run.parseAsync(await res.json()));
-  // .catch((error) => {
-  //   console.error(error);
-  //   return new Response(error.details, {
-  //     status: 500,
-  //   });
-  // });
+    body: bodyJson,
+    cache: "no-store",
+  })
+    .then((res) => res.text())
+    .then(async (res) => ComfyAPI_Run.parseAsync(JSON.parse(res)))
+    .catch((err) => {
+      console.log("Some went wrong in parsing the response");
+      throw new Error(err);
+    });
 
-  // console.log(result);
-
-  // // return the error
-  // if (result instanceof Response) {
-  //   return result;
-  // }
+  console.log(result);
 
   // Add to our db
   const workflow_run = await db
