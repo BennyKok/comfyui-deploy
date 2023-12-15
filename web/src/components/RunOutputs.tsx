@@ -12,7 +12,7 @@ import { getRunsOutput } from "@/server/getRunsOutput";
 
 export async function RunOutputs({ run_id }: { run_id: string }) {
   const outputs = await getRunsOutput(run_id);
-  console.log("Getting runs out put");
+  // console.log("Getting runs out put");
 
   // const [outputs, setOutputs] =
   //   useState<Awaited<ReturnType<typeof getRunsOutput>>>();

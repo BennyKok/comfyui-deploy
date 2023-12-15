@@ -6,6 +6,7 @@ export async function findAllRuns(workflow_id: string) {
   return await db.query.workflowRunsTable.findMany({
     where: eq(workflowRunsTable.workflow_id, workflow_id),
     orderBy: desc(workflowRunsTable.created_at),
+    limit: 10,
     with: {
       machine: {
         columns: {

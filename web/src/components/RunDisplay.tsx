@@ -1,7 +1,5 @@
-"use client";
-
 import { LiveStatus } from "./LiveStatus";
-import { callServerPromise } from "./callServerPromise";
+import { RunOutputs } from "@/components/RunOutputs";
 import {
   Dialog,
   DialogContent,
@@ -13,25 +11,24 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
-import { getRunsOutputDisplay } from "@/server/getRunsOutput";
-import { useState } from "react";
+import { Suspense } from "react";
 
-export function RunDisplay({
+export async function RunDisplay({
   run,
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];
 }) {
-  const [view, setView] = useState<any>();
+  // const [view, setView] = useState<any>();
   return (
     <Dialog>
       <DialogTrigger
         asChild
         className="appearance-none hover:cursor-pointer"
-        onClick={async () => {
-          if (view) return;
-          const _view = await callServerPromise(getRunsOutputDisplay(run.id));
-          setView(_view);
-        }}
+        // onClick={async () => {
+        //   if (view) return;
+        //   const _view = await callServerPromise(getRunsOutputDisplay(run.id));
+        //   setView(_view);
+        // }}
       >
         <TableRow>
           <TableCell>{run.version?.version}</TableCell>
@@ -47,10 +44,12 @@ export function RunDisplay({
             You can view your run&apos;s outputs here
           </DialogDescription>
         </DialogHeader>
-        {/* <Suspense>
-          <RunOutputs run_id={run.id} />
-        </Suspense> */}
-        <div className="max-h-96 overflow-y-scroll">{view}</div>
+        <div className="max-h-96 overflow-y-scroll">
+          <Suspense>
+            <RunOutputs run_id={run.id} />
+          </Suspense>
+        </div>
+        {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}
       </DialogContent>
     </Dialog>
   );
