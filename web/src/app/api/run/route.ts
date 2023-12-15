@@ -3,6 +3,7 @@ import { createRun } from "../../../server/createRun";
 import { db } from "@/db/db";
 import { deploymentsTable } from "@/db/schema";
 import { getRunsData } from "@/server/getRunsOutput";
+import { parseJWT } from "@/server/parseJWT";
 import { replaceCDNUrl } from "@/server/resource";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -18,6 +19,14 @@ const Request2 = z.object({
 });
 
 export async function GET(request: Request) {
+  const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
+  const userData = token ? parseJWT(token) : undefined;
+  if (!userData) {
+    return new NextResponse("Invalid or expired token", {
+      status: 401,
+    });
+  }
+
   const [data, error] = await parseDataSafe(Request2, request);
   if (!data || error) return error;
 
@@ -44,6 +53,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
+  const userData = token ? parseJWT(token) : undefined;
+  if (!userData) {
+    return new NextResponse("Invalid or expired token", {
+      status: 401,
+    });
+  }
+
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 

@@ -1,3 +1,4 @@
+import { parseJWT } from "../../../server/parseJWT";
 import { db } from "@/db/db";
 import {
   workflowAPIType,
@@ -7,7 +8,6 @@ import {
 } from "@/db/schema";
 import { parseDataSafe } from "@/lib/parseDataSafe";
 import { sql } from "drizzle-orm";
-import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -36,24 +36,6 @@ export async function OPTIONS(request: Request) {
   });
 }
 
-const APIKeyBodyRequest = z.object({
-  user_id: z.string().optional(),
-  org_id: z.string().optional(),
-  iat: z.number(),
-});
-
-function parseJWT(token: string) {
-  try {
-    // Verify the token - this also decodes it
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    return APIKeyBodyRequest.parse(decoded);
-  } catch (err) {
-    // Handle error (token is invalid, expired, etc.)
-    console.error(err);
-    return null;
-  }
-}
-
 export async function POST(request: Request) {
   const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
   const userData = token ? parseJWT(token) : undefined;
@@ -63,8 +45,6 @@ export async function POST(request: Request) {
       headers: corsHeaders,
     });
   }
-
-  console.log(userData);
 
   const { user_id, org_id } = userData;
 
