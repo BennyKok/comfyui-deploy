@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "generate": "bunx drizzle-kit generate:pg",
-    "migrate-production": "cp .env.local .env.local.bak && vercel env pull --environment=production && bun run migrate.mts && mv .env.local.bak .env.local",
+    "migrate-production": "bun run migrate.mts",
     "migrate-local": "SSL=false LOCAL=true bun run migrate.mts",
     "db-up": "docker-compose up",
     "db-dev": "bun run db-up && bun run migrate-local"

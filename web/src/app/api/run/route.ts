@@ -10,6 +10,7 @@ import { z } from "zod";
 
 const Request = z.object({
   deployment_id: z.string(),
+  inputs: z.record(z.string()).optional(),
 });
 
 const Request2 = z.object({
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
 
-  const { deployment_id } = data;
+  const { deployment_id, inputs } = data;
 
   try {
     const deploymentData = await db.query.deploymentsTable.findFirst({
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
     const run_id = await createRun(
       origin,
       deploymentData.workflow_version_id,
-      deploymentData.machine_id
+      deploymentData.machine_id,
+      inputs
     );
 
     return NextResponse.json(

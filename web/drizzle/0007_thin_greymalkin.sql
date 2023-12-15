@@ -1,0 +1,1 @@
+ALTER TABLE "comfy_deploy"."workflow_runs" ADD COLUMN "workflow_inputs" jsonb;

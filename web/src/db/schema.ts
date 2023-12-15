@@ -82,6 +82,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
       onDelete: "set null",
     }
   ),
+  workflow_inputs: jsonb("workflow_inputs").$type<Record<string, string>>(),
   workflow_id: uuid("workflow_id")
     .notNull()
     .references(() => workflowTable.id, {

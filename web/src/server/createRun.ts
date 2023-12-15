@@ -10,7 +10,8 @@ import "server-only";
 export async function createRun(
   origin: string,
   workflow_version_id: string,
-  machine_id: string
+  machine_id: string,
+  inputs?: Record<string, string>
 ) {
   const machine = await db.query.machinesTable.findFirst({
     where: eq(workflowRunsTable.id, machine_id),
@@ -46,6 +47,15 @@ export async function createRun(
 
   const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
 
+  let workflow_api = workflow_version_data.workflow_api;
+
+  // Replace the inputs
+  if (inputs) {
+    for (const key in inputs) {
+      workflow_api = workflow_api.replace(`"${key}"`, `"${inputs[key]}"`);
+    }
+  }
+
   // Sending to comfyui
   const result = await fetch(comfyui_endpoint, {
     method: "POST",
@@ -53,9 +63,10 @@ export async function createRun(
     //   "Content-Type": "application/json",
     // },
     body: JSON.stringify({
-      workflow_api: workflow_version_data.workflow_api,
+      workflow_api: workflow_api,
       status_endpoint: `${origin}/api/update-run`,
       file_upload_endpoint: `${origin}/api/file-upload`,
+      inputs: inputs,
     }),
   }).then(async (res) => ComfyAPI_Run.parseAsync(await res.json()));
   // .catch((error) => {
@@ -79,6 +90,7 @@ export async function createRun(
       id: result.prompt_id,
       workflow_id: workflow_version_data.workflow_id,
       workflow_version_id: workflow_version_data.id,
+      workflow_inputs: inputs,
       machine_id,
     })
     .returning();

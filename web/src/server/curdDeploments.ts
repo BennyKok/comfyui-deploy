@@ -43,4 +43,7 @@ export async function createDeployments(
     });
   }
   revalidatePath(`/${workflow_id}`);
+  return {
+    message: `Successfully created deployment for ${environment}`,
+  };
 }

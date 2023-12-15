@@ -22,6 +22,7 @@ const ext = {
           this.properties = {};
           this.properties.workflow_name = "";
           this.properties.workflow_id = "";
+          this.properties.version = "";
         }
 
         ComfyWidgets.STRING(
@@ -35,6 +36,13 @@ const ext = {
           this,
           "workflow_id",
           ["", { default: this.properties.workflow_id, multiline: false }],
+          app,
+        );
+
+        ComfyWidgets.STRING(
+          this,
+          "version",
+          ["", { default: this.properties.version, multiline: false }],
           app,
         );
 
@@ -150,6 +158,7 @@ function addButton() {
       deploy.style.color = "green";
 
       deployMetaNode.widgets[1].value = data.workflow_id;
+      deployMetaNode.widgets[2].value = data.version;
       graph.change();
 
       infoDialog.show(
