@@ -203,5 +203,19 @@ export const deploymentsRelations = relations(deploymentsTable, ({ one }) => ({
   }),
 }));
 
+export const apiKeyTable = dbSchema.table("api_keys", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  key: text("key").notNull().unique(),
+  name: text("name").notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  org_id: text("org_id"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;

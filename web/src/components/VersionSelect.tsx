@@ -1,7 +1,7 @@
 "use client";
 
+import { callServerPromise } from "./callServerPromise";
 import { LoadingIcon } from "@/components/LoadingIcon";
-import { callServerPromise } from "@/components/MachineList";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

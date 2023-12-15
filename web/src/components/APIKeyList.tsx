@@ -38,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { addMachine, deleteMachine } from "@/server/curdMachine";
+import { addNewAPIKey, deleteAPIKey } from "@/server/curdApiKeys";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ColumnDef,
@@ -59,14 +59,14 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-export type Machine = {
+export type APIKey = {
   id: string;
   name: string;
   endpoint: string;
   date: Date;
 };
 
-export const columns: ColumnDef<Machine>[] = [
+export const columns: ColumnDef<APIKey>[] = [
   {
     accessorKey: "id",
     id: "select",
@@ -161,10 +161,10 @@ export const columns: ColumnDef<Machine>[] = [
             <DropdownMenuItem
               className="text-destructive"
               onClick={async () => {
-                callServerPromise(deleteMachine(workflow.id));
+                callServerPromise(deleteAPIKey(workflow.id));
               }}
             >
-              Delete Machine
+              Delete API Key
             </DropdownMenuItem>
             {/* <DropdownMenuSeparator />
             <DropdownMenuItem>View customer</DropdownMenuItem>
@@ -176,7 +176,7 @@ export const columns: ColumnDef<Machine>[] = [
   },
 ];
 
-export function MachineList({ data }: { data: Machine[] }) {
+export function APIKeyList({ data }: { data: APIKey[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -325,7 +325,6 @@ export function MachineList({ data }: { data: Machine[] }) {
 
 const formSchema = z.object({
   name: z.string().min(1),
-  endpoint: z.string().min(1),
 });
 
 function AddMachinesDialog() {
@@ -333,31 +332,40 @@ function AddMachinesDialog() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "My Local Machine",
-      endpoint: "http://127.0.0.1:8188",
+      name: "My API Key",
     },
   });
 
+  const [apiKey, setAPIKey] = React.useState<Awaited<
+    ReturnType<typeof addNewAPIKey>
+  > | null>();
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        setOpen(open);
+        if (!open) setAPIKey(null);
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="default" className="">
-          Add Machines
+          Create API Key
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(async (data) => {
-              await addMachine(data.name, data.endpoint);
-              // await new Promise(resolve => setTimeout(resolve, 3000));
-              setOpen(false);
+              const apiKey = await callServerPromise(addNewAPIKey(data.name));
+              if (apiKey) setAPIKey(apiKey);
+              // setOpen(false);
             })}
           >
             <DialogHeader>
-              <DialogTitle>Add Machines</DialogTitle>
+              <DialogTitle>Create API Key</DialogTitle>
               <DialogDescription>
-                Add Comfyui machines to your account.
+                Create API Key for workflow upload
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -371,46 +379,39 @@ function AddMachinesDialog() {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    {/* <FormDescription>
-                      This is your public display name.
-                    </FormDescription> */}
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endpoint</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    {/* <FormDescription>
-                      This is your public display name.
-                    </FormDescription> */}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {apiKey && (
+                <FormItem>
+                  <FormLabel>API Key (Copy the API key now)</FormLabel>
+                  <FormControl>
+                    <Input readOnly value={apiKey.key} />
+                  </FormControl>
+                  {/* <FormMessage></FormMessage> */}
+                </FormItem>
+              )}
             </div>
             <DialogFooter>
-              <AddWorkflowButton pending={form.formState.isSubmitting} />
+              {apiKey ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                >
+                  Close {form.formState.isSubmitting && <LoadingIcon />}
+                </Button>
+              ) : (
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  Create {form.formState.isSubmitting && <LoadingIcon />}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function AddWorkflowButton({ pending }: { pending: boolean }) {
-  // const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      Save changes {pending && <LoadingIcon />}
-    </Button>
   );
 }

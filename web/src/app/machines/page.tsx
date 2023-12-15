@@ -1,7 +1,7 @@
 import { MachineList } from "@/components/MachineList";
 import { db } from "@/db/db";
-import { machinesTable, usersTable } from "@/db/schema";
-import { auth, clerkClient } from "@clerk/nextjs";
+import { machinesTable } from "@/db/schema";
+import { auth } from "@clerk/nextjs";
 import { desc, eq } from "drizzle-orm";
 
 export default function Page() {
@@ -35,27 +35,4 @@ async function MachineListServer() {
       />
     </div>
   );
-}
-
-async function setInitialUserData(userId: string) {
-  const user = await clerkClient.users.getUser(userId);
-
-  // incase we dont have username such as google login, fallback to first name + last name
-  const usernameFallback =
-    user.username ?? (user.firstName ?? "") + (user.lastName ?? "");
-
-  // For the display name, if it for some reason is empty, fallback to username
-  let nameFallback = (user.firstName ?? "") + (user.lastName ?? "");
-  if (nameFallback === "") {
-    nameFallback = usernameFallback;
-  }
-
-  const result = await db.insert(usersTable).values({
-    id: userId,
-    // this is used for path, make sure this is unique
-    username: usernameFallback,
-
-    // this is for display name, maybe different from username
-    name: nameFallback,
-  });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { LiveStatus } from "./LiveStatus";
-import { callServerPromise } from "@/components/MachineList";
+import { callServerPromise } from "./callServerPromise";
 import {
   Dialog,
   DialogContent,
