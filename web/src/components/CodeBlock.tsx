@@ -1,10 +1,10 @@
 import { CopyButton } from "@/components/CopyButton";
-import type { Lang } from "shiki";
-import shiki from "shiki";
+import { getHighlighter, StringLiteralUnion  } from 'shikiji'
 
-export async function CodeBlock(props: { code: string; lang: Lang }) {
-  const highlighter = await shiki.getHighlighter({
-    theme: "one-dark-pro",
+export async function CodeBlock(props: { code: string; lang: StringLiteralUnion<string> }) {
+  const highlighter = await getHighlighter({
+    themes: ["one-dark-pro"],
+    langs: [props.lang]
   });
 
   return (
@@ -20,6 +20,7 @@ export async function CodeBlock(props: { code: string; lang: Lang }) {
         dangerouslySetInnerHTML={{
           __html: highlighter.codeToHtml(props.code.trim(), {
             lang: props.lang,
+            theme: "one-dark-pro",
           }),
         }}
       />

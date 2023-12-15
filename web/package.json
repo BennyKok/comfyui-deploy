@@ -43,7 +43,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.48.2",
     "react-use-websocket": "^4.5.0",
-    "shiki": "^0.14.6",
+    "shikiji": "^0.9.3",
     "sonner": "^1.2.4",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
