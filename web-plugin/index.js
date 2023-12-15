@@ -126,16 +126,23 @@ function addButton() {
     console.log(graph);
     console.log(prompt);
 
+    const endpoint = localStorage.getItem("endpoint");
+    const apiKey = localStorage.getItem("apiKey");
+
+    if (!endpoint || !apiKey) {
+      configDialog.show();
+      return;
+    }
+
     deploy.textContent = "Deploying...";
     deploy.style.color = "orange";
 
-    const apiRoute = "http://localhost:3000/api/upload";
-    const userId = "user_2ZA6vuKD3IJXju16oJVQGLBcWwg";
+    const apiRoute = endpoint + "/api/upload"
+    // const userId = apiKey
     try {
       let data = await fetch(apiRoute, {
         method: "POST",
         body: JSON.stringify({
-          user_id: userId,
           workflow_name,
           workflow_id,
           workflow: prompt.workflow,
@@ -143,6 +150,7 @@ function addButton() {
         }),
         headers: {
           "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey,
         },
       });
 
@@ -181,7 +189,15 @@ function addButton() {
     }
   };
 
+  const config = document.createElement("button");
+  config.textContent = "Config";
+  config.className = "configbtn";
+  config.onclick = () => {
+    configDialog.show();
+  };
+  
   menu.append(deploy);
+  menu.append(config);
 }
 
 app.registerExtension(ext);
@@ -221,3 +237,56 @@ export class InfoDialog extends ComfyDialog {
 }
 
 export const infoDialog = new InfoDialog()
+
+export class ConfigDialog extends ComfyDialog {
+  constructor() {
+    super();
+    this.element.classList.add("comfy-normal-modal");
+  }
+
+  createButtons() {
+    return [
+      $el("button", {
+        type: "button",
+        textContent: "Save",
+        onclick: () => this.save(),
+      }),
+      $el("button", {
+        type: "button",
+        textContent: "Close",
+        onclick: () => this.close(),
+      }),
+    ];
+  }
+
+  close() {
+    this.element.style.display = "none";
+  }
+
+  save() {
+    const endpoint = this.textElement.querySelector("#endpoint").value;
+    const apiKey = this.textElement.querySelector("#apiKey").value;
+    localStorage.setItem("endpoint", endpoint);
+    localStorage.setItem("apiKey", apiKey);
+    this.close();
+  }
+
+  show() {
+    this.textElement.innerHTML = `
+      <div style="width: 600px;">
+      <label style="color: white;">
+        Endpoint:
+        <input id="endpoint" style="width: 100%;" type="text" value="${localStorage.getItem("endpoint") || ""}">
+      </label>
+      <label style="color: white;">
+        API Key:
+        <input id="apiKey" style="width: 100%;" type="text" value="${localStorage.getItem("apiKey") || ""}">
+      </label>
+      </div>
+    `;
+    this.element.style.display = "flex";
+    this.element.style.zIndex = 1001;
+  }
+}
+
+export const configDialog = new ConfigDialog();
