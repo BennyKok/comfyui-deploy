@@ -1,5 +1,6 @@
 from aiohttp import web
 from dotenv import load_dotenv
+
 import os
 import requests
 import folder_paths
@@ -19,9 +20,6 @@ import asyncio
 import atexit
 import logging
 from enum import Enum
-
-import aiohttp
-from aiohttp import web
 
 api = None
 api_task = None
