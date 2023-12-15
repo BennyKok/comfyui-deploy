@@ -182,9 +182,11 @@ export async function callServerPromise<T>(result: Promise<T>) {
       if ((x as { message: string })?.message !== undefined) {
         toast.success((x as { message: string }).message);
       }
+      return x;
     })
     .catch((error) => {
       toast.error(error.message);
+      return null;
     });
 }
 

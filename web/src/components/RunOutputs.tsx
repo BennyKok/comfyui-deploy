@@ -30,7 +30,7 @@ export async function RunOutputs({ run_id }: { run_id: string }) {
       {/* <TableCaption>A list of your recent runs.</TableCaption> */}
       <TableHeader className="bg-background top-0 sticky">
         <TableRow>
-          <TableHead className="w-[100px]">File</TableHead>
+          <TableHead className="w-[200px]">File</TableHead>
           <TableHead className="">Output</TableHead>
         </TableRow>
       </TableHeader>
@@ -42,7 +42,7 @@ export async function RunOutputs({ run_id }: { run_id: string }) {
             return (
               <TableRow key={run.id}>
                 <TableCell>Output</TableCell>
-                <TableCell className="max-h-44">
+                <TableCell className="">
                   <CodeBlock
                     code={JSON.stringify(run.data, null, 2)}
                     lang="json"

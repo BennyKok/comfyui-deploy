@@ -1,6 +1,7 @@
 "use client";
 
 import { LiveStatus } from "./LiveStatus";
+import { callServerPromise } from "@/components/MachineList";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,7 @@ export function RunDisplay({
         className="appearance-none hover:cursor-pointer"
         onClick={async () => {
           if (view) return;
-          const _view = await getRunsOutputDisplay(run.id);
+          const _view = await callServerPromise(getRunsOutputDisplay(run.id));
           setView(_view);
         }}
       >
@@ -49,7 +50,7 @@ export function RunDisplay({
         {/* <Suspense>
           <RunOutputs run_id={run.id} />
         </Suspense> */}
-        {view}
+        <div className="max-h-96 overflow-y-scroll">{view}</div>
       </DialogContent>
     </Dialog>
   );
@@ -59,6 +60,7 @@ export function OutputRender(props: { run_id: string; filename: string }) {
   if (props.filename.endsWith(".png")) {
     return (
       <img
+        className="max-w-[200px]"
         alt={props.filename}
         src={`/api/view?file=${encodeURIComponent(
           `outputs/runs/${props.run_id}/${props.filename}`
