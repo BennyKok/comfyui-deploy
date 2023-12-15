@@ -8,7 +8,7 @@ class ComfyUIDeployExternalImage:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "name": (
+                "input_id": (
                     "STRING",
                     {"multiline": False, "default": "input_image"},
                 ),
@@ -25,14 +25,14 @@ class ComfyUIDeployExternalImage:
 
     CATEGORY = "image"
 
-    def run(self, name, default_image=None):
+    def run(self, input_id, default_image=None):
         image = default_image
         try:
-            if name.startswith('http'):
+            if input_id.startswith('http'):
                 import requests
                 from io import BytesIO
-                print("Fetching image from url: ", name)
-                response = requests.get(name)
+                print("Fetching image from url: ", input_id)
+                response = requests.get(input_id)
                 image = Image.open(BytesIO(response.content))
             else:
                 raise ValueError("Invalid image url provided.")

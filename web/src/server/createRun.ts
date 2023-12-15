@@ -53,8 +53,8 @@ export async function createRun(
   if (inputs && workflow_api) {
     for (const key in inputs) {
       Object.entries(workflow_api).forEach(([_, node]) => {
-        if (node.inputs["name"] === key) {
-          node.inputs["name"] = inputs[key];
+        if (node.inputs["input_id"] === key) {
+          node.inputs["input_id"] = inputs[key];
         }
       });
     }
