@@ -9,7 +9,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 
-export const dbSchema = pgSchema("comfy_deploy");
+export const dbSchema = pgSchema("comfyui_deploy");
 
 export const usersTable = dbSchema.table("users", {
   id: text("id").primaryKey().notNull(),

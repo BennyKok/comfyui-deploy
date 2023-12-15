@@ -57,6 +57,13 @@
       "when": 1702609665746,
       "tag": "0007_thin_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1702615888467,
+      "tag": "0008_futuristic_adam_destine",
+      "breakpoints": true
     }
   ]
 }
