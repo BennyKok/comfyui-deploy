@@ -15,7 +15,8 @@ export function NavbarRight() {
           ? "machines"
           : pathname.startsWith("/api-keys")
           ? "api-keys"
-          : "workflow"
+          : pathname.startsWith("/workflows")
+          ? "workflows" : ""
       }
       className="w-[300px]"
       onValueChange={(value) => {
@@ -24,12 +25,12 @@ export function NavbarRight() {
         } else if (value === "api-keys") {
           router.push("/api-keys");
         } else {
-          router.push("/");
+          router.push("/workflows");
         }
       }}
     >
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="workflow">Workflow</TabsTrigger>
+        <TabsTrigger value="workflows">Workflows</TabsTrigger>
         <TabsTrigger value="machines">Machines</TabsTrigger>
         <TabsTrigger value="api-keys">API Keys</TabsTrigger>
       </TabsList>

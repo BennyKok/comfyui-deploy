@@ -84,7 +84,7 @@ export const columns: ColumnDef<Payment>[] = [
     },
     cell: ({ row }) => {
       return (
-        <a className="hover:underline" href={`/workflow/${row.original.id}`}>
+        <a className="hover:underline" href={`/workflows/${row.original.id}`}>
           {row.getValue("email")}
         </a>
       );

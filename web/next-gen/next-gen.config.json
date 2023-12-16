@@ -1,0 +1,23 @@
+{
+    "name": "Comfy Deploy",
+    "og:title": "Comfy Deploy | Stable Diffusion from your terminal to the world",
+    "og:description": "",
+    "author": "BennyKok",
+    "tagline": "Stable Diffusion from your terminal to the world",
+    "description": "Manage all your open development ports and remote Vercel deployment.",
+    "pricingPlan": [
+        {
+            "name": "Free",
+            "description": "Free",
+            "prices": [
+                {
+                    "price": 0,
+                    "currency": "usd",
+                    "pricingType": "month",
+                    "paymentLink": "",
+                    "paymentLink_Prod": ""
+                }
+            ]
+        }
+    ]
+}
