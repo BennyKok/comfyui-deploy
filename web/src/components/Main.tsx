@@ -48,7 +48,7 @@ export default function Main() {
       <div className="flex flex-col items-center gap-10">
         {/* Hero Section */}
 
-        <Section className="items-left min-h-[calc(100dvh-60px)] flex-col ">
+        <Section className="items-left min-h-[calc(100dvh-73px)] flex-col ">
           <div className="flex flex-col justify-center gap-2">
             <Section.Announcement
               className="text-sm"
