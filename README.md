@@ -1,7 +1,23 @@
 # ComfyUI Deploy
-Open source comfyui deployment platform
+Open source comfyui deployment platform, a `vercel` for generative workflow infra.
 
-![63shots_so](https://github.com/BennyKok/comfyui-deploy/assets/18395202/a8f40895-a613-4bc0-928c-c2f5b4cec625)
+![63shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/c0b88377-0135-4d9a-8a20-8b38b975bb48)
+
+# How it works
+
+1. Comfy Deploy Dashboard (https://comfydeploy.com) or self-hosted version
+2. Machines (Long running, on-premise ComfyUI machines)
+
+
+# Comfy Deploy Plugin Installation
+
+> Plugin lets you set up the machine as a target machine, and also upload workflow directly from there
+
+1. `cd custom_nodes`
+2. `git clone https://github.com/BennyKok/comfyui-deploy.git`
+3. Got to (https://comfydeploy.com) or a self-hosted version
+   - Machines -> Add Machines
+   - Enter a name and the URL of your machines (set up Ngrok for a public URL for your machines)
 
 # Usecase
 
@@ -10,5 +26,51 @@ Open source comfyui deployment platform
 3. Persistent API generated for Production and Staging environment
 4. Run the same comfyui workflow across different remote machines
 
-![467shots_so](https://github.com/BennyKok/comfyui-deploy/assets/18395202/430d8a68-1313-4cf3-9f66-00c719de6c81)
+![467shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/e49a0360-de94-4e3b-802b-0eadabe3c166)
+
+# Status & Timeline
+
+WIP, welcomes contributors!! Please join Discord -> https://discord.gg/EEYcQmdYZw
+
+Primary goal -> release v0.1.0 of stable Comfy Deploy
+
+Major areas
+- Security enforcement
+- Error handling
+- QOL workflow improvement
+- API usage examples
+- Load balancing
+- Workflow dependencies checking (custom nodes)
+- Remote machines
+- Serverless machines? Possible to set up a clean environment via Salad, Modal, etc
+- LCM realtime web socket image gen
+
+# Tech Stack
+- Shadcn UI
+- NextJS
+
+- Clerk (Auth)
+- Neon / Vercel Postgres (Database)
+- Drizzle (ORM)
+- R2 / S3 (Object Storage)
+
+# Development
+
+1. `git clone https://github.com/BennyKok/comfyui-deploy`
+2. `cd web`
+3. `bun i`
+4. Start docker
+5. `cp .env.example .env.local`
+6. Repace `JWT_SECRET` with `openssl rand -hex 32`
+7. Get a local clerk dev key for `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+8. Keep a terminal live for `bun run db-dev`
+9. Finally start the next server with `bun dev`
+
+**Schema Changes**
+1. `bun run generate`
+2. `bun run migrate-local`
+
+# Special Thanks
+- comfyui
+- oss/acc
 
