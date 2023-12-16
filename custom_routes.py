@@ -1,6 +1,4 @@
 from aiohttp import web
-from dotenv import load_dotenv
-
 import os
 import requests
 import folder_paths
@@ -24,8 +22,6 @@ from enum import Enum
 api = None
 api_task = None
 prompt_metadata = {}
-
-load_dotenv()
 
 def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
@@ -75,7 +71,6 @@ def randomSeed(num_digits=15):
 
 @server.PromptServer.instance.routes.post("/comfyui-deploy/run")
 async def comfy_deploy_run(request):
-    print("hi")
     prompt_server = server.PromptServer.instance
     data = await request.json()
 
@@ -87,7 +82,7 @@ async def comfy_deploy_run(request):
 
     prompt = {
         "prompt": workflow_api,
-        "client_id": "fake_client" #api.client_id
+        "client_id": "comfy_deploy_instance" #api.client_id
     }
 
     try:
@@ -151,7 +146,7 @@ prompt_server = server.PromptServer.instance
 
 send_json = prompt_server.send_json
 async def send_json_override(self, event, data, sid=None):
-    print("INTERNAL:", event, data, sid)
+    # print("INTERNAL:", event, data, sid)
 
     prompt_id = data.get('prompt_id')
 

@@ -105,7 +105,12 @@ const ext = {
 function addButton() {
   const menu = document.querySelector(".comfy-menu");
 
+  const deployContainer = document.createElement("div");
+
+
+  
   const deploy = document.createElement("button");
+  deploy.style.position = "relative";
   deploy.textContent = "Deploy";
   deploy.className = "sharebtn";
   deploy.onclick = async () => {
@@ -191,15 +196,29 @@ function addButton() {
     }
   };
 
-  const config = document.createElement("button");
-  config.textContent = "Config";
-  deploy.className = "sharebtn";
-  config.onclick = () => {
+  const config = document.createElement("img");
+  // config.style.padding = "0px 10px";
+  config.style.height = "100%";
+  config.style.position = "absolute";
+  config.style.right = "10px";
+  config.style.top = "0px";
+  
+  // set aspect ratio to square
+  config.style.width = "20px";
+  config.src = "https://api.iconify.design/material-symbols-light:settings.svg?color=%23888888";
+  config.onclick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
     configDialog.show();
   };
-  
+
+  deploy.append(
+    config
+  )
+
+  deploy.style.order = "99";
+
   menu.append(deploy);
-  menu.append(config);
 }
 
 app.registerExtension(ext);
@@ -241,23 +260,42 @@ export class InfoDialog extends ComfyDialog {
 export const infoDialog = new InfoDialog()
 
 export class ConfigDialog extends ComfyDialog {
+
+  container = null;
+
   constructor() {
     super();
     this.element.classList.add("comfy-normal-modal");
+
+    this.container = document.createElement("div");
+    this.element.querySelector(".comfy-modal-content").prepend(this.container);
   }
 
   createButtons() {
     return [
-      $el("button", {
-        type: "button",
-        textContent: "Save",
+      $el("div", {
+        type: "div",
+        style: {
+          display: "flex",
+          gap: "6px",
+          justifyContent: "flex-end",
+          width: "100%",
+        },
         onclick: () => this.save(),
-      }),
-      $el("button", {
-        type: "button",
-        textContent: "Close",
-        onclick: () => this.close(),
-      }),
+      }, 
+        [
+          $el("button", {
+            type: "button",
+            textContent: "Save",
+            onclick: () => this.save(),
+          }),
+          $el("button", {
+            type: "button",
+            textContent: "Close",
+            onclick: () => this.close(),
+          })
+        ]
+      ),
     ];
   }
 
@@ -274,15 +312,21 @@ export class ConfigDialog extends ComfyDialog {
   }
 
   show() {
-    this.textElement.innerHTML = `
-      <div style="width: 600px;">
-      <label style="color: white;">
+    // this.element.style.whiteSpace = "nowrap";
+    // this.textElement.style.overflow = "hidden";
+    this.container.style.color = "white";
+    // this.textElement.style.padding = "10px";
+    
+    this.container.innerHTML = `
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column;">
+      <h3 style="margin: 0px;">Comfy Deploy Config</h3>
+      <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="width: 100%;" type="text" value="${localStorage.getItem("endpoint") || ""}">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${localStorage.getItem("endpoint") || ""}">
       </label>
       <label style="color: white;">
         API Key:
-        <input id="apiKey" style="width: 100%;" type="text" value="${localStorage.getItem("apiKey") || ""}">
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:30px;" type="password" value="${localStorage.getItem("apiKey") || ""}">
       </label>
       </div>
     `;
