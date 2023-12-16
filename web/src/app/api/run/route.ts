@@ -90,9 +90,11 @@ export async function POST(request: Request) {
       inputs,
     );
 
+    if ('error' in run_id) throw new Error(run_id.error);
+
     return NextResponse.json(
       {
-        run_id: run_id.workflow_run_id,
+        run_id: ('workflow_run_id' in run_id) ? run_id.workflow_run_id : '',
       },
       {
         status: 200,
