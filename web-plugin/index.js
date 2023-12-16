@@ -304,8 +304,8 @@ export class ConfigDialog extends ComfyDialog {
   }
 
   save() {
-    const endpoint = this.textElement.querySelector("#endpoint").value;
-    const apiKey = this.textElement.querySelector("#apiKey").value;
+    const endpoint = this.container.querySelector("#endpoint").value;
+    const apiKey = this.container.querySelector("#apiKey").value;
     localStorage.setItem("endpoint", endpoint);
     localStorage.setItem("apiKey", apiKey);
     this.close();

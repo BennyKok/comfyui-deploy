@@ -100,7 +100,7 @@ export const createRun = withServerPromise(
 
     return {
       workflow_run_id: workflow_run[0].id,
-      message: "Successfully workflow run",
+      message: "Successful workflow run",
     };
   },
 );
