@@ -7,6 +7,7 @@ import {
   timestamp,
   jsonb,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
@@ -52,7 +53,7 @@ export const workflowType = z.any();
 export const workflowAPIType = z.record(
   z.object({
     inputs: z.record(z.any()),
-    class_type: z.string(),
+    class_type: z.string().optional(),
   })
 );
 
@@ -213,6 +214,7 @@ export const apiKeyTable = dbSchema.table("api_keys", {
     })
     .notNull(),
   org_id: text("org_id"),
+  revoked: boolean("revoked").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

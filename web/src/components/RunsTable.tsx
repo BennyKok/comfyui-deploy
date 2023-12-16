@@ -38,7 +38,7 @@ export async function RunsTable(props: { workflow_id: string }) {
 export async function DeploymentsTable(props: { workflow_id: string }) {
   const allRuns = await findAllDeployments(props.workflow_id);
   return (
-    <div className="overflow-auto h-[400px] w-full">
+    <div className="overflow-auto h-fit lg:h-[400px] w-full">
       <Table className="">
         <TableCaption>A list of your deployments</TableCaption>
         <TableHeader className="bg-background top-0 sticky">

@@ -55,7 +55,8 @@ function MachineWS({
   const { lastMessage, readyState } = useWebSocket(
     `${wsEndpoint}/comfyui-deploy/ws`,
     {
-      reconnectAttempts: 10,
+      shouldReconnect: ()=> true,
+      reconnectAttempts: 20,
       reconnectInterval: 1000,
     }
   );

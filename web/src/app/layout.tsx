@@ -1,5 +1,8 @@
 import "./globals.css";
 import { NavbarRight } from "@/components/NavbarRight";
+import { Button } from "@/components/ui/button";
+import { ClerkProvider, UserButton } from "@clerk/nextjs";
+import { Github } from "lucide-react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -18,21 +21,37 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <main className="flex min-h-screen flex-col items-center justify-start">
-          <div className="w-full h-18 flex items-center gap-4 p-4 border-b border-gray-200">
-            <a className="font-bold text-lg hover:underline" href="/">
-              Comfy Deploy
-            </a>
-            <NavbarRight />
-            {/* <div></div> */}
-          </div>
-          <div className="md:px-10 px-6 w-full flex items-start">
-            {children}
-          </div>
-          <Toaster richColors />
-        </main>
-      </body>
+      <ClerkProvider>
+        <body className={inter.className}>
+          <main className="flex min-h-screen flex-col items-center justify-start">
+            <div className="w-full h-18 flex items-center justify-between gap-4 p-4 border-b border-gray-200">
+              <div className="flex flex-row items-center gap-4">
+                <a className="font-bold text-lg hover:underline" href="/">
+                  ComfyUI Deploy
+                </a>
+                <NavbarRight />
+              </div>
+              <div className="flex flex-row items-center gap-2">
+                <UserButton />
+                <Button
+                  asChild
+                  variant={"outline"}
+                  className="rounded-full aspect-square p-2"
+                >
+                  <a target="_blank" href="https://github.com/BennyKok/comfyui-deploy">
+                    <Github />
+                  </a>
+                </Button>
+              </div>
+              {/* <div></div> */}
+            </div>
+            <div className="md:px-10 px-6 w-full flex items-start">
+              {children}
+            </div>
+            <Toaster richColors />
+          </main>
+        </body>
+      </ClerkProvider>
     </html>
   );
 }

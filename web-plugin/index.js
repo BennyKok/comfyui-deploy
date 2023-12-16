@@ -5,7 +5,7 @@ import { ComfyWidgets, LGraphNode } from "./widgets.js";
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
 const ext = {
-  name: "BennyKok.ComfyDeploy",
+  name: "BennyKok.ComfyUIDeploy",
 
   init(app) {
     addButton();
@@ -65,7 +65,7 @@ const ext = {
     // Load default visibility
 
     LiteGraph.registerNodeType(
-      "Comfy Deploy",
+      "ComfyDeploy",
       Object.assign(ComfyDeploy, {
         title_mode: LiteGraph.NORMAL_TITLE,
         title: "Comfy Deploy",
@@ -112,7 +112,7 @@ function addButton() {
     /** @type {LGraph} */
     const graph = app.graph;
 
-    const deployMeta = graph.findNodesByType("Comfy Deploy");
+    const deployMeta = graph.findNodesByType("ComfyDeploy");
     const deployMetaNode = deployMeta[0];
 
     console.log(deployMetaNode);
@@ -136,6 +136,8 @@ function addButton() {
 
     deploy.textContent = "Deploying...";
     deploy.style.color = "orange";
+
+    console.log(prompt);
 
     const apiRoute = endpoint + "/api/upload"
     // const userId = apiKey

@@ -14,7 +14,7 @@ import io
 import time
 import execution
 import random
-
+import traceback
 import uuid
 import asyncio
 import atexit
@@ -90,7 +90,14 @@ async def comfy_deploy_run(request):
         "client_id": "fake_client" #api.client_id
     }
 
-    res = post_prompt(prompt)
+    try:
+        res = post_prompt(prompt)
+    except Exception as e:
+        error_type = type(e).__name__
+        stack_trace = traceback.format_exc().strip().split('\n')[-2]
+        print(f"error: {error_type}, {e}")
+        print(f"stack trace: {stack_trace}")
+        return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace}")
 
     prompt_metadata[res['prompt_id']] = {
         'status_endpoint': data.get('status_endpoint'),
@@ -251,6 +258,10 @@ async def update_run_with_output(prompt_id, data):
             "output_data": data
         }
         requests.post(status_endpoint, json=body)
+
+        await send('outputs_uploaded', {
+            "prompt_id": prompt_id
+        })
 
 prompt_server.send_json_original = prompt_server.send_json
 prompt_server.send_json = send_json_override.__get__(prompt_server, server.PromptServer)

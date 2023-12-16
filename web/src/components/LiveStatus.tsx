@@ -4,6 +4,8 @@ import { useStore } from "@/components/MachinesWS";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TableCell } from "@/components/ui/table";
 import { type findAllRuns } from "@/server/findAllRuns";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function LiveStatus({
   run,
@@ -14,7 +16,7 @@ export function LiveStatus({
     (state) =>
       state.data
         .filter((x) => x.id === run.id)
-        .sort((a, b) => b.timestamp - a.timestamp)?.[0]
+        .sort((a, b) => b.timestamp - a.timestamp)?.[0],
   );
 
   let status = run.status;
@@ -25,6 +27,14 @@ export function LiveStatus({
   } else if (data?.json.event == "executing") {
     status = "running";
   }
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (data?.json.event === "outputs_uploaded") {
+      router.refresh()
+    }
+  }, [data?.json.event]);
 
   return (
     <>

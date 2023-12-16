@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_deploy"."api_keys" ADD COLUMN "revoked" boolean DEFAULT false NOT NULL;

@@ -2,6 +2,7 @@ import { parseDataSafe } from "../../../lib/parseDataSafe";
 import { createRun } from "../../../server/createRun";
 import { db } from "@/db/db";
 import { deploymentsTable } from "@/db/schema";
+import { isKeyRevoked } from "@/server/curdApiKeys";
 import { getRunsData } from "@/server/getRunsOutput";
 import { parseJWT } from "@/server/parseJWT";
 import { replaceCDNUrl } from "@/server/resource";
@@ -18,14 +19,26 @@ const Request2 = z.object({
   run_id: z.string(),
 });
 
-export async function GET(request: Request) {
+async function checkToken(request: Request) {
   const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
   const userData = token ? parseJWT(token) : undefined;
-  if (!userData) {
+  if (!userData || token === undefined) {
     return new NextResponse("Invalid or expired token", {
       status: 401,
     });
+  } else {
+    const revokedKey = await isKeyRevoked(token);
+    if (revokedKey)
+      return new NextResponse("Revoked token", {
+        status: 401,
+      });
   }
+}
+
+export async function GET(request: Request) {
+  const invalidRequest = await checkToken(request)
+  if (invalidRequest) return invalidRequest;
+
 
   const [data, error] = await parseDataSafe(Request2, request);
   if (!data || error) return error;
@@ -41,7 +54,7 @@ export async function GET(request: Request) {
       for (let j = 0; j < output.data?.images.length; j++) {
         const element = output.data?.images[j];
         element.url = replaceCDNUrl(
-          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
+          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`,
         );
       }
     }
@@ -53,13 +66,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
-  const userData = token ? parseJWT(token) : undefined;
-  if (!userData) {
-    return new NextResponse("Invalid or expired token", {
-      status: 401,
-    });
-  }
+  const invalidRequest = await checkToken(request)
+  if (invalidRequest) return invalidRequest;
 
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
@@ -79,7 +87,7 @@ export async function POST(request: Request) {
       origin,
       deploymentData.workflow_version_id,
       deploymentData.machine_id,
-      inputs
+      inputs,
     );
 
     return NextResponse.json(
@@ -88,7 +96,7 @@ export async function POST(request: Request) {
       },
       {
         status: 200,
-      }
+      },
     );
   } catch (error: any) {
     return NextResponse.json(
@@ -97,7 +105,7 @@ export async function POST(request: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
