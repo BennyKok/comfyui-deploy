@@ -8,6 +8,7 @@ Open source comfyui deployment platform, a `vercel` for generative workflow infr
 1. Comfy Deploy Dashboard (https://comfydeploy.com) or self-hosted version
 2. Machines (Long running, on-premise ComfyUI machines)
 
+https://github.com/BennyKok/comfyui-deploy/assets/18395202/85f85325-a4bb-446d-aa67-ed225ee03479
 
 # Comfy Deploy Plugin Installation
 
