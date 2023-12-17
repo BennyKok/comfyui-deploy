@@ -11,6 +11,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import type { findAllDeployments } from "@/server/findAllRuns";
+import { headers } from 'next/headers';
 
 const curlTemplate = `
 curl --request POST \
@@ -57,6 +58,11 @@ export function DeploymentDisplay({
 }: {
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0];
 }) {
+  const headersList = headers();
+  const host = headersList.get('host') || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const domain = `${protocol}://${host}`;
+
   return (
     <Dialog>
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
@@ -87,21 +93,21 @@ export function DeploymentDisplay({
           </TabsList>
           <TabsContent className="flex flex-col gap-2" value="js">
             Trigger the workflow
-            <CodeBlock lang="js" code={formatCode(jsTemplate, deployment)} />
+            <CodeBlock lang="js" code={formatCode(jsTemplate, deployment, domain)} />
             Check the status of the run, and retrieve the outputs
             <CodeBlock
               lang="js"
-              code={formatCode(jsTemplate_checkStatus, deployment)}
+              code={formatCode(jsTemplate_checkStatus, deployment, domain)}
             />
           </TabsContent>
           <TabsContent className="flex flex-col gap-2" value="curl">
             <CodeBlock
               lang="bash"
-              code={formatCode(curlTemplate, deployment)}
+              code={formatCode(curlTemplate, deployment, domain)}
             />
             <CodeBlock
               lang="bash"
-              code={formatCode(curlTemplate_checkStatus, deployment)}
+              code={formatCode(curlTemplate_checkStatus, deployment, domain)}
             />
           </TabsContent>
         </Tabs>
@@ -112,12 +118,13 @@ export function DeploymentDisplay({
 
 function formatCode(
   codeTemplate: string,
-  deployment: Awaited<ReturnType<typeof findAllDeployments>>[0]
+  deployment: Awaited<ReturnType<typeof findAllDeployments>>[0],
+  domain: string
 ) {
   return codeTemplate
     .replace(
       "<URL>",
-      `${process.env.VERCEL_URL ?? "http://localhost:3000"}/api/run`
+      `${domain ?? "http://localhost:3000"}/api/run`
     )
     .replace("<ID>", deployment.id);
 }
