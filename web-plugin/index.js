@@ -105,10 +105,6 @@ const ext = {
 function addButton() {
   const menu = document.querySelector(".comfy-menu");
 
-  const deployContainer = document.createElement("div");
-
-
-  
   const deploy = document.createElement("button");
   deploy.style.position = "relative";
   deploy.textContent = "Deploy";
@@ -131,7 +127,7 @@ function addButton() {
     console.log(graph);
     console.log(prompt);
 
-    const endpoint = localStorage.getItem("endpoint");
+    const endpoint = localStorage.getItem("endpoint") ?? "https://www.comfydeploy.com";
     const apiKey = localStorage.getItem("apiKey");
 
     if (!endpoint || !apiKey) {
@@ -322,7 +318,7 @@ export class ConfigDialog extends ComfyDialog {
       <h3 style="margin: 0px;">Comfy Deploy Config</h3>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${localStorage.getItem("endpoint") || ""}">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${localStorage.getItem("endpoint") || "https://www.comfydeploy.com"}">
       </label>
       <label style="color: white;">
         API Key:
