@@ -12,22 +12,8 @@ import { getRunsOutput } from "@/server/getRunsOutput";
 
 export async function RunOutputs({ run_id }: { run_id: string }) {
   const outputs = await getRunsOutput(run_id);
-  // console.log("Getting runs out put");
-
-  // const [outputs, setOutputs] =
-  //   useState<Awaited<ReturnType<typeof getRunsOutput>>>();
-
-  // useEffect(() => {
-  //   if (!run_id) return;
-  //   // fetch(`/api/run?run_id=${run_id}`)
-  //   //   .then((x) => x.json())
-  //   //   .then((x) => setOutputs(x));
-  //   callServerPromise(getRunsOutput(run_id).then((x) => setOutputs(x)));
-  // }, [run_id]);
-
   return (
     <Table className="table-fixed">
-      {/* <TableCaption>A list of your recent runs.</TableCaption> */}
       <TableHeader className="bg-background top-0 sticky">
         <TableRow>
           <TableHead className="w-[200px]">File</TableHead>

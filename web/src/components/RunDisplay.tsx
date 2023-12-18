@@ -1,3 +1,4 @@
+import { RunInputs } from "@/components/RunInputs";
 import { LiveStatus } from "./LiveStatus";
 import { RunOutputs } from "@/components/RunOutputs";
 import {
@@ -18,17 +19,11 @@ export async function RunDisplay({
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];
 }) {
-  // const [view, setView] = useState<any>();
   return (
     <Dialog>
       <DialogTrigger
         asChild
         className="appearance-none hover:cursor-pointer"
-        // onClick={async () => {
-        //   if (view) return;
-        //   const _view = await callServerPromise(getRunsOutputDisplay(run.id));
-        //   setView(_view);
-        // }}
       >
         <TableRow>
           <TableCell>{run.version?.version}</TableCell>
@@ -45,6 +40,7 @@ export async function RunDisplay({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-96 overflow-y-scroll">
+          <RunInputs run={run}/>
           <Suspense>
             <RunOutputs run_id={run.id} />
           </Suspense>
