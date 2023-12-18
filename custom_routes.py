@@ -132,13 +132,18 @@ async def websocket_handler(request):
     return ws
 
 async def send(event, data, sid=None):
-    if sid:
-        ws = sockets.get(sid)
-        if ws:
-            await ws.send_json({ 'event': event, 'data': data })
-    else:
-        for ws in sockets.values():
-            await ws.send_json({ 'event': event, 'data': data })
+    try:
+        if sid:
+            ws = sockets.get(sid)
+            if ws and not ws.closed:  # Check if the WebSocket connection is open and not closing
+                await ws.send_json({ 'event': event, 'data': data })
+        else:
+            for ws in sockets.values():
+                if not ws.closed:  # Check if the WebSocket connection is open and not closing
+                    await ws.send_json({ 'event': event, 'data': data })
+    except Exception as e:
+        print(f"Exception: {e}")
+        traceback.print_exc()
 
 logging.basicConfig(level=logging.INFO)
 
