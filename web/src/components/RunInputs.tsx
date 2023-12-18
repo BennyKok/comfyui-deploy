@@ -39,7 +39,7 @@ export async function RunInputs({
               return (
                 <TableRow key={key}>
                   <TableCell>{key}</TableCell>
-                  {imageUrl ? <TableCell><img className="w-[200px] aspect-square" src={imageUrl}></img></TableCell> : <TableCell>{data}</TableCell>}
+                  {imageUrl ? <TableCell><img className="w-[200px] aspect-square object-contain" src={imageUrl}></img></TableCell> : <TableCell>{data}</TableCell>}
                 </TableRow>
               );
             })}
