@@ -94,6 +94,11 @@ export const deploymentEnvironment = pgEnum("deployment_environment", [
   "production",
 ]);
 
+export const workflowRunOrigin = pgEnum("workflow_run_origin", [
+  "manual",
+  "api",
+]);
+
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -114,6 +119,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   machine_id: uuid("machine_id").references(() => machinesTable.id, {
     onDelete: "set null",
   }),
+  origin: workflowRunOrigin("origin").notNull().default("api"),
   status: workflowRunStatus("status").notNull().default("not-started"),
   ended_at: timestamp("ended_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),

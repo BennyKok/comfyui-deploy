@@ -14,6 +14,7 @@ export const createRun = withServerPromise(
     workflow_version_id: string,
     machine_id: string,
     inputs?: Record<string, string>,
+    isManualRun?: boolean,
   ) => {
     const machine = await db.query.machinesTable.findFirst({
       where: eq(workflowRunsTable.id, machine_id),
@@ -21,30 +22,15 @@ export const createRun = withServerPromise(
 
     if (!machine) {
       throw new Error("Machine not found");
-      // return new Response("Machine not found", {
-      //   status: 404,
-      // });
     }
 
     const workflow_version_data =
-      // workflow_version_id
-      //   ?
       await db.query.workflowVersionTable.findFirst({
         where: eq(workflowRunsTable.id, workflow_version_id),
       });
-    // : workflow_version != undefined
-    // ? await db.query.workflowVersionTable.findFirst({
-    //     where: and(
-    //       eq(workflowVersionTable.version, workflow_version),
-    //       eq(workflowVersionTable.workflow_id)
-    //     ),
-    //   })
-    // : null;
+
     if (!workflow_version_data) {
       throw new Error("Workflow version not found");
-      // return new Response("Workflow version not found", {
-      //   status: 404,
-      // });
     }
 
     const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
@@ -93,6 +79,7 @@ export const createRun = withServerPromise(
         workflow_version_id: workflow_version_data.id,
         workflow_inputs: inputs,
         machine_id,
+        origin: isManualRun ? "manual" : "api"
       })
       .returning();
 
