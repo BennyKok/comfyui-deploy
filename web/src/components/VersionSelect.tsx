@@ -203,6 +203,7 @@ export function CreateDeploymentButton({
 
 const customInputNodes: Record<string, string> = {
   ComfyUIDeployExternalText: "string",
+  ComfyUIDeployExternalImage: "string - image url",
 };
 
 export function VersionDetails({
@@ -232,7 +233,8 @@ export function VersionDetails({
                   const defaultValue = value.inputs.default_value;
                   return (
                     <>
-                      <Badge>{input_id}</Badge> {nodeType} {defaultValue}
+                      <Badge variant="secondary">{input_id}</Badge> {nodeType}{" "}
+                      {defaultValue}
                     </>
                   );
                 }
