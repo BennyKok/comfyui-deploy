@@ -6,12 +6,13 @@ import { z } from "zod";
 const Request = z.object({
   file_name: z.string(),
   run_id: z.string(),
-  type: z.enum(["image/png", "image/jpeg"]),
+  type: z.string(),
 });
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  console.log("yo hello");
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 

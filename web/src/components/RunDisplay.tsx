@@ -1,3 +1,4 @@
+
 import { RunInputs } from "@/components/RunInputs";
 import { LiveStatus } from "./LiveStatus";
 import { RunOutputs } from "@/components/RunOutputs";
@@ -50,18 +51,4 @@ export async function RunDisplay({
       </DialogContent>
     </Dialog>
   );
-}
-
-export function OutputRender(props: { run_id: string; filename: string }) {
-  if (props.filename.endsWith(".png")) {
-    return (
-      <img
-        className="max-w-[200px]"
-        alt={props.filename}
-        src={`/api/view?file=${encodeURIComponent(
-          `outputs/runs/${props.run_id}/${props.filename}`
-        )}`}
-      />
-    );
-  }
 }

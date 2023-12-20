@@ -1,4 +1,4 @@
-import { OutputRender } from "./RunDisplay";
+import { OutputRender } from "./OutputRender";
 import { CodeBlock } from "@/components/CodeBlock";
 import {
   Table,

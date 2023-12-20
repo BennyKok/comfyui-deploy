@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
   const { run_id, status, output_data } = data;
 
-  console.log(run_id, status, output_data);
+  // console.log(run_id, status, output_data);
 
   if (output_data) {
     const workflow_run_output = await db.insert(workflowRunOutputs).values({
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       data: output_data,
     });
   } else if (status) {
-    console.log("status", status);
+    // console.log("status", status);
     const workflow_run = await db
       .update(workflowRunsTable)
       .set({

@@ -128,7 +128,7 @@ export function RunWorkflowButton({
         }
       }}
     >
-      Run <Play size={14} /> {isLoading && <LoadingIcon />}
+      Run  {isLoading ?  <LoadingIcon /> : <Play size={14} />}
     </Button>
   );
 }
@@ -155,7 +155,7 @@ export function CreateDeploymentButton({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="gap-2" disabled={isLoading} variant="outline">
-          Deploy <MoreVertical size={14} /> {isLoading && <LoadingIcon />}
+          Deploy  {isLoading ? <LoadingIcon /> : <MoreVertical size={14} /> }
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
