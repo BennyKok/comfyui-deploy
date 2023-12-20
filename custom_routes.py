@@ -265,6 +265,11 @@ async def update_run_with_output(prompt_id, data):
             images = data.get('images', [])
             for image in images:
                 await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type", "image/png"))
+
+            files = data.get('files', [])
+            for file in files:
+                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type", "image/png"))
+                
         except Exception as e:
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
