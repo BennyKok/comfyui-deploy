@@ -5,7 +5,7 @@ import { deploymentsTable } from "@/db/schema";
 import { isKeyRevoked } from "@/server/curdApiKeys";
 import { getRunsData } from "@/server/getRunsOutput";
 import { parseJWT } from "@/server/parseJWT";
-import { replaceCDNUrl } from "@/server/resource";
+import { replaceCDNUrl } from "@/server/replaceCDNUrl";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -36,9 +36,8 @@ async function checkToken(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const invalidRequest = await checkToken(request)
+  const invalidRequest = await checkToken(request);
   if (invalidRequest) return invalidRequest;
-
 
   const [data, error] = await parseDataSafe(Request2, request);
   if (!data || error) return error;
@@ -54,7 +53,7 @@ export async function GET(request: Request) {
       for (let j = 0; j < output.data?.images.length; j++) {
         const element = output.data?.images[j];
         element.url = replaceCDNUrl(
-          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`,
+          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
         );
       }
     }
@@ -66,7 +65,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const invalidRequest = await checkToken(request)
+  const invalidRequest = await checkToken(request);
   if (invalidRequest) return invalidRequest;
 
   const [data, error] = await parseDataSafe(Request, request);
@@ -87,18 +86,18 @@ export async function POST(request: Request) {
       origin,
       deploymentData.workflow_version_id,
       deploymentData.machine_id,
-      inputs,
+      inputs
     );
 
-    if ('error' in run_id) throw new Error(run_id.error);
+    if ("error" in run_id) throw new Error(run_id.error);
 
     return NextResponse.json(
       {
-        run_id: ('workflow_run_id' in run_id) ? run_id.workflow_run_id : '',
+        run_id: "workflow_run_id" in run_id ? run_id.workflow_run_id : "",
       },
       {
         status: 200,
-      },
+      }
     );
   } catch (error: any) {
     return NextResponse.json(
@@ -107,7 +106,7 @@ export async function POST(request: Request) {
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }

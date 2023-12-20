@@ -1,6 +1,6 @@
-'use server'
+"use server";
 
-import { replaceCDNUrl } from "@/server/resource";
+import { replaceCDNUrl } from "./replaceCDNUrl";
 
 export async function getFileDownloadUrl(file: string) {
   return replaceCDNUrl(
