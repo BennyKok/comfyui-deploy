@@ -41,7 +41,7 @@ export function VersionSelect({
         setVersion(v);
       }}
     >
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[100px]">
         <SelectValue placeholder="Select a version" />
       </SelectTrigger>
       <SelectContent>
@@ -128,7 +128,7 @@ export function RunWorkflowButton({
         }
       }}
     >
-      Run  {isLoading ?  <LoadingIcon /> : <Play size={14} />}
+      Run {isLoading ? <LoadingIcon /> : <Play size={14} />}
     </Button>
   );
 }
@@ -155,7 +155,7 @@ export function CreateDeploymentButton({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="gap-2" disabled={isLoading} variant="outline">
-          Deploy  {isLoading ? <LoadingIcon /> : <MoreVertical size={14} /> }
+          Deploy {isLoading ? <LoadingIcon /> : <MoreVertical size={14} />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">

@@ -245,7 +245,7 @@ export function APIKeyList({ data }: { data: APIKey[] }) {
           </DropdownMenu> */}
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

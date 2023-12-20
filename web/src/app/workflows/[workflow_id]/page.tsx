@@ -30,7 +30,7 @@ export default async function Page({
   return (
     <div className="mt-4 w-full flex flex-col lg:flex-row gap-4 max-h-[calc(100dvh-100px)]">
       <div className="flex gap-4 flex-col">
-        <Card className="w-full lg:w-fit lg:min-w-[500px] h-fit">
+        <Card className="w-full lg:w-fit lg:min-w-[600px] h-fit">
           <CardHeader>
             <CardTitle>{workflow?.name}</CardTitle>
             <CardDescription suppressHydrationWarning={true}>
@@ -39,7 +39,7 @@ export default async function Page({
           </CardHeader>
 
           <CardContent>
-            <div className="flex gap-2 ">
+            <div className="flex gap-2 flex-wrap">
               <VersionSelect workflow={workflow} />
               <MachineSelect machines={machines} />
               <RunWorkflowButton workflow={workflow} machines={machines} />

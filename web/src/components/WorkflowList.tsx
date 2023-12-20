@@ -229,7 +229,7 @@ export function WorkflowList({ data }: { data: Payment[] }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

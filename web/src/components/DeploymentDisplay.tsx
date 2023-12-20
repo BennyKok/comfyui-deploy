@@ -11,7 +11,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import type { findAllDeployments } from "@/server/findAllRuns";
-import { headers } from 'next/headers';
+import { headers } from "next/headers";
 
 const curlTemplate = `
 curl --request POST \
@@ -59,7 +59,7 @@ export function DeploymentDisplay({
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0];
 }) {
   const headersList = headers();
-  const host = headersList.get('host') || "";
+  const host = headersList.get("host") || "";
   const protocol = headersList.get("x-forwarded-proto") || "";
   const domain = `${protocol}://${host}`;
 
@@ -93,7 +93,10 @@ export function DeploymentDisplay({
           </TabsList>
           <TabsContent className="flex flex-col gap-2" value="js">
             Trigger the workflow
-            <CodeBlock lang="js" code={formatCode(jsTemplate, deployment, domain)} />
+            <CodeBlock
+              lang="js"
+              code={formatCode(jsTemplate, deployment, domain)}
+            />
             Check the status of the run, and retrieve the outputs
             <CodeBlock
               lang="js"
@@ -122,9 +125,6 @@ function formatCode(
   domain: string
 ) {
   return codeTemplate
-    .replace(
-      "<URL>",
-      `${domain ?? "http://localhost:3000"}/api/run`
-    )
+    .replace("<URL>", `${domain ?? "http://localhost:3000"}/api/run`)
     .replace("<ID>", deployment.id);
 }

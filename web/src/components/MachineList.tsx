@@ -245,7 +245,7 @@ export function MachineList({ data }: { data: Machine[] }) {
           </DropdownMenu> */}
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
