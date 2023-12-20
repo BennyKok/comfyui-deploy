@@ -2,6 +2,7 @@
 
 import { callServerPromise } from "./callServerPromise";
 import { LoadingIcon } from "@/components/LoadingIcon";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -197,5 +198,50 @@ export function CreateDeploymentButton({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+const customInputNodes: Record<string, string> = {
+  ComfyUIDeployExternalText: "string",
+};
+
+export function VersionDetails({
+  workflow,
+}: {
+  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
+}) {
+  const [version] = useQueryState("version", {
+    defaultValue: workflow?.versions[0].version ?? 1,
+    ...parseAsInteger,
+  });
+  const workflow_version = workflow?.versions.find(
+    (x) => x.version === version
+  );
+  return (
+    <div className="mt-4">
+      Workflow Details
+      <div className="border rounded-lg p-2">
+        {workflow_version?.workflow_api && (
+          <div>
+            {Object.entries(workflow_version.workflow_api).map(
+              ([key, value]) => {
+                if (!value.class_type) return <> </>;
+                const nodeType = customInputNodes[value.class_type];
+                if (nodeType) {
+                  const input_id = value.inputs.input_id;
+                  const defaultValue = value.inputs.default_value;
+                  return (
+                    <>
+                      <Badge>{input_id}</Badge> {nodeType} {defaultValue}
+                    </>
+                  );
+                }
+                return <></>;
+              }
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
