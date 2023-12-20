@@ -14,7 +14,7 @@ class ComfyUIDeployExternalText:
                 ),
             },
             "optional": {
-                "default_text": (
+                "default_value": (
                     "STRING",
                     {"multiline": True, "default": ""},
                 ),
@@ -28,9 +28,9 @@ class ComfyUIDeployExternalText:
 
     CATEGORY = "text"
 
-    def run(self, input_id, default_text=None):
+    def run(self, input_id, default_value=None):
         if not input_id or len(input_id.strip()) == 0:
-            return [default_text]
+            return [default_value]
         return [input_id]
 
 

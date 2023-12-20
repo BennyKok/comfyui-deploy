@@ -14,7 +14,7 @@ class ComfyUIDeployExternalImage:
                 ),
             },
             "optional": {
-                "default_image": ("IMAGE",),
+                "default_value": ("IMAGE",),
             }
         }
 
@@ -25,8 +25,8 @@ class ComfyUIDeployExternalImage:
 
     CATEGORY = "image"
 
-    def run(self, input_id, default_image=None):
-        image = default_image
+    def run(self, input_id, default_value=None):
+        image = default_value
         try:
             if input_id.startswith('http'):
                 import requests
