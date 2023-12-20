@@ -18,6 +18,7 @@ import asyncio
 import atexit
 import logging
 from enum import Enum
+from urllib.parse import quote
 
 api = None
 api_task = None
@@ -200,7 +201,7 @@ def update_run(prompt_id, status: Status):
         requests.post(status_endpoint, json=body)
 
 
-async def upload_file(prompt_id, filename, subfolder=None):
+async def upload_file(prompt_id, filename, subfolder=None, type="image/png"):
     """
     Uploads file to S3 bucket using S3 client object
     :return: None
@@ -230,9 +231,15 @@ async def upload_file(prompt_id, filename, subfolder=None):
 
     file_upload_endpoint = prompt_metadata[prompt_id]['file_upload_endpoint']
 
-    content_type = "image/png"
+    content_type = type
 
-    result = requests.get(f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}")
+    filename = quote(filename)
+    prompt_id = quote(prompt_id)
+    content_type = quote(content_type)
+
+    target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}"
+
+    result = requests.get(target_url)
     ok = result.json()
     
     with open(file, 'rb') as f:
@@ -249,14 +256,29 @@ async def update_run_with_output(prompt_id, data):
     if prompt_id in prompt_metadata:
         status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
 
-        images = data.get('images', [])
-        for image in images:
-            await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"))
-
         body = {
             "run_id": prompt_id,
             "output_data": data
         }
+
+        try:
+            images = data.get('images', [])
+            for image in images:
+                await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type", "image/png"))
+        except Exception as e:
+            error_type = type(e).__name__
+            stack_trace = traceback.format_exc().strip()
+            body = {
+                "run_id": prompt_id,
+                "output_data": {
+                    "type": error_type,
+                    "message": str(e),
+                    "stack_trace": stack_trace
+                }
+            }
+            print(body)
+            print(f"Error occurred while uploading file: {e}")
+
         requests.post(status_endpoint, json=body)
 
         await send('outputs_uploaded', {
