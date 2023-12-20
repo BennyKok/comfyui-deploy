@@ -107,8 +107,8 @@ function addButton() {
 
   const deploy = document.createElement("button");
   deploy.style.position = "relative";
+  deploy.style.display = "block";
   deploy.textContent = "Deploy";
-  deploy.className = "sharebtn";
   deploy.onclick = async () => {
     /** @type {LGraph} */
     const graph = app.graph;
@@ -127,10 +127,15 @@ function addButton() {
     console.log(graph);
     console.log(prompt);
 
-    const endpoint = localStorage.getItem("endpoint") ?? "https://www.comfydeploy.com";
-    const apiKey = localStorage.getItem("apiKey");
+    // const endpoint = localStorage.getItem("endpoint") ?? "";
+    // const apiKey = localStorage.getItem("apiKey");
 
-    if (!endpoint || !apiKey) {
+    const {
+      endpoint,
+      apiKey,
+    } = getData();
+
+    if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
       configDialog.show();
       return;
     }
@@ -255,6 +260,27 @@ export class InfoDialog extends ComfyDialog {
 
 export const infoDialog = new InfoDialog()
 
+function getData(environment) {
+  const deployOption = environment || localStorage.getItem("comfy_deploy_env") || "cloud";
+  const data = localStorage.getItem("comfy_deploy_env_data_" + deployOption);
+  if (!data) {
+    if (deployOption == "cloud")
+      return {
+        endpoint: "https://www.comfydeploy.com",
+        apiKey: "",
+      };
+    else 
+      return {
+        endpoint: "http://localhost:3000",
+        apiKey: "",
+      };
+  }
+  return {
+    ...JSON.parse(data),
+    environment: deployOption,
+  };
+}
+
 export class ConfigDialog extends ComfyDialog {
 
   container = null;
@@ -300,32 +326,60 @@ export class ConfigDialog extends ComfyDialog {
   }
 
   save() {
+    const deployOption = this.container.querySelector("#deployOption").value;
+    localStorage.setItem("comfy_deploy_env", deployOption);
+
     const endpoint = this.container.querySelector("#endpoint").value;
     const apiKey = this.container.querySelector("#apiKey").value;
-    localStorage.setItem("endpoint", endpoint);
-    localStorage.setItem("apiKey", apiKey);
+    const data = {
+      endpoint,
+      apiKey,
+    }
+    localStorage.setItem("comfy_deploy_env_data_" + deployOption, JSON.stringify(data));
     this.close();
   }
 
   show() {
-    // this.element.style.whiteSpace = "nowrap";
-    // this.textElement.style.overflow = "hidden";
     this.container.style.color = "white";
-    // this.textElement.style.padding = "10px";
+
+    const data = getData();
     
     this.container.innerHTML = `
-      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column;">
-      <h3 style="margin: 0px;">Comfy Deploy Config</h3>
+    <div style="width: 400px; display: flex; gap: 18px; flex-direction: column;">
+    <h3 style="margin: 0px;">Comfy Deploy Config</h3>
+    <label style="color: white; width: 100%;">
+      <select id="deployOption" style="margin-top: 8px; width: 100%; height:30px;" >
+        <option value="cloud" ${data.environment === 'cloud' ? 'selected' : ''}>Cloud</option>
+        <option value="local" ${data.environment === 'local' ? 'selected' : ''}>Local</option>
+      </select>
+    </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${localStorage.getItem("endpoint") || "https://www.comfydeploy.com"}">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${data.endpoint}">
       </label>
       <label style="color: white;">
         API Key:
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:30px;" type="password" value="${localStorage.getItem("apiKey") || ""}">
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:30px;" type="password" value="${data.apiKey}">
       </label>
       </div>
     `;
+
+    const apiKeyInput = this.container.querySelector("#apiKey");
+    apiKeyInput.addEventListener("paste", function(e) {
+      e.stopPropagation();
+    });
+
+    const deployOption = this.container.querySelector("#deployOption");
+    const container = this.container
+    deployOption.addEventListener("change", function() {
+      const selectedOption = this.value;
+      const data = getData(selectedOption);
+      localStorage.setItem("comfy_deploy_env", selectedOption);
+      
+      container.querySelector("#endpoint").value = data.endpoint;
+      container.querySelector("#apiKey").value = data.apiKey;
+    });
+
     this.element.style.display = "flex";
     this.element.style.zIndex = 1001;
   }
