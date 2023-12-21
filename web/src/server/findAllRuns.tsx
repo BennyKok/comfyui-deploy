@@ -8,7 +8,7 @@ export async function findAllRuns(workflow_id: string) {
     orderBy: desc(workflowRunsTable.created_at),
     limit: 10,
     extras: {
-      "number": sql<number>`row_number() over (order by created_at)`.as("number"),
+      number: sql<number>`row_number() over (order by created_at)`.as("number"),
     },
     with: {
       machine: {
@@ -36,11 +36,7 @@ export async function findAllDeployments(workflow_id: string) {
           name: true,
         },
       },
-      version: {
-        columns: {
-          version: true,
-        },
-      },
+      version: true,
     },
   });
 }

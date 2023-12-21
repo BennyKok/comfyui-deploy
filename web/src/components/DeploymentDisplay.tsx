@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import type { findAllDeployments } from "@/server/findAllRuns";
 import { headers } from "next/headers";
@@ -29,28 +30,29 @@ curl --request GET \
 `;
 
 const jsTemplate = `
-fetch('<URL>', {
+const { run_id } = await fetch('<URL>', {
   method: 'POST',
-  headers: {'Content-Type': 'application/json'},
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + process.env.COMFY_DEPLOY_API_KEY,
+  },
   body: JSON.stringify({
     deployment_id: '<ID>',
+    inputs: {}
   }),
-})
-  .then(response => response.json())
-  .then(response => console.log(response))
-  .catch(err => console.error(err));
+}).then(response => response.json())
 `;
 
 const jsTemplate_checkStatus = `
 const run_id = '<RUN_ID>';
 
-fetch('<URL>?run_id=' + run_id, {
+const output = fetch('<URL>?run_id=' + run_id, {
   method: 'GET',
-  headers: {'Content-Type': 'application/json'},
-})
-  .then(response => response.json())
-  .then(response => console.log(response))
-  .catch(err => console.error(err));
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + process.env.COMFY_DEPLOY_API_KEY,
+  },
+}).then(response => response.json())
 `;
 
 export function DeploymentDisplay({
@@ -62,6 +64,8 @@ export function DeploymentDisplay({
   const host = headersList.get("host") || "";
   const protocol = headersList.get("x-forwarded-proto") || "";
   const domain = `${protocol}://${host}`;
+
+  const workflowInput = getInputsFromWorkflow(deployment.version);
 
   return (
     <Dialog>
@@ -79,7 +83,7 @@ export function DeploymentDisplay({
           </TableCell>
         </TableRow>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="capitalize">
             {deployment.environment} Deployment
@@ -95,7 +99,7 @@ export function DeploymentDisplay({
             Trigger the workflow
             <CodeBlock
               lang="js"
-              code={formatCode(jsTemplate, deployment, domain)}
+              code={formatCode(jsTemplate, deployment, domain, workflowInput)}
             />
             Check the status of the run, and retrieve the outputs
             <CodeBlock
@@ -122,8 +126,32 @@ export function DeploymentDisplay({
 function formatCode(
   codeTemplate: string,
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0],
-  domain: string
+  domain: string,
+  inputs?: ReturnType<typeof getInputsFromWorkflow>
 ) {
+  if (inputs && inputs.length > 0) {
+    codeTemplate = codeTemplate.replace(
+      "inputs: {}",
+      `inputs: ${JSON.stringify(
+        Object.fromEntries(
+          inputs.map((x) => {
+            return [x?.input_id, ""];
+          })
+        ),
+        null,
+        2
+      )
+        .split("\n")
+        .map((line, index) => (index === 0 ? line : `    ${line}`)) // Add two spaces indentation except for the first line
+        .join("\n")}`
+    );
+  } else {
+    codeTemplate = codeTemplate.replace(
+      `
+    inputs: {}`,
+      ""
+    );
+  }
   return codeTemplate
     .replace("<URL>", `${domain ?? "http://localhost:3000"}/api/run`)
     .replace("<ID>", deployment.id);

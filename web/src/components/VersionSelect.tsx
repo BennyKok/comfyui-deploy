@@ -1,6 +1,8 @@
 "use client";
 
+import { getInputsFromWorkflow } from "../lib/getInputsFromWorkflow";
 import { callServerPromise } from "./callServerPromise";
+import { customInputNodes } from "./customInputNodes";
 import { LoadingIcon } from "@/components/LoadingIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -206,10 +208,16 @@ export function CreateDeploymentButton({
   );
 }
 
-const customInputNodes: Record<string, string> = {
-  ComfyUIDeployExternalText: "string",
-  ComfyUIDeployExternalImage: "string - (public image url)",
-};
+export function getWorkflowVersionFromVersionIndex(
+  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>,
+  version: number
+) {
+  const workflow_version = workflow?.versions.find(
+    (x) => x.version === version
+  );
+
+  return workflow_version;
+}
 
 export function VersionDetails({
   workflow,
@@ -220,46 +228,46 @@ export function VersionDetails({
     defaultValue: workflow?.versions[0].version ?? 1,
     ...parseAsInteger,
   });
-  const workflow_version = workflow?.versions.find(
-    (x) => x.version === version
+  const workflow_version = getWorkflowVersionFromVersionIndex(
+    workflow,
+    version
   );
+  const inputs = getInputsFromWorkflow(workflow_version);
   return (
     <div className="mt-4">
       Workflow Details
       <div className="border rounded-lg p-2">
-        {workflow_version?.workflow_api && (
+        {inputs && (
           <div className="flex flex-col gap-2">
-            {Object.entries(workflow_version.workflow_api).map(
-              ([key, value]) => {
-                if (!value.class_type) return <> </>;
-                const nodeType = customInputNodes[value.class_type];
-                if (nodeType) {
-                  const input_id = value.inputs.input_id;
-                  const defaultValue = value.inputs.default_value;
-                  return (
-                    <div key={input_id}>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge variant="secondary">
-                            <div>
-                              {input_id}
-                              {" : "}
-                              {nodeType}
-                            </div>
-                          </Badge>
-                          {/* {nodeType}{" "} */}
-                          {/* <Button variant="outline">Hover</Button> */}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Default Value: {defaultValue}
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  );
-                }
-                return <></>;
+            {inputs.map((value) => {
+              if (!value.class_type) return <> </>;
+              const nodeType = customInputNodes[value.class_type];
+              if (nodeType) {
+                const input_id = value.input_id;
+                const defaultValue = value.default_value;
+                return (
+                  <div key={input_id}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge variant="secondary">
+                          <div>
+                            {input_id}
+                            {" : "}
+                            <span className="text-orange-500">{nodeType}</span>
+                          </div>
+                        </Badge>
+                        {/* {nodeType}{" "} */}
+                        {/* <Button variant="outline">Hover</Button> */}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Default Value: {defaultValue}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                );
               }
-            )}
+              return <></>;
+            })}
           </div>
         )}
       </div>
