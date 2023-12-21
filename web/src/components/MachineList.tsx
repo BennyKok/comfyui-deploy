@@ -11,6 +11,7 @@ import {
   FormMessage,
   Form,
 } from "./ui/form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -38,7 +39,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { addMachine, deleteMachine } from "@/server/curdMachine";
+import type { MachineType } from "@/db/schema";
+import {
+  addMachine,
+  deleteMachine,
+  disableMachine,
+  enableMachine,
+} from "@/server/curdMachine";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ColumnDef,
@@ -59,12 +66,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-export type Machine = {
-  id: string;
-  name: string;
-  endpoint: string;
-  date: Date;
-};
+export type Machine = MachineType;
 
 export const columns: ColumnDef<Machine>[] = [
   {
@@ -106,7 +108,12 @@ export const columns: ColumnDef<Machine>[] = [
     cell: ({ row }) => {
       return (
         // <a className="hover:underline" href={`/${row.original.id}`}>
-        row.getValue("name")
+        <div className="flex flex-row gap-2">
+          <div>{row.getValue("name")}</div>
+          {row.original.disabled && (
+            <Badge variant="destructive">Disabled</Badge>
+          )}
+        </div>
         // </a>
       );
     },
@@ -137,7 +144,7 @@ export const columns: ColumnDef<Machine>[] = [
     },
     cell: ({ row }) => (
       <div className="capitalize text-right">
-        {getRelativeTime(row.original.date)}
+        {getRelativeTime(row.original.updated_at)}
       </div>
     ),
   },
@@ -146,7 +153,7 @@ export const columns: ColumnDef<Machine>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const workflow = row.original;
+      const machine = row.original;
 
       return (
         <DropdownMenu>
@@ -161,11 +168,29 @@ export const columns: ColumnDef<Machine>[] = [
             <DropdownMenuItem
               className="text-destructive"
               onClick={async () => {
-                callServerPromise(deleteMachine(workflow.id));
+                callServerPromise(deleteMachine(machine.id));
               }}
             >
               Delete Machine
             </DropdownMenuItem>
+            {machine.disabled ? (
+              <DropdownMenuItem
+                onClick={async () => {
+                  callServerPromise(enableMachine(machine.id));
+                }}
+              >
+                Enable Machine
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={async () => {
+                  callServerPromise(disableMachine(machine.id));
+                }}
+              >
+                Disable Machine
+              </DropdownMenuItem>
+            )}
             {/* <DropdownMenuSeparator />
             <DropdownMenuItem>View customer</DropdownMenuItem>
             <DropdownMenuItem>View payment details</DropdownMenuItem> */}

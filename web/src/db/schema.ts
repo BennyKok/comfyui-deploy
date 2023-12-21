@@ -176,6 +176,7 @@ export const machinesTable = dbSchema.table("machines", {
   endpoint: text("endpoint").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
+  disabled: boolean("disabled").default(false).notNull(),
 });
 
 export const deploymentsTable = dbSchema.table("deployments", {
@@ -227,3 +228,4 @@ export const apiKeyTable = dbSchema.table("api_keys", {
 
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
+export type MachineType = InferSelectModel<typeof machinesTable>;

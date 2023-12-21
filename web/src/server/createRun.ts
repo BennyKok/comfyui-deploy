@@ -1,12 +1,12 @@
 "use server";
 
+import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
-import { workflowRunsTable } from "@/db/schema";
+import { machinesTable, workflowRunsTable } from "@/db/schema";
 import { ComfyAPI_Run } from "@/types/ComfyAPI_Run";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import "server-only";
-import { withServerPromise } from "./withServerPromise";
 
 export const createRun = withServerPromise(
   async (
@@ -14,20 +14,24 @@ export const createRun = withServerPromise(
     workflow_version_id: string,
     machine_id: string,
     inputs?: Record<string, string>,
-    isManualRun?: boolean,
+    isManualRun?: boolean
   ) => {
     const machine = await db.query.machinesTable.findFirst({
-      where: eq(workflowRunsTable.id, machine_id),
+      where: and(
+        eq(machinesTable.id, machine_id),
+        eq(machinesTable.disabled, false)
+      ),
     });
 
     if (!machine) {
       throw new Error("Machine not found");
     }
 
-    const workflow_version_data =
-      await db.query.workflowVersionTable.findFirst({
+    const workflow_version_data = await db.query.workflowVersionTable.findFirst(
+      {
         where: eq(workflowRunsTable.id, workflow_version_id),
-      });
+      }
+    );
 
     if (!workflow_version_data) {
       throw new Error("Workflow version not found");
@@ -79,7 +83,7 @@ export const createRun = withServerPromise(
         workflow_version_id: workflow_version_data.id,
         workflow_inputs: inputs,
         machine_id,
-        origin: isManualRun ? "manual" : "api"
+        origin: isManualRun ? "manual" : "api",
       })
       .returning();
 
@@ -89,5 +93,5 @@ export const createRun = withServerPromise(
       workflow_run_id: workflow_run[0].id,
       message: "Successful workflow run",
     };
-  },
+  }
 );
