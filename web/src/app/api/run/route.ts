@@ -48,13 +48,20 @@ export async function GET(request: Request) {
     for (let i = 0; i < run.outputs.length; i++) {
       const output = run.outputs[i];
 
-      if (output.data?.images === undefined) continue;
-
-      for (let j = 0; j < output.data?.images.length; j++) {
-        const element = output.data?.images[j];
-        element.url = replaceCDNUrl(
-          `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
-        );
+      if (output.data?.images !== undefined) {
+        for (let j = 0; j < output.data?.images.length; j++) {
+          const element = output.data?.images[j];
+          element.url = replaceCDNUrl(
+            `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
+          );
+        }
+      } else if (output.data?.files !== undefined) {
+        for (let j = 0; j < output.data?.files.length; j++) {
+          const element = output.data?.files[j];
+          element.url = replaceCDNUrl(
+            `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
+          );
+        }
       }
     }
   }
