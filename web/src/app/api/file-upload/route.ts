@@ -12,7 +12,6 @@ const Request = z.object({
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  console.log("yo hello");
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 
