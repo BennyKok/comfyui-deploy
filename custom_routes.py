@@ -201,7 +201,7 @@ def update_run(prompt_id, status: Status):
         requests.post(status_endpoint, json=body)
 
 
-async def upload_file(prompt_id, filename, subfolder=None, type="image/png"):
+async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output"):
     """
     Uploads file to S3 bucket using S3 client object
     :return: None
@@ -213,7 +213,7 @@ async def upload_file(prompt_id, filename, subfolder=None, type="image/png"):
         return
 
     if output_dir is None:
-        output_dir = folder_paths.get_directory_by_type("output")
+        output_dir = folder_paths.get_directory_by_type(type)
 
     if output_dir is None:
         return 
@@ -230,8 +230,6 @@ async def upload_file(prompt_id, filename, subfolder=None, type="image/png"):
     # print("uploading file", file)
 
     file_upload_endpoint = prompt_metadata[prompt_id]['file_upload_endpoint']
-
-    content_type = type
 
     filename = quote(filename)
     prompt_id = quote(prompt_id)
@@ -264,11 +262,11 @@ async def update_run_with_output(prompt_id, data):
         try:
             images = data.get('images', [])
             for image in images:
-                await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type", "image/png"))
+                await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type"), content_type=image.get("content_type", "image/png"))
 
             files = data.get('files', [])
             for file in files:
-                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type", "image/png"))
+                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=image.get("content_type", "image/png"))
                 
         except Exception as e:
             error_type = type(e).__name__
@@ -276,9 +274,11 @@ async def update_run_with_output(prompt_id, data):
             body = {
                 "run_id": prompt_id,
                 "output_data": {
-                    "type": error_type,
-                    "message": str(e),
-                    "stack_trace": stack_trace
+                    "error": {
+                        "type": error_type,
+                        "message": str(e),
+                        "stack_trace": stack_trace
+                    }
                 }
             }
             print(body)
