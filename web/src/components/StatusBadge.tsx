@@ -10,7 +10,7 @@ export function StatusBadge({
   switch (status) {
     case "running":
       return (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className="gap-2 w-fit">
           {status} <LoadingIcon />
         </Badge>
       );
