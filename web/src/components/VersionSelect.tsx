@@ -240,7 +240,7 @@ export function VersionDetails({
         {inputs && (
           <div className="flex flex-col gap-2">
             {inputs.map((value) => {
-              if (!value.class_type) return <> </>;
+              if (!value || !value.class_type) return <> </>;
               const nodeType = customInputNodes[value.class_type];
               if (nodeType) {
                 const input_id = value.input_id;
