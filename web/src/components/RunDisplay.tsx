@@ -1,6 +1,5 @@
-
-import { RunInputs } from "@/components/RunInputs";
 import { LiveStatus } from "./LiveStatus";
+import { RunInputs } from "@/components/RunInputs";
 import { RunOutputs } from "@/components/RunOutputs";
 import {
   Dialog,
@@ -22,10 +21,7 @@ export async function RunDisplay({
 }) {
   return (
     <Dialog>
-      <DialogTrigger
-        asChild
-        className="appearance-none hover:cursor-pointer"
-      >
+      <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
         <TableRow>
           <TableCell>{run.number}</TableCell>
           <TableCell className="font-medium">{run.machine?.name}</TableCell>
@@ -42,7 +38,7 @@ export async function RunDisplay({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-96 overflow-y-scroll">
-          <RunInputs run={run}/>
+          <RunInputs run={run} />
           <Suspense>
             <RunOutputs run_id={run.id} />
           </Suspense>

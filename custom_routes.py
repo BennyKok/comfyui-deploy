@@ -17,8 +17,11 @@ import uuid
 import asyncio
 import atexit
 import logging
+import sys
+from logging.handlers import RotatingFileHandler
 from enum import Enum
 from urllib.parse import quote
+import threading
 
 api = None
 api_task = None
@@ -124,6 +127,7 @@ async def websocket_handler(request):
     try:
         # Send initial state to the new client
         await send("status", { 'sid': sid }, sid)
+        await send_first_time_log(sid)
             
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.ERROR:
@@ -136,7 +140,7 @@ async def send(event, data, sid=None):
     try:
         if sid:
             ws = sockets.get(sid)
-            if ws and not ws.closed:  # Check if the WebSocket connection is open and not closing
+            if ws != None and not ws.closed:  # Check if the WebSocket connection is open and not closing
                 await ws.send_json({ 'event': event, 'data': data })
         else:
             for ws in sockets.values():
@@ -292,3 +296,47 @@ async def update_run_with_output(prompt_id, data):
 
 prompt_server.send_json_original = prompt_server.send_json
 prompt_server.send_json = send_json_override.__get__(prompt_server, server.PromptServer)
+
+root_path = os.path.dirname(os.path.abspath(__file__))
+two_dirs_up = os.path.dirname(os.path.dirname(root_path))
+log_file_path = os.path.join(two_dirs_up, 'comfy-deploy.log')
+
+last_read_line = 0
+
+async def watch_file_changes(file_path, callback):
+    global last_read_line
+    last_modified_time = os.stat(file_path).st_mtime
+    while True:
+        time.sleep(1)  # sleep for a while to reduce CPU usage
+        modified_time = os.stat(file_path).st_mtime
+        if modified_time != last_modified_time:
+            last_modified_time = modified_time
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+            if last_read_line > len(lines):
+                last_read_line = 0  # Reset if log file has been rotated
+            new_lines = lines[last_read_line:]
+            last_read_line = len(lines)
+            if new_lines:
+                await callback(''.join(new_lines))
+
+
+async def send_first_time_log(sid):
+    with open(log_file_path, 'r') as file:
+        lines = file.readlines()
+    await send("LOGS", ''.join(lines), sid)
+
+async def send_logs_to_websocket(logs):
+    await send("LOGS", logs)
+
+def start_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+def run_in_new_thread(coroutine):
+    new_loop = asyncio.new_event_loop()
+    t = threading.Thread(target=start_loop, args=(new_loop,), daemon=True)
+    t.start()
+    asyncio.run_coroutine_threadsafe(coroutine, new_loop)
+
+run_in_new_thread(watch_file_changes(log_file_path, send_logs_to_websocket))
