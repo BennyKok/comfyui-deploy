@@ -30,9 +30,10 @@ import { createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
 import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import { MoreVertical, Play } from "lucide-react";
+import { Copy, MoreVertical, Play } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function VersionSelect({
   workflow,
@@ -202,6 +203,51 @@ export function CreateDeploymentButton({
           }}
         >
           Staging
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function CopyWorkflowVersion({
+  workflow,
+}: {
+  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
+}) {
+  const [version] = useQueryState("version", {
+    defaultValue: workflow?.versions[0].version ?? 1,
+    ...parseAsInteger,
+  });
+  const workflow_version = workflow?.versions.find(
+    (x) => x.version === version
+  );
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="gap-2" variant="outline">
+          Copy Workflow <Copy size={14} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuItem
+          onClick={async () => {
+            navigator.clipboard.writeText(
+              JSON.stringify(workflow_version?.workflow)
+            );
+            toast("Copied to clipboard");
+          }}
+        >
+          Copy (JSON)
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={async () => {
+            navigator.clipboard.writeText(
+              JSON.stringify(workflow_version?.workflow_api)
+            );
+            toast("Copied to clipboard");
+          }}
+        >
+          Copy API (JSON)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

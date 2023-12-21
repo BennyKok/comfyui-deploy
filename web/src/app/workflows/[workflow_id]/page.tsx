@@ -2,6 +2,7 @@ import { DeploymentsTable, RunsTable } from "../../../components/RunsTable";
 import { findFirstTableWithVersion } from "../../../server/findFirstTableWithVersion";
 import { MachinesWSMain } from "@/components/MachinesWS";
 import {
+  CopyWorkflowVersion,
   CreateDeploymentButton,
   MachineSelect,
   RunWorkflowButton,
@@ -45,6 +46,7 @@ export default async function Page({
               <MachineSelect machines={machines} />
               <RunWorkflowButton workflow={workflow} machines={machines} />
               <CreateDeploymentButton workflow={workflow} machines={machines} />
+              <CopyWorkflowVersion workflow={workflow} />
             </div>
 
             <VersionDetails workflow={workflow} />
