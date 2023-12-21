@@ -1,10 +1,14 @@
 import { CopyButton } from "@/components/CopyButton";
-import { getHighlighter, StringLiteralUnion  } from 'shikiji'
+import type { StringLiteralUnion } from "shikiji";
+import { getHighlighter } from "shikiji";
 
-export async function CodeBlock(props: { code: string; lang: StringLiteralUnion<string> }) {
+export async function CodeBlock(props: {
+  code: string;
+  lang: StringLiteralUnion<string>;
+}) {
   const highlighter = await getHighlighter({
     themes: ["one-dark-pro"],
-    langs: [props.lang]
+    langs: [props.lang],
   });
 
   return (

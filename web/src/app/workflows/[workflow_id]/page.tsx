@@ -48,7 +48,6 @@ export default async function Page({
             </div>
 
             <VersionDetails workflow={workflow} />
-
             <MachinesWSMain machines={machines} />
           </CardContent>
         </Card>

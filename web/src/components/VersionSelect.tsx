@@ -19,6 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
@@ -75,11 +80,11 @@ export function MachineSelect({
       }}
     >
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select a version" />
+        <SelectValue placeholder="Select a machine" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Versions</SelectLabel>
+          <SelectLabel>Machines</SelectLabel>
           {machines?.map((x) => (
             <SelectItem key={x.id} value={x.id ?? ""}>
               {x.name}
@@ -203,7 +208,7 @@ export function CreateDeploymentButton({
 
 const customInputNodes: Record<string, string> = {
   ComfyUIDeployExternalText: "string",
-  ComfyUIDeployExternalImage: "string - image url",
+  ComfyUIDeployExternalImage: "string - (public image url)",
 };
 
 export function VersionDetails({
@@ -223,7 +228,7 @@ export function VersionDetails({
       Workflow Details
       <div className="border rounded-lg p-2">
         {workflow_version?.workflow_api && (
-          <div>
+          <div className="flex flex-col gap-2">
             {Object.entries(workflow_version.workflow_api).map(
               ([key, value]) => {
                 if (!value.class_type) return <> </>;
@@ -232,10 +237,24 @@ export function VersionDetails({
                   const input_id = value.inputs.input_id;
                   const defaultValue = value.inputs.default_value;
                   return (
-                    <>
-                      <Badge variant="secondary">{input_id}</Badge> {nodeType}{" "}
-                      {defaultValue}
-                    </>
+                    <div key={input_id}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge variant="secondary">
+                            <div>
+                              {input_id}
+                              {" : "}
+                              {nodeType}
+                            </div>
+                          </Badge>
+                          {/* {nodeType}{" "} */}
+                          {/* <Button variant="outline">Hover</Button> */}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Default Value: {defaultValue}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   );
                 }
                 return <></>;
