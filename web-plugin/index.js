@@ -108,10 +108,12 @@ function addButton() {
   const deploy = document.createElement("button");
   deploy.style.position = "relative";
   deploy.style.display = "block";
-  deploy.textContent = "Deploy";
+  deploy.innerHTML = "<div id='button-title'>Deploy</div>";
   deploy.onclick = async () => {
     /** @type {LGraph} */
     const graph = app.graph;
+
+    const title = deploy.querySelector("#button-title")
 
     const deployMeta = graph.findNodesByType("ComfyDeploy");
     const deployMetaNode = deployMeta[0];
@@ -140,8 +142,8 @@ function addButton() {
       return;
     }
 
-    deploy.textContent = "Deploying...";
-    deploy.style.color = "orange";
+    title.innerText = "Deploying...";
+    title.style.color = "orange";
 
     console.log(prompt);
 
@@ -170,8 +172,8 @@ function addButton() {
         data = await data.json();
       }
 
-      deploy.textContent = "Done";
-      deploy.style.color = "green";
+      title.textContent = "Done";
+      title.style.color = "green";
 
       deployMetaNode.widgets[1].value = data.workflow_id;
       deployMetaNode.widgets[2].value = data.version;
@@ -182,17 +184,17 @@ function addButton() {
       );
 
       setTimeout(() => {
-        deploy.textContent = "Deploy";
-        deploy.style.color = "white";
+        title.textContent = "Deploy";
+        title.style.color = "white";
       }, 1000);
     } catch (e) {
       app.ui.dialog.show(e);
       console.error(e);
-      deploy.textContent = "Error";
-      deploy.style.color = "red";
+      title.textContent = "Error";
+      title.style.color = "red";
       setTimeout(() => {
-        deploy.textContent = "Deploy";
-        deploy.style.color = "white";
+        title.textContent = "Deploy";
+        title.style.color = "white";
       }, 1000);
     }
   };
