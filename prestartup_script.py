@@ -26,7 +26,7 @@ class StreamToLogger(object):
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Create a handler that rotates log files every 1MB
+# Create a handler that rotates log files every 500KB
 handler = RotatingFileHandler('comfy-deploy.log', maxBytes=500000, backupCount=5)
 logger.addHandler(handler)
 
