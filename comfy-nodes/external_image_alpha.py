@@ -3,7 +3,7 @@ from PIL import Image, ImageOps
 import numpy as np
 import torch
 
-class ComfyUIDeployExternalImage:
+class ComfyUIDeployExternalImageAlpha:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -45,7 +45,6 @@ class ComfyUIDeployExternalImage:
                 raise ValueError("Invalid image url provided.")
 
             image = ImageOps.exif_transpose(image)
-            image = image.convert("RGB")
             image = np.array(image).astype(np.float32) / 255.0
             image = torch.from_numpy(image)[None,]
             return [image]
@@ -53,5 +52,5 @@ class ComfyUIDeployExternalImage:
             return [image]
 
 
-NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalImage": ComfyUIDeployExternalImage}
-NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalImage": "External Image (ComfyUI Deploy)"}
+NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalImageAlpha": ComfyUIDeployExternalImageAlpha}
+NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalImageAlpha": "External Image Alpha (ComfyUI Deploy)"}
