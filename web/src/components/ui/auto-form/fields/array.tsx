@@ -1,11 +1,15 @@
-import type { useForm , useForm } from "react-hook-form";
-import { useFieldArray } from "react-hook-form";
 import { Button } from "../../button";
 import { Separator } from "../../separator";
 import { beautifyObjectName } from "../utils";
 import AutoFormObject from "./object";
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Plus, Trash } from "lucide-react";
-import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import type { useForm } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 import type { z } from "zod";
 
 export default function AutoFormArray({
