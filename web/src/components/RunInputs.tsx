@@ -1,5 +1,3 @@
-import { OutputRender } from "./OutputRender";
-import { CodeBlock } from "@/components/CodeBlock";
 import {
   Table,
   TableBody,
@@ -8,8 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { findAllRuns } from "@/server/findAllRuns";
-import { getRunsOutput } from "@/server/getRunsOutput";
+import type { findAllRuns } from "@/server/findAllRuns";
 
 export async function RunInputs({
   run,
@@ -30,16 +27,28 @@ export async function RunInputs({
             {Object.entries(run.workflow_inputs).map(([key, data]) => {
               let imageUrl;
               try {
-                const url = new URL(data);
-                if (url.pathname.endsWith('.png')) {
+                if (data.startsWith("data:image/")) {
                   imageUrl = data;
+                } else {
+                  const url = new URL(data);
+                  if (url.pathname.endsWith(".png")) {
+                    imageUrl = data;
+                  }
                 }
-              } catch (_) {
-              }
+              } catch (_) {}
               return (
                 <TableRow key={key}>
                   <TableCell>{key}</TableCell>
-                  {imageUrl ? <TableCell><img className="w-[200px] aspect-square object-contain" src={imageUrl}></img></TableCell> : <TableCell>{data}</TableCell>}
+                  {imageUrl ? (
+                    <TableCell>
+                      <img
+                        className="w-[200px] aspect-square object-contain"
+                        src={imageUrl}
+                      />
+                    </TableCell>
+                  ) : (
+                    <TableCell>{data}</TableCell>
+                  )}
                 </TableRow>
               );
             })}
