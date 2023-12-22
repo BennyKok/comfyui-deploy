@@ -174,9 +174,9 @@ export function RunWorkflowButton({
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Run outputs</DialogTitle>
+          <DialogTitle>Run inputs</DialogTitle>
           <DialogDescription>
-            You can view your run&apos;s outputs here
+            Run your workflow with custom inputs
           </DialogDescription>
         </DialogHeader>
         {/* <div className="max-h-96 overflow-y-scroll"> */}
