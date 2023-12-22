@@ -202,7 +202,13 @@ def update_run(prompt_id, status: Status):
             "status": status.value,
         }
         prompt_metadata[prompt_id]['status'] = status
-        requests.post(status_endpoint, json=body)
+
+        try:
+            requests.post(status_endpoint, json=body)
+        except Exception as e:
+            error_type = type(e).__name__
+            stack_trace = traceback.format_exc().strip()
+            print(f"Error occurred while updating run: {e} {stack_trace}")
 
 
 async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output"):
