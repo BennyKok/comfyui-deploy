@@ -7,7 +7,9 @@ import { z } from "zod";
 
 const Request = z.object({
   run_id: z.string(),
-  status: z.enum(["not-started", "running", "success", "failed"]).optional(),
+  status: z
+    .enum(["not-started", "running", "uploading", "success", "failed"])
+    .optional(),
   output_data: z.any().optional(),
 });
 

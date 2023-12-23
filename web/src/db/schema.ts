@@ -85,6 +85,7 @@ export const workflowVersionRelations = relations(
 export const workflowRunStatus = pgEnum("workflow_run_status", [
   "not-started",
   "running",
+  "uploading",
   "success",
   "failed",
 ]);
