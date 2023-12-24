@@ -147,6 +147,11 @@ function addButton() {
 
     console.log(prompt);
 
+    // TODO trim the ending / from endpoint is there is
+    if (endpoint.endsWith("/")) {
+      endpoint = endpoint.slice(0, -1);
+    }
+
     const apiRoute = endpoint + "/api/upload"
     // const userId = apiKey
     try {
