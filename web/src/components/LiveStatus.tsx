@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { TableCell } from "@/components/ui/table";
 import { type findAllRuns } from "@/server/findAllRuns";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export function LiveStatus({
   run,
@@ -16,23 +16,30 @@ export function LiveStatus({
     (state) =>
       state.data
         .filter((x) => x.id === run.id)
-        .sort((a, b) => b.timestamp - a.timestamp)?.[0],
+        .sort((a, b) => b.timestamp - a.timestamp)?.[0]
   );
 
   let status = run.status;
 
   // const [view, setView] = useState<any>();
-  if (data?.json.event == "executing" && data.json.data.node == undefined) {
-    status = "success";
-  } else if (data?.json.event == "executing") {
+  // if (data?.json.event == "executing" && data.json.data.node == undefined) {
+  //   status = "success";
+  // } else
+  if (data?.json.event == "executing") {
     status = "running";
+  } else if (data?.json.event == "uploading") {
+    status = "uploading";
+  } else if (data?.json.event == "success") {
+    status = "success";
+  } else if (data?.json.event == "failed") {
+    status = "failed";
   }
 
   const router = useRouter();
 
   useEffect(() => {
     if (data?.json.event === "outputs_uploaded") {
-      router.refresh()
+      router.refresh();
     }
   }, [data?.json.event]);
 

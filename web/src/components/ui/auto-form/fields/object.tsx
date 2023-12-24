@@ -1,28 +1,28 @@
-import * as z from "zod";
-import { useForm } from "react-hook-form";
-import { FieldConfig, FieldConfigItem } from "../types";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "../../accordion";
+import { FormField } from "../../form";
+import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from "../config";
+import type { FieldConfig, FieldConfigItem } from "../types";
 import {
   beautifyObjectName,
   getBaseSchema,
   getBaseType,
   zodToHtmlInputProps,
 } from "../utils";
-import { FormField } from "../../form";
-import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from "../config";
 import AutoFormArray from "./array";
+import type { useForm } from "react-hook-form";
+import type * as z from "zod";
 
 function DefaultParent({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
 export default function AutoFormObject<
-  SchemaType extends z.ZodObject<any, any>,
+  SchemaType extends z.ZodObject<any, any>
 >({
   schema,
   form,

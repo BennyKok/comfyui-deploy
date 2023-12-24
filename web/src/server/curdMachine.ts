@@ -1,5 +1,6 @@
 "use server";
 
+import type { addMachineSchema } from "./addMachineSchema";
 import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
 import { machinesTable } from "@/db/schema";
@@ -7,6 +8,7 @@ import { auth } from "@clerk/nextjs";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import "server-only";
+import type { z } from "zod";
 
 export async function getMachines() {
   const { userId } = auth();
@@ -20,17 +22,36 @@ export async function getMachines() {
   return machines;
 }
 
-export async function addMachine(name: string, endpoint: string) {
-  const { userId } = auth();
-  if (!userId) throw new Error("No user id");
-  console.log(name, endpoint);
-  await db.insert(machinesTable).values({
-    user_id: userId,
-    name,
-    endpoint,
-  });
-  revalidatePath("/machines");
-}
+export const addMachine = withServerPromise(
+  async ({ name, endpoint, type }: z.infer<typeof addMachineSchema>) => {
+    const { userId } = auth();
+    if (!userId) return { error: "No user id" };
+    console.log(name, endpoint);
+    await db.insert(machinesTable).values({
+      user_id: userId,
+      name,
+      endpoint,
+      type,
+    });
+    revalidatePath("/machines");
+    return { message: "Machine Added" };
+  }
+);
+
+export const updateMachine = withServerPromise(
+  async ({
+    id,
+    ...data
+  }: z.infer<typeof addMachineSchema> & {
+    id: string;
+  }) => {
+    const { userId } = auth();
+    if (!userId) return { error: "No user id" };
+    await db.update(machinesTable).set(data).where(eq(machinesTable.id, id));
+    revalidatePath("/machines");
+    return { message: "Machine Updated" };
+  }
+);
 
 export const deleteMachine = withServerPromise(
   async (machine_id: string): Promise<{ message: string }> => {

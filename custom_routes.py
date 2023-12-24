@@ -51,7 +51,8 @@ def post_prompt(json_data):
         if "client_id" in json_data:
             extra_data["client_id"] = json_data["client_id"]
         if valid[0]:
-            prompt_id = str(uuid.uuid4())
+            # if the prompt id is provided
+            prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
             outputs_to_execute = valid[2]
             prompt_server.prompt_queue.put(
                 (number, prompt_id, prompt, extra_data, outputs_to_execute)
@@ -80,13 +81,17 @@ async def comfy_deploy_run(request):
 
     workflow_api = data.get("workflow_api")
 
+    # The prompt id generated from comfy deploy, can be None
+    prompt_id = data.get("prompt_id")
+
     for key in workflow_api:
         if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
             workflow_api[key]['inputs']['seed'] = randomSeed()
 
     prompt = {
         "prompt": workflow_api,
-        "client_id": "comfy_deploy_instance" #api.client_id
+        "client_id": "comfy_deploy_instance", #api.client_id
+        "prompt_id": prompt_id
     }
 
     try:
@@ -136,6 +141,19 @@ async def websocket_handler(request):
         sockets.pop(sid, None)
     return ws
 
+@server.PromptServer.instance.routes.get('/comfyui-deploy/check-status')
+async def comfy_deploy_check_status(request):
+    prompt_server = server.PromptServer.instance
+    prompt_id = request.rel_url.query.get('prompt_id', None)
+    if prompt_id in prompt_metadata:
+        return web.json_response({
+            "status": prompt_metadata[prompt_id]['status'].value
+        })
+    else:
+        return web.json_response({
+            "message": "prompt_id not found"
+        })
+
 async def send(event, data, sid=None):
     try:
         if sid:
@@ -168,7 +186,7 @@ async def send_json_override(self, event, data, sid=None):
         update_run(prompt_id, Status.RUNNING)
 
     # the last executing event is none, then the workflow is finished
-    if event == 'executing' and data.get('node') is None:
+    if event == 'executing' and data.get('node') is None and not have_pending_upload(prompt_id):
         update_run(prompt_id, Status.SUCCESS)
 
     if event == 'execution_error':
@@ -176,7 +194,7 @@ async def send_json_override(self, event, data, sid=None):
         asyncio.create_task(update_run_with_output(prompt_id, data))
 
     if event == 'executed' and 'node' in data and 'output' in data:
-        asyncio.create_task(update_run_with_output(prompt_id, data.get('output')))
+        asyncio.create_task(update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node')))
         # update_run_with_output(prompt_id, data.get('output'))
 
 
@@ -185,6 +203,7 @@ class Status(Enum):
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
+    UPLOADING = "uploading"
 
 def update_run(prompt_id, status: Status):
     if prompt_id not in prompt_metadata:
@@ -260,7 +279,47 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         response = requests.put(ok.get("url"), headers=headers, data=data)
         print("upload file response", response.status_code)
 
-async def update_run_with_output(prompt_id, data):
+def have_pending_upload(prompt_id):
+    if 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:
+        return True
+    return False
+
+async def update_file_status(prompt_id, data, uploading, have_error=False, node_id=None):
+    if 'uploading_nodes' not in prompt_metadata[prompt_id]:
+        prompt_metadata[prompt_id]['uploading_nodes'] = set()
+
+    if node_id is not None:
+        if uploading:
+            prompt_metadata[prompt_id]['uploading_nodes'].add(node_id)
+        else:
+            prompt_metadata[prompt_id]['uploading_nodes'].discard(node_id)
+
+    # print(prompt_metadata[prompt_id])
+    # Update the remote status
+
+    if have_error:
+        update_run(prompt_id, Status.FAILED)
+        await send("failed", {
+            "prompt_id": prompt_id,
+        })
+        return
+
+    # if there are still nodes that are uploading, then we set the status to uploading
+    if uploading and have_pending_upload(prompt_id):
+        if prompt_metadata[prompt_id]['status'] != Status.UPLOADING:
+            update_run(prompt_id, Status.UPLOADING)
+            await send("uploading", {
+                "prompt_id": prompt_id,
+            })
+    
+    # if there are no nodes that are uploading, then we set the status to success
+    elif not uploading:
+        update_run(prompt_id, Status.SUCCESS)
+        await send("success", {
+            "prompt_id": prompt_id,
+        })
+
+async def update_run_with_output(prompt_id, data, node_id=None):
     if prompt_id in prompt_metadata:
         status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
 
@@ -270,6 +329,13 @@ async def update_run_with_output(prompt_id, data):
         }
 
         try:
+            have_upload = 'images' in data or 'files' in data
+
+            print("have_upload", have_upload)
+
+            if have_upload:
+                await update_file_status(prompt_id, data, True, node_id=node_id)
+
             images = data.get('images', [])
             for image in images:
                 await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type"), content_type=image.get("content_type", "image/png"))
@@ -278,6 +344,9 @@ async def update_run_with_output(prompt_id, data):
             for file in files:
                 await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=image.get("content_type", "image/png"))
                 
+            if have_upload:
+                await update_file_status(prompt_id, data, False, node_id=node_id)
+
         except Exception as e:
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
@@ -291,6 +360,7 @@ async def update_run_with_output(prompt_id, data):
                     }
                 }
             }
+            await update_file_status(prompt_id, data, False, have_error=True)
             print(body)
             print(f"Error occurred while uploading file: {e}")
 

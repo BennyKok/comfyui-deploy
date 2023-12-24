@@ -1,28 +1,11 @@
 "use client";
 
 import { getRelativeTime } from "../lib/getRelativeTime";
-import { LoadingIcon } from "./LoadingIcon";
+import { InsertModal, UpdateModal } from "./InsertModal";
 import { callServerPromise } from "./callServerPromise";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Form,
-} from "./ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,14 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { MachineType } from "@/db/schema";
+import { type MachineType } from "@/db/schema";
+import { addMachineSchema } from "@/server/addMachineSchema";
 import {
   addMachine,
   deleteMachine,
   disableMachine,
   enableMachine,
+  updateMachine,
 } from "@/server/curdMachine";
-import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -63,8 +47,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useState } from "react";
 
 export type Machine = MachineType;
 
@@ -128,6 +111,13 @@ export const columns: ColumnDef<Machine>[] = [
     },
   },
   {
+    accessorKey: "type",
+    header: () => <div className="text-left">Type</div>,
+    cell: ({ row }) => {
+      return <div className="text-left font-medium">{row.original.type}</div>;
+    },
+  },
+  {
     accessorKey: "date",
     sortingFn: "datetime",
     enableSorting: true,
@@ -154,6 +144,7 @@ export const columns: ColumnDef<Machine>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const machine = row.original;
+      const [open, setOpen] = useState(false);
 
       return (
         <DropdownMenu>
@@ -191,10 +182,33 @@ export const columns: ColumnDef<Machine>[] = [
                 Disable Machine
               </DropdownMenuItem>
             )}
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem> */}
+            <DropdownMenuItem onClick={() => setOpen(true)}>
+              Edit
+            </DropdownMenuItem>
           </DropdownMenuContent>
+          <UpdateModal
+            fieldConfig={{
+              name: {
+                inputProps: { defaultValue: machine.name },
+              },
+              endpoint: {
+                inputProps: { defaultValue: machine.endpoint },
+              },
+              type: {
+                inputProps: { defaultValue: machine.type },
+              },
+              auth_token: {
+                inputProps: { defaultValue: machine.auth_token ?? "" },
+              },
+            }}
+            data={machine}
+            open={open}
+            setOpen={setOpen}
+            title="Edit"
+            description="Edit machines"
+            serverAction={updateMachine}
+            formSchema={addMachineSchema}
+          />
         </DropdownMenu>
       );
     },
@@ -241,33 +255,12 @@ export function MachineList({ data }: { data: Machine[] }) {
           className="max-w-sm"
         />
         <div className="ml-auto flex gap-2">
-          <AddMachinesDialog />
-          {/* <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu> */}
+          <InsertModal
+            title="Add Machine"
+            description="Add Comfyui machines to your account."
+            serverAction={addMachine}
+            formSchema={addMachineSchema}
+          />
         </div>
       </div>
       <div className="rounded-md border overflow-x-auto w-full">
@@ -345,97 +338,5 @@ export function MachineList({ data }: { data: Machine[] }) {
         </div>
       </div>
     </div>
-  );
-}
-
-const formSchema = z.object({
-  name: z.string().min(1),
-  endpoint: z.string().min(1),
-});
-
-function AddMachinesDialog() {
-  const [open, setOpen] = React.useState(false);
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "My Local Machine",
-      endpoint: "http://127.0.0.1:8188",
-    },
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" className="">
-          Add Machines
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(async (data) => {
-              await addMachine(data.name, data.endpoint);
-              // await new Promise(resolve => setTimeout(resolve, 3000));
-              setOpen(false);
-            })}
-          >
-            <DialogHeader>
-              <DialogTitle>Add Machines</DialogTitle>
-              <DialogDescription>
-                Add Comfyui machines to your account.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {/* <div className="grid grid-cols-4 items-center gap-4"> */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    {/* <FormDescription>
-                      This is your public display name.
-                    </FormDescription> */}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endpoint</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    {/* <FormDescription>
-                      This is your public display name.
-                    </FormDescription> */}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <AddWorkflowButton pending={form.formState.isSubmitting} />
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AddWorkflowButton({ pending }: { pending: boolean }) {
-  // const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      Save changes {pending && <LoadingIcon />}
-    </Button>
   );
 }

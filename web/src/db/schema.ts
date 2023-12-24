@@ -9,6 +9,7 @@ import {
   pgEnum,
   boolean,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const dbSchema = pgSchema("comfyui_deploy");
@@ -100,6 +101,11 @@ export const workflowRunOrigin = pgEnum("workflow_run_origin", [
   "api",
 ]);
 
+export const machinesType = pgEnum("machine_type", [
+  "classic",
+  "runpod-serverless",
+]);
+
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -178,6 +184,14 @@ export const machinesTable = dbSchema.table("machines", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
   disabled: boolean("disabled").default(false).notNull(),
+  auth_token: text("auth_token"),
+  type: machinesType("type").notNull().default("classic"),
+});
+
+export const insertMachineSchema = createInsertSchema(machinesTable, {
+  name: (schema) => schema.name.default("My Machine"),
+  endpoint: (schema) => schema.endpoint.default("http://127.0.0.1:8188"),
+  type: (schema) => schema.type.default("classic"),
 });
 
 export const deploymentsTable = dbSchema.table("deployments", {

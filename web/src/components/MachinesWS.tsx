@@ -62,9 +62,11 @@ export function MachinesWSMain(props: {
     <div className="flex flex-col gap-2 mt-4">
       Machine Status
       <div className="flex flex-wrap gap-2">
-        {props.machines.map((x) => (
-          <MachineWS key={x.id} machine={x} />
-        ))}
+        {props.machines
+          .filter((x) => x.type === "classic")
+          .map((x) => (
+            <MachineWS key={x.id} machine={x} />
+          ))}
       </div>
     </div>
   );
@@ -112,13 +114,14 @@ function MachineWS({
     if (!lastMessage?.data) return;
 
     const message = JSON.parse(lastMessage.data);
-    console.log(message.event, message);
+    // console.log(message.event, message);
 
     if (message.data.sid) {
       setSid(message.data.sid);
     }
 
     if (message.data?.prompt_id) {
+      console.log(message.event, message);
       addData(message.data.prompt_id, message);
     }
 
