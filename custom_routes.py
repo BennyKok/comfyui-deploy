@@ -280,7 +280,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         print("upload file response", response.status_code)
 
 def have_pending_upload(prompt_id):
-    if 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:
+    if 'prompt_id' in prompt_metadata and 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:
         return True
     return False
 
