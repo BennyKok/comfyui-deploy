@@ -56,6 +56,7 @@
     "react-use-websocket": "^4.5.0",
     "shikiji": "^0.9.3",
     "sonner": "^1.2.4",
+    "swr": "^2.2.4",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",

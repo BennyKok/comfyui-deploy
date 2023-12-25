@@ -8,6 +8,7 @@ import {
   MachineSelect,
   RunWorkflowButton,
   VersionSelect,
+  ViewWorkflowDetailsButton,
 } from "@/components/VersionSelect";
 import {
   Card,
@@ -47,6 +48,7 @@ export default async function Page({
               <RunWorkflowButton workflow={workflow} machines={machines} />
               <CreateDeploymentButton workflow={workflow} machines={machines} />
               <CopyWorkflowVersion workflow={workflow} />
+              <ViewWorkflowDetailsButton workflow={workflow} />
             </div>
 
             <VersionDetails workflow={workflow} />

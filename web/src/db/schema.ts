@@ -51,12 +51,12 @@ export const workflowType = z.any();
 //   ),
 // });
 
-export const workflowAPIType = z.record(
-  z.object({
-    inputs: z.record(z.any()),
-    class_type: z.string().optional(),
-  })
-);
+export const workflowAPINodeType = z.object({
+  inputs: z.record(z.any()),
+  class_type: z.string().optional(),
+});
+
+export const workflowAPIType = z.record(workflowAPINodeType);
 
 export const workflowVersionTable = dbSchema.table("workflow_versions", {
   workflow_id: uuid("workflow_id")
