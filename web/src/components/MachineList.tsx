@@ -194,6 +194,13 @@ export const columns: ColumnDef<Machine>[] = [
             description="Edit machines"
             serverAction={updateMachine}
             formSchema={addMachineSchema}
+            fieldConfig={{
+              auth_token: {
+                inputProps: {
+                  type: "password",
+                },
+              },
+            }}
           />
         </DropdownMenu>
       );
