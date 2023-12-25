@@ -68,6 +68,11 @@ export const createRun = withServerPromise(
           },
         };
         console.log(data);
+
+        if (!machine.auth_token) {
+          throw new Error("Machine auth token not found");
+        }
+
         const __result = await fetch(`${machine.endpoint}/run`, {
           method: "POST",
           headers: {

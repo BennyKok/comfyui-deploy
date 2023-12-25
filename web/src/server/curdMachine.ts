@@ -23,15 +23,13 @@ export async function getMachines() {
 }
 
 export const addMachine = withServerPromise(
-  async ({ name, endpoint, type }: z.infer<typeof addMachineSchema>) => {
+  async (data: z.infer<typeof addMachineSchema>) => {
     const { userId } = auth();
     if (!userId) return { error: "No user id" };
-    console.log(name, endpoint);
+    // console.log(name, endpoint);
     await db.insert(machinesTable).values({
+      ...data,
       user_id: userId,
-      name,
-      endpoint,
-      type,
     });
     revalidatePath("/machines");
     return { message: "Machine Added" };

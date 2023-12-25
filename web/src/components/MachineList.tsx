@@ -187,20 +187,6 @@ export const columns: ColumnDef<Machine>[] = [
             </DropdownMenuItem>
           </DropdownMenuContent>
           <UpdateModal
-            fieldConfig={{
-              name: {
-                inputProps: { defaultValue: machine.name },
-              },
-              endpoint: {
-                inputProps: { defaultValue: machine.endpoint },
-              },
-              type: {
-                inputProps: { defaultValue: machine.type },
-              },
-              auth_token: {
-                inputProps: { defaultValue: machine.auth_token ?? "" },
-              },
-            }}
             data={machine}
             open={open}
             setOpen={setOpen}

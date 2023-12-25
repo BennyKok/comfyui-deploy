@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import * as React from "react";
+import { useState } from "react";
 import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
 
 export function InsertModal<
@@ -83,7 +84,12 @@ export function UpdateModal<
   fieldConfig?: FieldConfig<z.infer<Z>>;
 }) {
   // const [open, setOpen] = React.useState(false);
+  const [values, setValues] = useState<Partial<z.infer<Z>>>({});
   const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setValues(props.data);
+  }, [props.data]);
 
   return (
     <Dialog open={props.open} onOpenChange={props.setOpen}>
@@ -96,6 +102,8 @@ export function UpdateModal<
           <DialogDescription>{props.description}</DialogDescription>
         </DialogHeader>
         <AutoForm
+          values={values}
+          onValuesChange={setValues}
           fieldConfig={props.fieldConfig}
           formSchema={props.formSchema}
           onSubmit={async (data) => {
