@@ -57,6 +57,13 @@ export default function RootLayout({
                   <NavbarRight />
                 </div>
                 <div className="flex flex-row items-center gap-2">
+                  <Button
+                    asChild
+                    variant="link"
+                    className="rounded-full aspect-square p-2 mr-4"
+                  >
+                    <a href="/docs">Docs</a>
+                  </Button>
                   <UserButton />
                   <Button
                     asChild

@@ -1,4 +1,4 @@
-import { parseJWT } from "../../../server/parseJWT";
+import { parseJWT } from "../../../../server/parseJWT";
 import { db } from "@/db/db";
 import {
   workflowAPIType,

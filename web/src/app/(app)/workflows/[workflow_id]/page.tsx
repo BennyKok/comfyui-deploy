@@ -1,5 +1,5 @@
-import { DeploymentsTable, RunsTable } from "../../../components/RunsTable";
-import { findFirstTableWithVersion } from "../../../server/findFirstTableWithVersion";
+import { DeploymentsTable, RunsTable } from "../../../../components/RunsTable";
+import { findFirstTableWithVersion } from "../../../../server/findFirstTableWithVersion";
 import { MachinesWSMain } from "@/components/MachinesWS";
 import { VersionDetails } from "@/components/VersionDetails";
 import {

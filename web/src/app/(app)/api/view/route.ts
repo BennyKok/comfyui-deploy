@@ -1,4 +1,4 @@
-import { getFileDownloadUrl } from "../../../server/getFileDownloadUrl";
+import { getFileDownloadUrl } from "../../../../server/getFileDownloadUrl";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {

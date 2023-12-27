@@ -1,4 +1,4 @@
-import { parseDataSafe } from "../../../lib/parseDataSafe";
+import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { db } from "@/db/db";
 import { workflowRunOutputs, workflowRunsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";

@@ -96,7 +96,7 @@ export function MachineSelect({
         setMachine(v);
       }}
     >
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[180px] text-start">
         <SelectValue placeholder="Select a machine" />
       </SelectTrigger>
       <SelectContent>

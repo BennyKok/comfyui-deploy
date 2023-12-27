@@ -1,4 +1,4 @@
-import { parseDataSafe } from "../../../lib/parseDataSafe";
+import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { handleResourceUpload } from "@/server/resource";
 import { NextResponse } from "next/server";
 import { z } from "zod";
