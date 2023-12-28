@@ -48,6 +48,10 @@ sys.stdout = StreamToLogger(logging.INFO)
 sys.stderr = StreamToLogger(logging.ERROR)
 
 try:
+    # Get the absolute path of the script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Change the current working directory to the script's directory
+    os.chdir(script_dir)
     current_git_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
     print(f"** Comfy Deploy Revision: {current_git_commit}")
 except Exception as e:
