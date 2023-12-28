@@ -309,6 +309,17 @@ export function CopyWorkflowVersion({
       <DropdownMenuContent className="w-56">
         <DropdownMenuItem
           onClick={async () => {
+            if (!workflow) return;
+
+            // console.log(workflow_version?.workflow);
+
+            workflow_version?.workflow?.nodes.forEach((x: any) => {
+              if (x?.type === "ComfyDeploy") {
+                x.widgets_values[1] = workflow.id;
+                x.widgets_values[2] = workflow_version.version;
+              }
+            });
+
             navigator.clipboard.writeText(
               JSON.stringify(workflow_version?.workflow)
             );
@@ -374,7 +385,7 @@ export function ViewWorkflowDetailsButton({
   const groupedByAuxName = useMemo(() => {
     if (!data) return null;
 
-    console.log(data);
+    // console.log(data);
 
     const workflow_version = getWorkflowVersionFromVersionIndex(
       workflow,
@@ -395,7 +406,7 @@ export function ViewWorkflowDetailsButton({
       })
       .filter((item) => item !== null);
 
-    console.log(crossCheckedApi);
+    // console.log(crossCheckedApi);
 
     const groupedByAuxName = crossCheckedApi.reduce(
       (acc, data) => {
@@ -403,7 +414,7 @@ export function ViewWorkflowDetailsButton({
 
         const { node, classTypeData } = data;
         const auxName = classTypeData[1][1].title_aux;
-        console.log(auxName);
+        // console.log(auxName);
         if (!acc[auxName]) {
           acc[auxName] = {
             url: classTypeData[0],
@@ -422,7 +433,7 @@ export function ViewWorkflowDetailsButton({
       >
     );
 
-    console.log(groupedByAuxName);
+    // console.log(groupedByAuxName);
 
     return groupedByAuxName;
   }, [version, data]);
