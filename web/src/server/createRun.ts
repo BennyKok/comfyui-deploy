@@ -58,49 +58,7 @@ export const createRun = withServerPromise(
       file_upload_endpoint: `${origin}/api/file-upload`,
     };
 
-    switch (machine.type) {
-      case "runpod-serverless":
-        prompt_id = v4();
-        const data = {
-          input: {
-            ...shareData,
-            prompt_id: prompt_id,
-          },
-        };
-        console.log(data);
-
-        if (!machine.auth_token) {
-          throw new Error("Machine auth token not found");
-        }
-
-        const __result = await fetch(`${machine.endpoint}/run`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${machine.auth_token}`,
-          },
-          body: JSON.stringify(data),
-          cache: "no-store",
-        });
-        console.log(__result);
-        if (!__result.ok)
-          throw new Error(`Error creating run, ${__result.statusText}`);
-        console.log(data, __result);
-        break;
-      case "classic":
-        const body = shareData;
-        const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
-        const _result = await fetch(comfyui_endpoint, {
-          method: "POST",
-          body: JSON.stringify(body),
-          cache: "no-store",
-        });
-        if (!_result.ok)
-          throw new Error(`Error creating run, ${_result.statusText}`);
-        const result = await ComfyAPI_Run.parseAsync(await _result.json());
-        prompt_id = result.prompt_id;
-        break;
-    }
+    prompt_id = v4();
 
     // Add to our db
     const workflow_run = await db
@@ -116,6 +74,76 @@ export const createRun = withServerPromise(
       .returning();
 
     revalidatePath(`/${workflow_version_data.workflow_id}`);
+
+    try {
+      switch (machine.type) {
+        case "runpod-serverless":
+          const data = {
+            input: {
+              ...shareData,
+              prompt_id: prompt_id,
+            },
+          };
+
+          if (
+            !machine.auth_token &&
+            !machine.endpoint.includes("localhost") &&
+            !machine.endpoint.includes("127.0.0.1")
+          ) {
+            throw new Error("Machine auth token not found");
+          }
+
+          const __result = await fetch(`${machine.endpoint}/run`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${machine.auth_token}`,
+            },
+            body: JSON.stringify(data),
+            cache: "no-store",
+          });
+          console.log(__result);
+          if (!__result.ok)
+            throw new Error(`Error creating run, ${__result.statusText}`);
+          console.log(data, __result);
+          break;
+        case "classic":
+          const body = {
+            ...shareData,
+            prompt_id: prompt_id,
+          };
+          // console.log(body);
+          const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
+          const _result = await fetch(comfyui_endpoint, {
+            method: "POST",
+            body: JSON.stringify(body),
+            cache: "no-store",
+          });
+          // console.log(_result);
+
+          if (!_result.ok) {
+            let message = `Error creating run, ${_result.statusText}`;
+            try {
+              const result = await ComfyAPI_Run.parseAsync(
+                await _result.json()
+              );
+              message += ` ${result.node_errors}`;
+            } catch (error) {}
+            throw new Error(message);
+          }
+          // prompt_id = result.prompt_id;
+          break;
+      }
+    } catch (e) {
+      console.error(e);
+      await db
+        .update(workflowRunsTable)
+        .set({
+          status: "failed",
+        })
+        .where(eq(workflowRunsTable.id, workflow_run[0].id));
+      throw e;
+    }
 
     return {
       workflow_run_id: workflow_run[0].id,

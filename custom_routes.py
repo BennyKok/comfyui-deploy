@@ -94,19 +94,24 @@ async def comfy_deploy_run(request):
         "prompt_id": prompt_id
     }
 
+    prompt_metadata[prompt_id] = {
+        'status_endpoint': data.get('status_endpoint'),
+        'file_upload_endpoint': data.get('file_upload_endpoint'),
+    }
+
     try:
         res = post_prompt(prompt)
     except Exception as e:
         error_type = type(e).__name__
-        stack_trace = traceback.format_exc().strip().split('\n')[-2]
+        stack_trace_short = traceback.format_exc().strip().split('\n')[-2]
+        stack_trace = traceback.format_exc().strip()
         print(f"error: {error_type}, {e}")
-        print(f"stack trace: {stack_trace}")
-        return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace}")
-
-    prompt_metadata[res['prompt_id']] = {
-        'status_endpoint': data.get('status_endpoint'),
-        'file_upload_endpoint': data.get('file_upload_endpoint'),
-    }
+        print(f"stack trace: {stack_trace_short}")
+        asyncio.create_task(update_run_with_output(prompt_id, {
+            "error_type": error_type,
+            "stack_trace": stack_trace
+        }))
+        return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
 
     status = 200
     if "error" in res:
