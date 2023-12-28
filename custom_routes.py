@@ -342,7 +342,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
 
             files = data.get('files', [])
             for file in files:
-                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=image.get("content_type", "image/png"))
+                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=file.get("content_type", "image/png"))
                 
             if have_upload:
                 await update_file_status(prompt_id, data, False, node_id=node_id)
