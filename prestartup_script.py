@@ -46,3 +46,9 @@ class StreamToLogger():
 # Redirect stdout and stderr to the logger
 sys.stdout = StreamToLogger(logging.INFO)
 sys.stderr = StreamToLogger(logging.ERROR)
+
+try:
+    current_git_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
+    print(f"** Comfy Deploy Revision: {current_git_commit}")
+except Exception as e:
+    print(f"** Comfy Deploy failed to get current git commit: {str(e)}")
