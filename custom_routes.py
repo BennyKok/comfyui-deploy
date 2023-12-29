@@ -250,6 +250,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         output_dir = folder_paths.get_directory_by_type(type)
 
     if output_dir is None:
+        print(filename, "Upload failed: output_dir is None")
         return 
 
     if subfolder != None:
