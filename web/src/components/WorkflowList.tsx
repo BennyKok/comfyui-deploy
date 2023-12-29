@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -192,8 +193,8 @@ export function WorkflowList({ data }: { data: Payment[] }) {
   });
 
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
+    <div className="grid grid-rows-[auto,1fr,auto] h-full">
+      <div className="flex flex-row w-full items-center py-4">
         <Input
           placeholder="Filter workflows..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -229,9 +230,9 @@ export function WorkflowList({ data }: { data: Payment[] }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border overflow-x-auto w-full">
+      <ScrollArea className="h-full w-full rounded-md border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-background top-0 sticky">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -278,8 +279,8 @@ export function WorkflowList({ data }: { data: Payment[] }) {
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      </ScrollArea>
+      <div className="flex flex-row items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.

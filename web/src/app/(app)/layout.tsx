@@ -46,7 +46,7 @@ export default function RootLayout({
               <div className="z-[-1] fixed h-full w-full bg-white">
                 <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
               </div>
-              <div className="w-full h-18 flex items-center justify-between gap-4 p-4 border-b border-gray-200">
+              <div className="sticky w-full h-18 flex items-center justify-between gap-4 p-4 border-b border-gray-200">
                 <div className="flex flex-row items-center gap-4">
                   <a
                     className="font-bold text-md md:text-lg hover:underline"
@@ -80,7 +80,7 @@ export default function RootLayout({
                 </div>
                 {/* <div></div> */}
               </div>
-              <div className="md:px-10 px-6 w-full min-h-[calc(100dvh-73px)]">
+              <div className="md:px-10 px-6 w-full h-[calc(100dvh-73px)]">
                 {children}
               </div>
               <Toaster richColors />

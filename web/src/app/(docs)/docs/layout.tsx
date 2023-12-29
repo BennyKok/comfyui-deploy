@@ -4,6 +4,7 @@ import { Layout } from "@/components/docs/Layout";
 import { type Section } from "@/components/docs/SectionProvider";
 import glob from "fast-glob";
 import { type Metadata } from "next";
+import PlausibleProvider from "next-plausible";
 
 export const metadata: Metadata = {
   title: {
@@ -28,6 +29,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
+      <head>
+        {process.env.PLAUSIBLE_DOMAIN && (
+          <PlausibleProvider domain={process.env.PLAUSIBLE_DOMAIN} />
+        )}
+      </head>
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">

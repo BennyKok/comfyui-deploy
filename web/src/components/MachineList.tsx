@@ -91,7 +91,7 @@ export const columns: ColumnDef<Machine>[] = [
     cell: ({ row }) => {
       return (
         // <a className="hover:underline" href={`/${row.original.id}`}>
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row gap-2 items-center">
           <div>{row.getValue("name")}</div>
           {row.original.disabled && (
             <Badge variant="destructive">Disabled</Badge>
