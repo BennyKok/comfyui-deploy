@@ -8,6 +8,7 @@ export function StatusBadge({
   status: Awaited<ReturnType<typeof findAllRuns>>[0]["status"];
 }) {
   switch (status) {
+    case "uploading":
     case "running":
       return (
         <Badge variant="secondary" className="gap-2 w-fit">

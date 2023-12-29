@@ -26,7 +26,11 @@ export function LiveStatus({
   //   status = "success";
   // } else
   if (data?.json.event == "executing") {
-    status = "running";
+    if (data?.json?.data?.node == undefined) {
+      status = "success";
+    } else {
+      status = "running";
+    }
   } else if (data?.json.event == "uploading") {
     status = "uploading";
   } else if (data?.json.event == "success") {

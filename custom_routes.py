@@ -206,15 +206,19 @@ async def send_json_override(self, event, data, sid=None):
         update_run(prompt_id, Status.RUNNING)
 
     # the last executing event is none, then the workflow is finished
-    if event == 'executing' and data.get('node') is None and not have_pending_upload(prompt_id):
-        update_run(prompt_id, Status.SUCCESS)
+    if event == 'executing' and data.get('node') is None:
+        mark_prompt_done(prompt_id=prompt_id)
+        if not have_pending_upload(prompt_id):
+            update_run(prompt_id, Status.SUCCESS)
 
     if event == 'execution_error':
         update_run(prompt_id, Status.FAILED)
         asyncio.create_task(update_run_with_output(prompt_id, data))
+        # await update_run_with_output(prompt_id, data)
 
     if event == 'executed' and 'node' in data and 'output' in data:
         asyncio.create_task(update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node')))
+        # await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # update_run_with_output(prompt_id, data.get('output'))
 
 
@@ -302,7 +306,22 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
 
 def have_pending_upload(prompt_id):
     if 'prompt_id' in prompt_metadata and 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:
+        print("have pending upload ", len(prompt_metadata[prompt_id]['uploading_nodes']))
         return True
+
+    print("no pending upload")
+    return False
+
+def mark_prompt_done(prompt_id):
+    if prompt_id in prompt_metadata:
+        prompt_metadata[prompt_id]["done"] = True
+        print("Prompt done")
+
+def is_prompt_done(prompt_id):
+    if prompt_id in prompt_metadata and "done" in prompt_metadata[prompt_id]:
+        if prompt_metadata[prompt_id]["done"] == True:
+            return True
+    
     return False
 
 async def update_file_status(prompt_id, data, uploading, have_error=False, node_id=None):
@@ -315,7 +334,7 @@ async def update_file_status(prompt_id, data, uploading, have_error=False, node_
         else:
             prompt_metadata[prompt_id]['uploading_nodes'].discard(node_id)
 
-    # print(prompt_metadata[prompt_id])
+    print(prompt_metadata[prompt_id]['uploading_nodes'])
     # Update the remote status
 
     if have_error:
@@ -326,16 +345,18 @@ async def update_file_status(prompt_id, data, uploading, have_error=False, node_
         return
 
     # if there are still nodes that are uploading, then we set the status to uploading
-    if uploading and have_pending_upload(prompt_id):
+    if uploading:
         if prompt_metadata[prompt_id]['status'] != Status.UPLOADING:
             update_run(prompt_id, Status.UPLOADING)
+            print("Status: UPLOADING")
             await send("uploading", {
                 "prompt_id": prompt_id,
             })
     
     # if there are no nodes that are uploading, then we set the status to success
-    elif not uploading:
+    elif not uploading and not have_pending_upload(prompt_id) and is_prompt_done(prompt_id=prompt_id):
         update_run(prompt_id, Status.SUCCESS)
+        print("Status: SUCCUSS")
         await send("success", {
             "prompt_id": prompt_id,
         })
@@ -352,7 +373,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
         try:
             have_upload = 'images' in data or 'files' in data
 
-            print("have_upload", have_upload)
+            print("\nhave_upload", have_upload, node_id)
 
             if have_upload:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
