@@ -124,7 +124,7 @@ async def comfy_deploy_run(request):
             }
         })
     
-    if "node_errors" in res:
+    if "node_errors" in res and res["node_errors"]:
         status = 400
         await update_run_with_output(prompt_id, {
             "error": {
