@@ -107,15 +107,30 @@ async def comfy_deploy_run(request):
         stack_trace = traceback.format_exc().strip()
         print(f"error: {error_type}, {e}")
         print(f"stack trace: {stack_trace_short}")
-        asyncio.create_task(update_run_with_output(prompt_id, {
-            "error_type": error_type,
-            "stack_trace": stack_trace
-        }))
+        await update_run_with_output(prompt_id, {
+            "error": {
+                "error_type": error_type,
+                "stack_trace": stack_trace
+            }
+        })
         return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
 
     status = 200
     if "error" in res:
         status = 400
+        await update_run_with_output(prompt_id, {
+            "error": {
+                **res
+            }
+        })
+    
+    if "node_errors" in res:
+        status = 400
+        await update_run_with_output(prompt_id, {
+            "error": {
+                **res
+            }
+        })
 
     return web.json_response(res, status=status)
 
