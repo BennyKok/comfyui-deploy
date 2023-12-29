@@ -15,7 +15,7 @@ const s3Client = new S3({
     accessKeyId: process.env.SPACES_KEY!,
     secretAccessKey: process.env.SPACES_SECRET!,
   },
-  forcePathStyle: true,
+  forcePathStyle: process.env.SPACES_CDN_FORCE_PATH_STYLE === "true",
 });
 
 export type ResourceObject = {
