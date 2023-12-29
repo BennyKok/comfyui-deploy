@@ -116,21 +116,26 @@ async def comfy_deploy_run(request):
         return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
 
     status = 200
-    if "error" in res:
-        status = 400
-        await update_run_with_output(prompt_id, {
-            "error": {
-                **res
-            }
-        })
+    # if "error" in res:
+    #     status = 400
+    #     await update_run_with_output(prompt_id, {
+    #         "error": {
+    #             **res
+    #         }
+    #     })
     
     if "node_errors" in res and res["node_errors"]:
+        # Even tho there are node_errors it can still be run
         status = 400
         await update_run_with_output(prompt_id, {
             "error": {
                 **res
             }
         })
+
+        # When there are critical errors, the prompt is actually not run
+        if "error" in res:
+            await update_run(prompt_id, Status.FAILED)
 
     return web.json_response(res, status=status)
 
