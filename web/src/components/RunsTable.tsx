@@ -1,5 +1,9 @@
-import { findAllDeployments, findAllRuns } from "../server/findAllRuns";
+import {
+  findAllDeployments,
+  findAllRunsWithCounts,
+} from "../server/findAllRuns";
 import { DeploymentDisplay } from "./DeploymentDisplay";
+import { PaginationControl } from "./PaginationControl";
 import { RunDisplay } from "./RunDisplay";
 import {
   Table,
@@ -9,29 +13,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { parseAsInteger } from "next-usequerystate";
 
-export async function RunsTable(props: { workflow_id: string }) {
-  const allRuns = await findAllRuns(props.workflow_id);
+const itemPerPage = 4;
+const pageParser = parseAsInteger.withDefault(1);
+
+export async function RunsTable(props: {
+  workflow_id: string;
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // await new Promise((resolve) => setTimeout(resolve, 5000));
+  const page = pageParser.parseServerSide(
+    props.searchParams?.page ?? undefined
+  );
+  const { allRuns, total } = await findAllRunsWithCounts({
+    workflow_id: props.workflow_id,
+    limit: itemPerPage,
+    offset: (page - 1) * itemPerPage,
+  });
   return (
-    <div className="overflow-auto h-[400px] w-full">
-      <Table className="">
-        <TableCaption>A list of your recent runs.</TableCaption>
-        <TableHeader className="bg-background top-0 sticky">
-          <TableRow>
-            <TableHead className="w-[100px]">Number</TableHead>
-            <TableHead className="">Machine</TableHead>
-            <TableHead className="">Time</TableHead>
-            <TableHead className="w-[100px]">Version</TableHead>
-            <TableHead className="">Live Status</TableHead>
-            <TableHead className=" text-right">Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {allRuns.map((run) => (
-            <RunDisplay run={run} key={run.id} />
-          ))}
-        </TableBody>
-      </Table>
+    <div>
+      <div className="overflow-auto h-[400px] w-full">
+        <Table className="">
+          {/* <TableCaption>A list of your recent runs.</TableCaption> */}
+          <TableHeader className="bg-background top-0 sticky">
+            <TableRow>
+              <TableHead className="w-[100px]">Number</TableHead>
+              <TableHead className="">Machine</TableHead>
+              <TableHead className="">Time</TableHead>
+              <TableHead className="w-[100px]">Version</TableHead>
+              <TableHead className="">Live Status</TableHead>
+              <TableHead className=" text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allRuns.map((run) => (
+              <RunDisplay run={run} key={run.id} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <PaginationControl
+        totalPage={Math.ceil(total / itemPerPage)}
+        currentPage={page}
+      />
     </div>
   );
 }
