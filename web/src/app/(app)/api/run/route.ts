@@ -10,6 +10,8 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const Request = z.object({
   deployment_id: z.string(),
   inputs: z.record(z.string()).optional(),
