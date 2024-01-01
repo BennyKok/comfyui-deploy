@@ -18,6 +18,7 @@ import {
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { getMachines } from "@/server/curdMachine";
 import { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
+import { redirect } from "next/navigation";
 
 export default async function Page({
   params,

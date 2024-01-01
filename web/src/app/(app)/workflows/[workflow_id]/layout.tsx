@@ -15,8 +15,8 @@ export default async function Layout({
         {workflow}
         {deployment}
       </div>
-
       {runs}
+      {children}
     </div>
   );
 }
