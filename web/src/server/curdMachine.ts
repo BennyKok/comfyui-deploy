@@ -11,13 +11,18 @@ import "server-only";
 import type { z } from "zod";
 
 export async function getMachines() {
-  const { userId } = auth();
+  const { userId, orgId } = auth();
   if (!userId) throw new Error("No user id");
   const machines = await db
     .select()
     .from(machinesTable)
     .where(
-      and(eq(machinesTable.user_id, userId), eq(machinesTable.disabled, false))
+      and(
+        orgId
+          ? eq(machinesTable.org_id, orgId)
+          : eq(machinesTable.user_id, userId),
+        eq(machinesTable.disabled, false)
+      )
     );
   return machines;
 }
