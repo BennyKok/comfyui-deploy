@@ -16,7 +16,7 @@ https://github.com/BennyKok/comfyui-deploy/assets/18395202/85f85325-a4bb-446d-aa
 
 1. `cd custom_nodes`
 2. `git clone https://github.com/BennyKok/comfyui-deploy.git`
-3. Got to (https://comfydeploy.com) or a self-hosted version
+3. Go to (https://comfydeploy.com) or a self-hosted version
    - Machines -> Add Machines
    - Enter a name and the URL of your machines (set up Ngrok for a public URL for your machines)
 
