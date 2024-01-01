@@ -69,7 +69,7 @@ export async function getRunsData(user: APIKeyUserType, run_id: string) {
     }
   } else {
     // is user api call, check user only
-    if (data.workflow.user_id != user.user_id) {
+    if (data.workflow.user_id != user.user_id && data.workflow.org_id == null) {
       return null;
     }
   }

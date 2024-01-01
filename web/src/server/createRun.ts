@@ -68,7 +68,10 @@ export const createRun = withServerPromise(
         }
       } else {
         // is user api call, check user only
-        if (apiUser.user_id != workflow_version_data.workflow.user_id) {
+        if (
+          apiUser.user_id != workflow_version_data.workflow.user_id &&
+          workflow_version_data.workflow.org_id == null
+        ) {
           throw new Error("Workflow not found");
         }
       }
