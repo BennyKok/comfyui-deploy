@@ -212,7 +212,9 @@ export const deploymentsTable = dbSchema.table("deployments", {
     .references(() => workflowVersionTable.id),
   workflow_id: uuid("workflow_id")
     .notNull()
-    .references(() => workflowTable.id),
+    .references(() => workflowTable.id, {
+      onDelete: "cascade",
+    }),
   machine_id: uuid("machine_id")
     .notNull()
     .references(() => machinesTable.id),
