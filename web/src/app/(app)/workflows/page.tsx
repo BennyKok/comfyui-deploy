@@ -2,14 +2,14 @@ import { WorkflowList } from "@/components/WorkflowList";
 import { db } from "@/db/db";
 import { usersTable, workflowTable, workflowVersionTable } from "@/db/schema";
 import { auth, clerkClient } from "@clerk/nextjs";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 export default function Home() {
   return <WorkflowServer />;
 }
 
 async function WorkflowServer() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
 
   if (!userId) {
     return <div>No auth</div>;
@@ -36,7 +36,10 @@ async function WorkflowServer() {
       },
     },
     orderBy: desc(workflowTable.updated_at),
-    where: eq(workflowTable.user_id, userId),
+    where:
+      orgId != undefined
+        ? eq(workflowTable.org_id, orgId)
+        : and(eq(workflowTable.user_id, userId), isNull(workflowTable.org_id)),
   });
 
   return (

@@ -1,8 +1,8 @@
 import "./globals.css";
-import { NavbarRight } from "@/components/NavbarRight";
+import { NavbarMenu } from "@/components/NavbarMenu";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, UserButton } from "@clerk/nextjs";
+import { ClerkProvider, OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { Github } from "lucide-react";
 import type { Metadata } from "next";
 import meta from "next-gen/config";
@@ -54,9 +54,16 @@ export default function RootLayout({
                   >
                     {meta.name}
                   </a>
-                  <NavbarRight />
+                  <OrganizationSwitcher
+                    appearance={{
+                      elements: {
+                        rootBox: "flex items-center justify-center",
+                      },
+                    }}
+                  />
                 </div>
                 <div className="flex flex-row items-center gap-2">
+                  <NavbarMenu />
                   <Button
                     asChild
                     variant="link"

@@ -2,7 +2,9 @@
 
 import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
+import type { MachineType, WorkflowVersionType } from "@/db/schema";
 import { machinesTable, workflowRunsTable } from "@/db/schema";
+import type { APIKeyUserType } from "@/server/APIKeyBodyRequest";
 import { ComfyAPI_Run } from "@/types/ComfyAPI_Run";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -10,33 +12,66 @@ import "server-only";
 import { v4 } from "uuid";
 
 export const createRun = withServerPromise(
-  async (
-    origin: string,
-    workflow_version_id: string,
-    machine_id: string,
-    inputs?: Record<string, string>,
-    isManualRun?: boolean
-  ) => {
-    const machine = await db.query.machinesTable.findFirst({
-      where: and(
-        eq(machinesTable.id, machine_id),
-        eq(machinesTable.disabled, false)
-      ),
-    });
+  async ({
+    origin,
+    workflow_version_id,
+    machine_id,
+    inputs,
+    isManualRun,
+    apiUser,
+  }: {
+    origin: string;
+    workflow_version_id: string | WorkflowVersionType;
+    machine_id: string | MachineType;
+    inputs?: Record<string, string>;
+    isManualRun?: boolean;
+    apiUser?: APIKeyUserType;
+  }) => {
+    const machine =
+      typeof machine_id === "string"
+        ? await db.query.machinesTable.findFirst({
+            where: and(
+              eq(machinesTable.id, machine_id),
+              eq(machinesTable.disabled, false)
+            ),
+          })
+        : machine_id;
 
     if (!machine) {
       throw new Error("Machine not found");
     }
 
-    const workflow_version_data = await db.query.workflowVersionTable.findFirst(
-      {
-        where: eq(workflowRunsTable.id, workflow_version_id),
-      }
-    );
+    const workflow_version_data =
+      typeof workflow_version_id === "string"
+        ? await db.query.workflowVersionTable.findFirst({
+            where: eq(workflowRunsTable.id, workflow_version_id),
+            with: {
+              workflow: {
+                columns: {
+                  org_id: true,
+                  user_id: true,
+                },
+              },
+            },
+          })
+        : workflow_version_id;
 
     if (!workflow_version_data) {
       throw new Error("Workflow version not found");
     }
+
+    if (apiUser)
+      if (apiUser.org_id) {
+        // is org api call, check org only
+        if (apiUser.org_id != workflow_version_data.workflow.org_id) {
+          throw new Error("Workflow not found");
+        }
+      } else {
+        // is user api call, check user only
+        if (apiUser.user_id != workflow_version_data.workflow.user_id) {
+          throw new Error("Workflow not found");
+        }
+      }
 
     const workflow_api = workflow_version_data.workflow_api;
 
@@ -68,7 +103,7 @@ export const createRun = withServerPromise(
         workflow_id: workflow_version_data.workflow_id,
         workflow_version_id: workflow_version_data.id,
         workflow_inputs: inputs,
-        machine_id,
+        machine_id: machine.id,
         origin: isManualRun ? "manual" : "api",
       })
       .returning();

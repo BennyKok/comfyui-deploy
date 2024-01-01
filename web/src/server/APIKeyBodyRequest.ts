@@ -5,3 +5,5 @@ export const APIKeyBodyRequest = z.object({
   org_id: z.string().optional(),
   iat: z.number(),
 });
+
+export type APIKeyUserType = z.infer<typeof APIKeyBodyRequest>;

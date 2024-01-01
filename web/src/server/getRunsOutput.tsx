@@ -3,7 +3,8 @@
 import { RunOutputs } from "@/components/RunOutputs";
 import { db } from "@/db/db";
 import { workflowRunOutputs, workflowRunsTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import type { APIKeyUserType } from "@/server/APIKeyBodyRequest";
+import { and, eq } from "drizzle-orm";
 
 export async function getRunsOutputDisplay(run_id: string) {
   return <RunOutputs run_id={run_id} />;
@@ -17,11 +18,38 @@ export async function getRunsOutput(run_id: string) {
     .where(eq(workflowRunOutputs.run_id, run_id));
 }
 
-export async function getRunsData(run_id: string) {
-  // throw new Error("Not implemented");
-  return await db.query.workflowRunsTable.findFirst({
-    where: eq(workflowRunsTable.id, run_id),
+export async function getRunsData(user: APIKeyUserType, run_id: string) {
+  const data = await db.query.workflowRunsTable.findFirst({
+    where: and(
+      eq(workflowRunsTable.id, run_id)
+      // inArray(
+      //   workflowRunsTable.workflow_id,
+      //   db
+      //     .select({
+      //       id: workflowTable.id,
+      //     })
+      //     .from(workflowTable)
+      //     .innerJoin(
+      //       workflowRunsTable,
+      //       eq(workflowTable.id, workflowRunsTable.workflow_id)
+      //     )
+      //     .where(
+      //       and(
+      //         eq(workflowTable.id, workflowRunsTable.workflow_id),
+      //         user.org_id
+      //           ? eq(workflowTable.org_id, user.org_id)
+      //           : eq(workflowTable.user_id, user.user_id!)
+      //       )
+      //     )
+      // )
+    ),
     with: {
+      workflow: {
+        columns: {
+          org_id: true,
+          user_id: true,
+        },
+      },
       outputs: {
         columns: {
           data: true,
@@ -29,4 +57,22 @@ export async function getRunsData(run_id: string) {
       },
     },
   });
+
+  if (!data) {
+    return null;
+  }
+
+  if (user.org_id) {
+    // is org api call, check org only
+    if (data.workflow.org_id != user.org_id) {
+      return null;
+    }
+  } else {
+    // is user api call, check user only
+    if (data.workflow.user_id != user.user_id) {
+      return null;
+    }
+  }
+
+  return data;
 }

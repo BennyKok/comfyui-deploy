@@ -25,26 +25,57 @@ async function checkToken(request: Request) {
   const token = request.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
   const userData = token ? parseJWT(token) : undefined;
   if (!userData || token === undefined) {
-    return new NextResponse("Invalid or expired token", {
-      status: 401,
-    });
+    return {
+      error: new NextResponse("Invalid or expired token", {
+        status: 401,
+      }),
+    };
   } else {
     const revokedKey = await isKeyRevoked(token);
     if (revokedKey)
-      return new NextResponse("Revoked token", {
-        status: 401,
-      });
+      return {
+        error: new NextResponse("Revoked token", {
+          status: 401,
+        }),
+      };
   }
+
+  return {
+    data: userData,
+  };
 }
 
 export async function GET(request: Request) {
-  const invalidRequest = await checkToken(request);
-  if (invalidRequest) return invalidRequest;
+  const apiKeyTokenData = await checkToken(request);
+  if (apiKeyTokenData.error) return apiKeyTokenData.error;
 
   const [data, error] = await parseDataSafe(Request2, request);
   if (!data || error) return error;
 
-  const run = await getRunsData(data.run_id);
+  // return NextResponse.json(
+  //   await db
+  //     .select()
+  //     .from(workflowTable)
+  //     .innerJoin(
+  //       workflowRunsTable,
+  //       eq(workflowTable.id, workflowRunsTable.workflow_id)
+  //     )
+  //     .where(
+  //       and(
+  //         eq(workflowTable.id, workflowRunsTable.workflow_id),
+  //         apiKeyTokenData.data.org_id
+  //           ? eq(workflowTable.org_id, apiKeyTokenData.data.org_id)
+  //           : eq(workflowTable.user_id, apiKeyTokenData.data.user_id!)
+  //       )
+  //     ),
+  //   {
+  //     status: 200,
+  //   }
+  // );
+
+  const run = await getRunsData(apiKeyTokenData.data, data.run_id);
+
+  if (!run) return new NextResponse("Run not found", { status: 404 });
 
   if (run?.status === "success" && run?.outputs?.length > 0) {
     for (let i = 0; i < run.outputs.length; i++) {
@@ -74,8 +105,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const invalidRequest = await checkToken(request);
-  if (invalidRequest) return invalidRequest;
+  const apiKeyTokenData = await checkToken(request);
+  if (apiKeyTokenData.error) return apiKeyTokenData.error;
 
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
@@ -87,16 +118,31 @@ export async function POST(request: Request) {
   try {
     const deploymentData = await db.query.deploymentsTable.findFirst({
       where: eq(deploymentsTable.id, deployment_id),
+      with: {
+        machine: true,
+        version: {
+          with: {
+            workflow: {
+              columns: {
+                org_id: true,
+                user_id: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!deploymentData) throw new Error("Deployment not found");
 
-    const run_id = await createRun(
+    const run_id = await createRun({
       origin,
-      deploymentData.workflow_version_id,
-      deploymentData.machine_id,
-      inputs
-    );
+      workflow_version_id: deploymentData.version,
+      machine_id: deploymentData.machine,
+      inputs,
+      isManualRun: false,
+      apiUser: apiKeyTokenData.data,
+    });
 
     if ("error" in run_id) throw new Error(run_id.error);
 

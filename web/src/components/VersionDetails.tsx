@@ -29,7 +29,7 @@ export function VersionDetails({
 
   return (
     <div className="mt-4">
-      Workflow Details
+      Workflow Inputs
       <div className="border rounded-lg p-2">
         {inputs && inputs.length > 0 ? (
           <div className="flex flex-col gap-2">

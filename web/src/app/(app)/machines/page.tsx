@@ -2,14 +2,14 @@ import { MachineList } from "@/components/MachineList";
 import { db } from "@/db/db";
 import { machinesTable } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNull, and } from "drizzle-orm";
 
 export default function Page() {
   return <MachineListServer />;
 }
 
 async function MachineListServer() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
 
   if (!userId) {
     return <div>No auth</div>;
@@ -17,7 +17,10 @@ async function MachineListServer() {
 
   const machines = await db.query.machinesTable.findMany({
     orderBy: desc(machinesTable.updated_at),
-    where: eq(machinesTable.user_id, userId),
+    where:
+      orgId != undefined
+        ? eq(machinesTable.org_id, orgId)
+        : and(eq(machinesTable.user_id, userId), isNull(machinesTable.org_id)),
   });
 
   return (

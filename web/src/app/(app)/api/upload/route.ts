@@ -79,6 +79,7 @@ export async function POST(request: Request) {
         .values({
           user_id,
           name: workflow_name,
+          org_id: org_id,
         })
         .returning();
 

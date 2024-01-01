@@ -29,6 +29,7 @@ export const workflowTable = dbSchema.table("workflows", {
       onDelete: "cascade",
     })
     .notNull(),
+  org_id: text("org_id"),
   name: text("name").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -144,6 +145,10 @@ export const workflowRunRelations = relations(
       references: [workflowVersionTable.id],
     }),
     outputs: many(workflowRunOutputs),
+    workflow: one(workflowTable, {
+      fields: [workflowRunsTable.workflow_id],
+      references: [workflowTable.id],
+    }),
   })
 );
 
@@ -180,6 +185,7 @@ export const machinesTable = dbSchema.table("machines", {
     })
     .notNull(),
   name: text("name").notNull(),
+  org_id: text("org_id"),
   endpoint: text("endpoint").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -244,3 +250,4 @@ export const apiKeyTable = dbSchema.table("api_keys", {
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
+export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;

@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 
-export function NavbarRight() {
+export function NavbarMenu() {
   const pathnames = usePathname();
   const pathname = `/${pathnames.split("/")[1]}`;
 
@@ -34,10 +34,11 @@ export function NavbarRight() {
   ];
 
   return (
-    <div>
+    <div className="mr-2">
+      {/* <div className="w-full h-full absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"> */}
       <Tabs
         defaultValue={pathname}
-        className="w-[300px] hidden lg:flex"
+        className="w-[300px] hidden lg:flex pointer-events-auto"
         onValueChange={(value) => {
           router.push(value);
         }}
@@ -50,6 +51,7 @@ export function NavbarRight() {
           ))}
         </TabsList>
       </Tabs>
+      {/* </div> */}
 
       <div className="w-[100px] flex lg:hidden">
         <Select

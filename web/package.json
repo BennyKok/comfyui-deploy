@@ -61,6 +61,7 @@
     "lucide-react": "^0.294.0",
     "mdast-util-to-string": "^4.0.0",
     "mdx-annotations": "^0.1.4",
+    "mitata": "^0.1.6",
     "nanoid": "^5.0.4",
     "next": "14.0.3",
     "next-plausible": "^3.12.0",
