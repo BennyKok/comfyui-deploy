@@ -115,6 +115,27 @@ export const createRun = withServerPromise(
 
     try {
       switch (machine.type) {
+        case "modal-serverless":
+          const _data = {
+            input: {
+              ...shareData,
+              prompt_id: prompt_id,
+            },
+          };
+
+          const ___result = await fetch(`${machine.endpoint}/run`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(_data),
+            cache: "no-store",
+          });
+          console.log(___result);
+          if (!___result.ok)
+            throw new Error(`Error creating run, ${___result.statusText}`);
+          console.log(_data, ___result);
+          break;
         case "runpod-serverless":
           const data = {
             input: {

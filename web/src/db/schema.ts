@@ -105,6 +105,7 @@ export const workflowRunOrigin = pgEnum("workflow_run_origin", [
 export const machinesType = pgEnum("machine_type", [
   "classic",
   "runpod-serverless",
+  "modal-serverless",
 ]);
 
 // We still want to keep the workflow run record.
