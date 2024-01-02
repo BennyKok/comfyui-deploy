@@ -133,7 +133,11 @@ export const createRun = withServerPromise(
           });
           console.log(___result);
           if (!___result.ok)
-            throw new Error(`Error creating run, ${___result.statusText}`);
+            throw new Error(
+              `Error creating run, ${
+                ___result.statusText
+              } ${await ___result.text()}`
+            );
           console.log(_data, ___result);
           break;
         case "runpod-serverless":
@@ -163,7 +167,11 @@ export const createRun = withServerPromise(
           });
           console.log(__result);
           if (!__result.ok)
-            throw new Error(`Error creating run, ${__result.statusText}`);
+            throw new Error(
+              `Error creating run, ${
+                __result.statusText
+              } ${await __result.text()}`
+            );
           console.log(data, __result);
           break;
         case "classic":
