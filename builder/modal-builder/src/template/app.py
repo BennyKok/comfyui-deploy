@@ -1,0 +1,188 @@
+import modal
+from modal import Image, Mount, web_endpoint, Stub, asgi_app
+import json
+import urllib.request
+import urllib.parse
+from pydantic import BaseModel
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+
+# deploy_test = False
+
+import os
+current_directory = os.path.dirname(os.path.realpath(__file__))
+
+from config import config
+deploy_test = config["deploy_test"] == "True"
+# MODAL_IMAGE_ID = os.environ.get('MODAL_IMAGE_ID', None)
+
+# print(MODAL_IMAGE_ID)
+
+# config_file_path = current_directory if MODAL_IMAGE_ID is None else ""
+# with open(f'{config_file_path}/data/config.json') as f:
+#     config = json.load(f)
+# config["name"]
+# print(config)
+
+web_app = FastAPI()
+print(config)
+print("deploy_test ", deploy_test)
+stub = Stub(name=config["name"])
+
+if not deploy_test:
+    dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
+
+
+# Time to wait between API check attempts in milliseconds
+COMFY_API_AVAILABLE_INTERVAL_MS = 50
+# Maximum number of API check attempts
+COMFY_API_AVAILABLE_MAX_RETRIES = 500
+# Time to wait between poll attempts in milliseconds
+COMFY_POLLING_INTERVAL_MS = 250
+# Maximum number of poll attempts
+COMFY_POLLING_MAX_RETRIES = 500
+# Host where ComfyUI is running
+COMFY_HOST = "127.0.0.1:8188"
+
+def check_server(url, retries=50, delay=500):
+    import requests
+    import time
+    """
+    Check if a server is reachable via HTTP GET request
+
+    Args:
+    - url (str): The URL to check
+    - retries (int, optional): The number of times to attempt connecting to the server. Default is 50
+    - delay (int, optional): The time in milliseconds to wait between retries. Default is 500
+
+    Returns:
+    bool: True if the server is reachable within the given number of retries, otherwise False
+    """
+
+    for i in range(retries):
+        try:
+            response = requests.get(url)
+
+            # If the response status code is 200, the server is up and running
+            if response.status_code == 200:
+                print(f"runpod-worker-comfy - API is reachable")
+                return True
+        except requests.RequestException as e:
+            # If an exception occurs, the server may not be ready
+            pass
+
+
+        # print(f"runpod-worker-comfy - trying")
+
+        # Wait for the specified delay before retrying
+        time.sleep(delay / 1000)
+
+    print(
+        f"runpod-worker-comfy - Failed to connect to server at {url} after {retries} attempts."
+    )
+    return False
+
+def check_status(prompt_id):
+    req = urllib.request.Request(f"http://{COMFY_HOST}/comfyui-deploy/check-status?prompt_id={prompt_id}")
+    return json.loads(urllib.request.urlopen(req).read())
+
+class Input(BaseModel):
+    prompt_id: str
+    workflow_api: dict
+    status_endpoint: str
+    file_upload_endpoint: str
+
+def queue_workflow_comfy_deploy(data: Input):
+    data_str = data.json()
+    data_bytes = data_str.encode('utf-8') 
+    req = urllib.request.Request(f"http://{COMFY_HOST}/comfyui-deploy/run", data=data_bytes)
+    return json.loads(urllib.request.urlopen(req).read())
+
+class RequestInput(BaseModel):
+    input: Input
+
+image = Image.debian_slim()
+
+target_image = image if deploy_test else dockerfile_image
+
+@stub.function(image=target_image, gpu="T4")
+def run(input: Input):
+    import subprocess
+    import time
+    # Make sure that the ComfyUI API is available
+    print(f"comfy-modal - check server")
+
+    command = ["python3", "/comfyui/main.py", "--disable-auto-launch", "--disable-metadata"]
+    server_process = subprocess.Popen(command)
+
+    check_server(
+        f"http://{COMFY_HOST}",
+        COMFY_API_AVAILABLE_MAX_RETRIES,
+        COMFY_API_AVAILABLE_INTERVAL_MS,
+    )
+
+    job_input = input
+
+    # print(f"comfy-modal - got input {job_input}")
+
+    # Queue the workflow
+    try:
+        # job_input is the json input
+        queued_workflow = queue_workflow_comfy_deploy(job_input) # queue_workflow(workflow)
+        prompt_id = queued_workflow["prompt_id"]
+        print(f"comfy-modal - queued workflow with ID {prompt_id}")
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return {"error": f"Error queuing workflow: {str(e)}"}
+
+    # Poll for completion
+    print(f"comfy-modal - wait until image generation is complete")
+    retries = 0
+    status = ""
+    try:
+        print("getting request")
+        while retries < COMFY_POLLING_MAX_RETRIES:
+            status_result = check_status(prompt_id=prompt_id)
+            # history = get_history(prompt_id)
+
+            # Exit the loop if we have found the history
+            # if prompt_id in history and history[prompt_id].get("outputs"):
+            #     break
+
+            # Exit the loop if we have found the status both success or failed
+            if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
+                status = status_result['status']
+                print(status)
+                break
+            else:
+                # Wait before trying again
+                time.sleep(COMFY_POLLING_INTERVAL_MS / 1000)
+                retries += 1
+        else:
+            return {"error": "Max retries reached while waiting for image generation"}
+    except Exception as e:
+        return {"error": f"Error waiting for image generation: {str(e)}"}
+
+    print(f"comfy-modal - Finished, turning off")
+    server_process.terminate()
+
+    # Get the generated image and return it as URL in an AWS bucket or as base64
+    # images_result = process_output_images(history[prompt_id].get("outputs"), job["id"])
+    # result = {**images_result, "refresh_worker": REFRESH_WORKER}
+    result = { "status": status }
+
+    return result
+    print("Running remotely on Modal!")
+
+@web_app.post("/run")
+async def bar(request_input: RequestInput):
+    # print(request_input)
+    if not deploy_test:
+        return run.remote(request_input.input)
+    # pass
+
+@stub.function(image=image)
+@asgi_app()
+def comfyui_app():
+    return web_app
