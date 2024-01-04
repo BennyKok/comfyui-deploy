@@ -1,5 +1,8 @@
+import { isRedirectError } from "next/dist/client/components/redirect";
+
 export async function wrapServerPromise<T>(result: Promise<T>) {
   return result.catch((error) => {
+    if (isRedirectError(error)) throw error;
     return {
       error: error.message,
     };

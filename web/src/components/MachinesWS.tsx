@@ -1,5 +1,7 @@
 "use client";
 
+import { LogsViewer } from "./LogsViewer";
+import { getConnectionStatus } from "./getConnectionStatus";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -10,9 +12,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { getMachines } from "@/server/curdMachine";
-import { Check, CircleOff, SatelliteDish } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import useWebSocket, { ReadyState } from "react-use-websocket";
+import React, { useEffect, useState } from "react";
+import useWebSocket from "react-use-websocket";
 import { create } from "zustand";
 
 type State = {
@@ -98,17 +99,7 @@ function MachineWS({
     }
   );
 
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: (
-      <SatelliteDish size={14} className="text-orange-500" />
-    ),
-    [ReadyState.OPEN]: <Check size={14} className="text-green-500" />,
-    [ReadyState.CLOSING]: <CircleOff size={14} className="text-orange-500" />,
-    [ReadyState.CLOSED]: <CircleOff size={14} className="text-red-500" />,
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
-  }[readyState];
-
-  const container = useRef<HTMLDivElement | null>(null);
+  const connectionStatus = getConnectionStatus(readyState);
 
   useEffect(() => {
     if (!lastMessage?.data) return;
@@ -130,18 +121,6 @@ function MachineWS({
     }
   }, [lastMessage]);
 
-  useEffect(() => {
-    // console.log(logs.length, container.current);
-    if (container.current) {
-      const scrollHeight = container.current.scrollHeight;
-
-      container.current.scrollTo({
-        top: scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [logs.length]);
-
   return (
     <Dialog>
       <DialogTrigger asChild className="">
@@ -156,24 +135,7 @@ function MachineWS({
             You can view your run&apos;s outputs here
           </DialogDescription>
         </DialogHeader>
-        <div
-          ref={(ref) => {
-            if (!container.current && ref) {
-              const scrollHeight = ref.scrollHeight;
-
-              ref.scrollTo({
-                top: scrollHeight,
-                behavior: "instant",
-              });
-            }
-            container.current = ref;
-          }}
-          className="flex flex-col text-xs p-2 overflow-y-scroll max-h-[400px] whitespace-break-spaces"
-        >
-          {logs.map((x, i) => (
-            <div key={i}>{x.logs}</div>
-          ))}
-        </div>
+        <LogsViewer logs={logs} />
       </DialogContent>
     </Dialog>
   );

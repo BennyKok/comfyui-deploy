@@ -108,6 +108,12 @@ export const machinesType = pgEnum("machine_type", [
   "modal-serverless",
 ]);
 
+export const machinesStatus = pgEnum("machine_status", [
+  "ready",
+  "building",
+  "error",
+]);
+
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -193,6 +199,9 @@ export const machinesTable = dbSchema.table("machines", {
   disabled: boolean("disabled").default(false).notNull(),
   auth_token: text("auth_token"),
   type: machinesType("type").notNull().default("classic"),
+  status: machinesStatus("status").notNull().default("ready"),
+  snapshot: jsonb("snapshot").$type<any>(),
+  build_log: text("build_log"),
 });
 
 export const insertMachineSchema = createInsertSchema(machinesTable, {

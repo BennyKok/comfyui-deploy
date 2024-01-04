@@ -23,8 +23,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type MachineType } from "@/db/schema";
-import { addMachineSchema } from "@/server/addMachineSchema";
 import {
+  addCustomMachineSchema,
+  addMachineSchema,
+} from "@/server/addMachineSchema";
+import {
+  addCustomMachine,
   addMachine,
   deleteMachine,
   disableMachine,
@@ -92,9 +96,14 @@ export const columns: ColumnDef<Machine>[] = [
       return (
         // <a className="hover:underline" href={`/${row.original.id}`}>
         <div className="flex flex-row gap-2 items-center">
-          <div>{row.getValue("name")}</div>
+          <a href={`/machines/${row.original.id}`} className="hover:underline">
+            {row.getValue("name")}
+          </a>
           {row.original.disabled && (
             <Badge variant="destructive">Disabled</Badge>
+          )}
+          {!row.original.disabled && row.original.status && (
+            <Badge variant="outline">{row.original.status}</Badge>
           )}
         </div>
         // </a>
@@ -253,6 +262,20 @@ export function MachineList({ data }: { data: Machine[] }) {
             description="Add Comfyui machines to your account."
             serverAction={addMachine}
             formSchema={addMachineSchema}
+          />
+          <InsertModal
+            title="Custom Machine"
+            description="Add custom Comfyui machines to your account."
+            serverAction={addCustomMachine}
+            formSchema={addCustomMachineSchema}
+            fieldConfig={{
+              type: {
+                fieldType: "fallback",
+                inputProps: {
+                  disabled: true,
+                },
+              },
+            }}
           />
         </div>
       </div>
