@@ -106,6 +106,7 @@ export const machinesType = pgEnum("machine_type", [
   "classic",
   "runpod-serverless",
   "modal-serverless",
+  "comfy-deploy-serverless",
 ]);
 
 export const machinesStatus = pgEnum("machine_status", [

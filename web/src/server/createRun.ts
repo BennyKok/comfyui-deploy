@@ -115,6 +115,7 @@ export const createRun = withServerPromise(
 
     try {
       switch (machine.type) {
+        case "comfy-deploy-serverless":
         case "modal-serverless":
           const _data = {
             input: {

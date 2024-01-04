@@ -221,25 +221,26 @@ async def build_logic(item: Item):
                     "timestamp": time.time()
                 }}))
 
-            if "Created comfyui_app =>" in l:
-                url = l.split("=>")[1].strip()
 
-            # Some case it only prints the url on a blank line
-            if (l.startswith("https://") and l.endswith(".modal.run")):
-                url = l
+            if "Created comfyui_app =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
+                if "Created comfyui_app =>" in l:
+                    url = l.split("=>")[1].strip()
+                else:
+                # Some case it only prints the url on a blank line
+                    url = l
 
-            if url:
-                # machine_logs_cache.append({
-                #     "logs": f"App image built, url: {url}",
-                #     "timestamp": time.time()
-                # })
-
-                if item.machine_id in machine_id_websocket_dict:
-                    await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
-                        "machine_id": item.machine_id,
+                if url:
+                    machine_logs_cache.append({
                         "logs": f"App image built, url: {url}",
                         "timestamp": time.time()
-                    }}))
+                    })
+
+                    if item.machine_id in machine_id_websocket_dict:
+                        await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
+                            "machine_id": item.machine_id,
+                            "logs": f"App image built, url: {url}",
+                            "timestamp": time.time()
+                        }}))
         
         if e != "":
             logger.info(e)
