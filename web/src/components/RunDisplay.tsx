@@ -24,8 +24,12 @@ export async function RunDisplay({
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
         <TableRow>
           <TableCell>{run.number}</TableCell>
-          <TableCell className="font-medium">{run.machine?.name}</TableCell>
-          <TableCell>{getRelativeTime(run.created_at)}</TableCell>
+          <TableCell className="font-medium truncate">
+            {run.machine?.name}
+          </TableCell>
+          <TableCell className="truncate">
+            {getRelativeTime(run.created_at)}
+          </TableCell>
           <TableCell>{run.version?.version}</TableCell>
           <LiveStatus run={run} />
         </TableRow>

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { parseAsInteger } from "next-usequerystate";
 
-const itemPerPage = 4;
+const itemPerPage = 6;
 const pageParser = parseAsInteger.withDefault(1);
 
 export async function RunsTable(props: {
@@ -33,7 +33,7 @@ export async function RunsTable(props: {
   });
   return (
     <div>
-      <div className="overflow-auto h-[400px] w-full">
+      <div className="overflow-auto h-fit w-full">
         <Table className="">
           {/* <TableCaption>A list of your recent runs.</TableCaption> */}
           <TableHeader className="bg-background top-0 sticky">
@@ -42,7 +42,7 @@ export async function RunsTable(props: {
               <TableHead className="">Machine</TableHead>
               <TableHead className="">Time</TableHead>
               <TableHead className="w-[100px]">Version</TableHead>
-              <TableHead className="">Live Status</TableHead>
+              <TableHead className="truncate">Live Status</TableHead>
               <TableHead className=" text-right">Status</TableHead>
             </TableRow>
           </TableHeader>

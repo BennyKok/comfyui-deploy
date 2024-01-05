@@ -12,6 +12,22 @@ export function PaginationControl(props: {
   totalPage: number;
   currentPage: number;
 }) {
+  let startPage = Math.max(props.currentPage - 2, 1);
+  let endPage = Math.min(startPage + 3, props.totalPage);
+
+  if (props.currentPage <= 2) {
+    endPage = Math.min(4, props.totalPage);
+  }
+
+  if (props.currentPage > props.totalPage - 2) {
+    startPage = Math.max(props.totalPage - 3, 1);
+  }
+
+  const pageNumbers = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i
+  );
+
   return (
     <Pagination>
       <PaginationContent>
@@ -22,9 +38,15 @@ export function PaginationControl(props: {
               : `?page=${props.currentPage}`
           }
         />
-        <PaginationLink href="#" isActive>
-          {props.currentPage}
-        </PaginationLink>
+        {pageNumbers.map((page) => (
+          <PaginationLink
+            key={page}
+            href={`?page=${page}`}
+            isActive={props.currentPage === page}
+          >
+            {page}
+          </PaginationLink>
+        ))}
         <PaginationItem>
           <PaginationEllipsis />
         </PaginationItem>

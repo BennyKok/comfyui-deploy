@@ -1,4 +1,5 @@
 import { LoadingWrapper } from "@/components/LoadingWrapper";
+import { RouteRefresher } from "@/components/RouteRefresher";
 import { RunsTable } from "@/components/RunsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,8 +14,11 @@ export default async function Page({
 
   return (
     <Card className="w-full h-fit min-w-0">
-      <CardHeader>
+      <CardHeader className="relative">
         <CardTitle>Run</CardTitle>
+        <div className="absolute right-6 top-6">
+          <RouteRefresher interval={5000} />
+        </div>
       </CardHeader>
 
       <CardContent>

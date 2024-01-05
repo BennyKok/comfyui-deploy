@@ -54,7 +54,7 @@ export function LiveStatus({
           ? `${data.json.event} - ${data.json.data.node}`
           : "-"}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="truncate text-right">
         <StatusBadge status={status} />
       </TableCell>
     </>
