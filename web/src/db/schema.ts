@@ -202,7 +202,7 @@ export const machinesTable = dbSchema.table("machines", {
   auth_token: text("auth_token"),
   type: machinesType("type").notNull().default("classic"),
   status: machinesStatus("status").notNull().default("ready"),
-  snapshot: jsonb("snapshot").$type<z.infer<typeof snapshotType>>(),
+  snapshot: jsonb("snapshot").$type<any>(),
   build_log: text("build_log"),
 });
 
