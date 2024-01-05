@@ -139,24 +139,17 @@ function addButton() {
         "Create your deployment",
         "Workflow name",
       );
-      if (!text) return
+      if (!text) return;
       console.log(text);
       app.graph.beforeChange();
       var node = LiteGraph.createNode("ComfyDeploy");
       node.configure({
-        widgets_values: [
-          text
-        ]
+        widgets_values: [text],
       });
       node.pos = [0, 0];
       app.graph.add(node);
       app.graph.afterChange();
-      deployMeta=[node]
-      // return;
-      // showError(
-      //   "Error when deploying",
-      //   "Unable to to find ComfyDeploy node, please add it first.",
-      // );
+      deployMeta = [node];
     }
 
     const deployMetaNode = deployMeta[0];
@@ -181,6 +174,9 @@ function addButton() {
       configDialog.show();
       return;
     }
+
+    const ok = await confirmDialog.confirm("Confirm deployment", "A new version will be deployed, are you conform?")
+    if (!ok) return;
 
     title.innerText = "Deploying...";
     title.style.color = "orange";
@@ -226,7 +222,7 @@ function addButton() {
       graph.change();
 
       infoDialog.show(
-        `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>View here -></a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
+        `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
       );
 
       setTimeout(() => {
@@ -330,6 +326,14 @@ export class InputDialog extends InfoDialog {
         [
           $el("button", {
             type: "button",
+            textContent: "Close",
+            onclick: () => {
+              this.callback?.(undefined);
+              this.close();
+            },
+          }),
+          $el("button", {
+            type: "button",
             textContent: "Save",
             onclick: () => {
               const input = this.textElement.querySelector("#input").value;
@@ -340,14 +344,6 @@ export class InputDialog extends InfoDialog {
                 this.close();
                 this.textElement.querySelector("#input").value = "";
               }
-            },
-          }),
-          $el("button", {
-            type: "button",
-            textContent: "Close",
-            onclick: () => {
-              this.callback?.(undefined);
-              this.close()
             },
           }),
         ],
@@ -371,9 +367,70 @@ export class InputDialog extends InfoDialog {
   }
 }
 
-export const inputDialog = new InputDialog();
 
+export class ConfirmDialog extends InfoDialog {
+  callback = undefined;
+
+  constructor() {
+    super();
+  }
+
+  createButtons() {
+    return [
+      $el(
+        "div",
+        {
+          type: "div",
+          style: {
+            display: "flex",
+            gap: "6px",
+            justifyContent: "flex-end",
+            width: "100%",
+          },
+        },
+        [
+          $el("button", {
+            type: "button",
+            textContent: "Close",
+            onclick: () => {
+              this.callback?.(false);
+              this.close();
+            },
+          }),
+          $el("button", {
+            type: "button",
+            textContent: "Confirm",
+            style: {
+              color: "green",
+            },
+            onclick: () => {
+              this.callback?.(true);
+              this.close();
+            },
+          }),
+        ],
+      ),
+    ];
+  }
+
+  confirm(title, message) {
+    return new Promise((resolve, reject) => {
+      this.callback = resolve;
+      this.show(`
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
+        <h3 style="margin: 0px;">${title}</h3>
+        <label>
+          ${message}
+        </label>
+        </div>
+      `);
+    });
+  }
+}
+
+export const inputDialog = new InputDialog();
 export const infoDialog = new InfoDialog();
+export const confirmDialog = new ConfirmDialog();
 
 function getData(environment) {
   const deployOption =
@@ -426,13 +483,13 @@ export class ConfigDialog extends ComfyDialog {
         [
           $el("button", {
             type: "button",
-            textContent: "Save",
-            onclick: () => this.save(),
+            textContent: "Close",
+            onclick: () => this.close(),
           }),
           $el("button", {
             type: "button",
-            textContent: "Close",
-            onclick: () => this.close(),
+            textContent: "Save",
+            onclick: () => this.save(),
           }),
         ],
       ),
