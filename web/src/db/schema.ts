@@ -69,6 +69,7 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
   workflow: jsonb("workflow").$type<z.infer<typeof workflowType>>(),
   workflow_api: jsonb("workflow_api").$type<z.infer<typeof workflowAPIType>>(),
   version: integer("version").notNull(),
+  snapshot: jsonb("snapshot").$type<z.infer<typeof snapshotType>>(),
 
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -201,8 +202,19 @@ export const machinesTable = dbSchema.table("machines", {
   auth_token: text("auth_token"),
   type: machinesType("type").notNull().default("classic"),
   status: machinesStatus("status").notNull().default("ready"),
-  snapshot: jsonb("snapshot").$type<any>(),
+  snapshot: jsonb("snapshot").$type<z.infer<typeof snapshotType>>(),
   build_log: text("build_log"),
+});
+
+export const snapshotType = z.object({
+  comfyui: z.string(),
+  git_custom_nodes: z.record(
+    z.object({
+      hash: z.string(),
+      disabled: z.boolean(),
+    })
+  ),
+  file_custom_nodes: z.array(z.any()),
 });
 
 export const insertMachineSchema = createInsertSchema(machinesTable, {

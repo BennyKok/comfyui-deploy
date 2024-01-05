@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_deploy"."workflow_versions" ADD COLUMN "snapshot" jsonb;

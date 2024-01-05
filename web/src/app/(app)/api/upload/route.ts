@@ -1,6 +1,7 @@
 import { parseJWT } from "../../../../server/parseJWT";
 import { db } from "@/db/db";
 import {
+  snapshotType,
   workflowAPIType,
   workflowTable,
   workflowType,
@@ -18,11 +19,11 @@ const corsHeaders = {
 };
 
 const UploadRequest = z.object({
-  // user_id: z.string(),
   workflow_id: z.string().optional(),
-  workflow_name: z.string().optional(),
+  workflow_name: z.string().min(1).optional(),
   workflow: workflowType,
   workflow_api: workflowAPIType,
+  snapshot: snapshotType,
 });
 
 export async function OPTIONS(request: Request) {
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
     workflow_api,
     workflow_id: _workflow_id,
     workflow_name,
+    snapshot,
   } = data;
 
   let workflow_id = _workflow_id;
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
           workflow,
           workflow_api,
           version: 1,
+          snapshot: snapshot,
         })
         .returning();
       version = data[0].version;
@@ -105,6 +108,7 @@ export async function POST(request: Request) {
           workflow: workflow,
           workflow_api,
           // version: sql`${workflowVersionTable.version} + 1`,
+          snapshot: snapshot,
           version: sql`(
         SELECT COALESCE(MAX(version), 0) + 1
         FROM ${workflowVersionTable}

@@ -102,6 +102,12 @@ const ext = {
  * @typedef {import('../../../web/types/litegraph.js').LGraphNode} LGraphNode
  */
 
+function showError(title, message) {
+  infoDialog.show(
+    `<h3 style="margin: 0px; color: red;">${title}</h3><br><span>${message}</span> `,
+  );
+}
+
 function addButton() {
   const menu = document.querySelector(".comfy-menu");
 
@@ -113,9 +119,46 @@ function addButton() {
     /** @type {LGraph} */
     const graph = app.graph;
 
-    const title = deploy.querySelector("#button-title")
+    const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
+    console.log(snapshot);
 
-    const deployMeta = graph.findNodesByType("ComfyDeploy");
+    if (!snapshot) {
+      showError(
+        "Error when deploying",
+        "Unable to generate snapshot, please install ComfyUI Manager",
+      );
+      return;
+    }
+
+    const title = deploy.querySelector("#button-title");
+
+    let deployMeta = graph.findNodesByType("ComfyDeploy");
+
+    if (deployMeta.length == 0) {
+      const text = await inputDialog.input(
+        "Create your deployment",
+        "Workflow name",
+      );
+      if (!text) return
+      console.log(text);
+      app.graph.beforeChange();
+      var node = LiteGraph.createNode("ComfyDeploy");
+      node.configure({
+        widgets_values: [
+          text
+        ]
+      });
+      node.pos = [0, 0];
+      app.graph.add(node);
+      app.graph.afterChange();
+      deployMeta=[node]
+      // return;
+      // showError(
+      //   "Error when deploying",
+      //   "Unable to to find ComfyDeploy node, please add it first.",
+      // );
+    }
+
     const deployMetaNode = deployMeta[0];
 
     console.log(deployMetaNode);
@@ -132,10 +175,7 @@ function addButton() {
     // const endpoint = localStorage.getItem("endpoint") ?? "";
     // const apiKey = localStorage.getItem("apiKey");
 
-    const {
-      endpoint,
-      apiKey,
-    } = getData();
+    const { endpoint, apiKey } = getData();
 
     if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
       configDialog.show();
@@ -152,7 +192,7 @@ function addButton() {
       endpoint = endpoint.slice(0, -1);
     }
 
-    const apiRoute = endpoint + "/api/upload"
+    const apiRoute = endpoint + "/api/upload";
     // const userId = apiKey
     try {
       let data = await fetch(apiRoute, {
@@ -162,10 +202,11 @@ function addButton() {
           workflow_id,
           workflow: prompt.workflow,
           workflow_api: prompt.output,
+          snapshot: snapshot,
         }),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey,
+          Authorization: "Bearer " + apiKey,
         },
       });
 
@@ -185,7 +226,7 @@ function addButton() {
       graph.change();
 
       infoDialog.show(
-        `<span style="color:green;">Deployed successfully!</span> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version}`,
+        `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>View here -></a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
       );
 
       setTimeout(() => {
@@ -210,19 +251,18 @@ function addButton() {
   config.style.position = "absolute";
   config.style.right = "10px";
   config.style.top = "0px";
-  
+
   // set aspect ratio to square
   config.style.width = "20px";
-  config.src = "https://api.iconify.design/material-symbols-light:settings.svg?color=%23888888";
+  config.src =
+    "https://api.iconify.design/material-symbols-light:settings.svg?color=%23888888";
   config.onclick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     configDialog.show();
   };
 
-  deploy.append(
-    config
-  )
+  deploy.append(config);
 
   deploy.style.order = "99";
 
@@ -231,44 +271,113 @@ function addButton() {
 
 app.registerExtension(ext);
 
-
-import { ComfyDialog, $el } from '../../scripts/ui.js';
+import { ComfyDialog, $el } from "../../scripts/ui.js";
 
 export class InfoDialog extends ComfyDialog {
-	constructor() {
-		super();
-		this.element.classList.add("comfy-normal-modal");
-	}
-	createButtons() {
-		return [
-			$el("button", {
-				type: "button",
-				textContent: "Close",
-				onclick: () => this.close(),
-			}),
-		];
-	}
+  constructor() {
+    super();
+    this.element.classList.add("comfy-normal-modal");
+    this.element.style.paddingBottom = "20px";
+  }
+  createButtons() {
+    return [
+      $el("button", {
+        type: "button",
+        textContent: "Close",
+        onclick: () => this.close(),
+      }),
+    ];
+  }
 
-	close() {
-		this.element.style.display = "none";
-	}
+  close() {
+    this.element.style.display = "none";
+  }
 
-	show(html) {
+  show(html) {
+    this.textElement.style["white-space"] = "normal";
     this.textElement.style.color = "white";
-		if (typeof html === "string") {
-			this.textElement.innerHTML = html;
-		} else {
-			this.textElement.replaceChildren(html);
-		}
-		this.element.style.display = "flex";
-		this.element.style.zIndex = 1001;
-	}
+    this.textElement.style.marginTop = "0px";
+    if (typeof html === "string") {
+      this.textElement.innerHTML = html;
+    } else {
+      this.textElement.replaceChildren(html);
+    }
+    this.element.style.display = "flex";
+    this.element.style.zIndex = 1001;
+  }
 }
 
-export const infoDialog = new InfoDialog()
+export class InputDialog extends InfoDialog {
+  callback = undefined;
+
+  constructor() {
+    super();
+  }
+
+  createButtons() {
+    return [
+      $el(
+        "div",
+        {
+          type: "div",
+          style: {
+            display: "flex",
+            gap: "6px",
+            justifyContent: "flex-end",
+            width: "100%",
+          },
+        },
+        [
+          $el("button", {
+            type: "button",
+            textContent: "Save",
+            onclick: () => {
+              const input = this.textElement.querySelector("#input").value;
+              if (input.trim() === "") {
+                showError("Input validation", "Input cannot be empty");
+              } else {
+                this.callback?.(input);
+                this.close();
+                this.textElement.querySelector("#input").value = "";
+              }
+            },
+          }),
+          $el("button", {
+            type: "button",
+            textContent: "Close",
+            onclick: () => {
+              this.callback?.(undefined);
+              this.close()
+            },
+          }),
+        ],
+      ),
+    ];
+  }
+
+  input(title, message) {
+    return new Promise((resolve, reject) => {
+      this.callback = resolve;
+      this.show(`
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
+        <h3 style="margin: 0px;">${title}</h3>
+        <label>
+          ${message}
+          <input id="input" style="margin-top: 8px; width: 100%; height:40px; padding: 0px 6px; box-sizing: border-box; outline-offset: -1px;">
+        </label>
+        </div>
+      `);
+    });
+  }
+}
+
+export const inputDialog = new InputDialog();
+
+export const infoDialog = new InfoDialog();
 
 function getData(environment) {
-  const deployOption = environment || localStorage.getItem("comfy_deploy_env") || "cloud";
+  const deployOption =
+    environment || localStorage.getItem("comfy_deploy_env") || "cloud";
   const data = localStorage.getItem("comfy_deploy_env_data_" + deployOption);
   if (!data) {
     if (deployOption == "cloud")
@@ -276,7 +385,7 @@ function getData(environment) {
         endpoint: "https://www.comfydeploy.com",
         apiKey: "",
       };
-    else 
+    else
       return {
         endpoint: "http://localhost:3000",
         apiKey: "",
@@ -289,12 +398,12 @@ function getData(environment) {
 }
 
 export class ConfigDialog extends ComfyDialog {
-
   container = null;
 
   constructor() {
     super();
     this.element.classList.add("comfy-normal-modal");
+    this.element.style.paddingBottom = "20px";
 
     this.container = document.createElement("div");
     this.element.querySelector(".comfy-modal-content").prepend(this.container);
@@ -302,16 +411,18 @@ export class ConfigDialog extends ComfyDialog {
 
   createButtons() {
     return [
-      $el("div", {
-        type: "div",
-        style: {
-          display: "flex",
-          gap: "6px",
-          justifyContent: "flex-end",
-          width: "100%",
+      $el(
+        "div",
+        {
+          type: "div",
+          style: {
+            display: "flex",
+            gap: "6px",
+            justifyContent: "flex-end",
+            width: "100%",
+          },
+          onclick: () => this.save(),
         },
-        onclick: () => this.save(),
-      }, 
         [
           $el("button", {
             type: "button",
@@ -322,8 +433,8 @@ export class ConfigDialog extends ComfyDialog {
             type: "button",
             textContent: "Close",
             onclick: () => this.close(),
-          })
-        ]
+          }),
+        ],
       ),
     ];
   }
@@ -341,8 +452,11 @@ export class ConfigDialog extends ComfyDialog {
     const data = {
       endpoint,
       apiKey,
-    }
-    localStorage.setItem("comfy_deploy_env_data_" + deployOption, JSON.stringify(data));
+    };
+    localStorage.setItem(
+      "comfy_deploy_env_data_" + deployOption,
+      JSON.stringify(data),
+    );
     this.close();
   }
 
@@ -350,39 +464,47 @@ export class ConfigDialog extends ComfyDialog {
     this.container.style.color = "white";
 
     const data = getData();
-    
+
     this.container.innerHTML = `
     <div style="width: 400px; display: flex; gap: 18px; flex-direction: column;">
     <h3 style="margin: 0px;">Comfy Deploy Config</h3>
     <label style="color: white; width: 100%;">
-      <select id="deployOption" style="margin-top: 8px; width: 100%; height:30px;" >
-        <option value="cloud" ${data.environment === 'cloud' ? 'selected' : ''}>Cloud</option>
-        <option value="local" ${data.environment === 'local' ? 'selected' : ''}>Local</option>
+      <select id="deployOption" style="margin: 8px 0px; width: 100%; height:30px; box-sizing: border-box;" >
+        <option value="cloud" ${
+          data.environment === "cloud" ? "selected" : ""
+        }>Cloud</option>
+        <option value="local" ${
+          data.environment === "local" ? "selected" : ""
+        }>Local</option>
       </select>
     </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:30px;" type="text" value="${data.endpoint}">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
+          data.endpoint
+        }">
       </label>
       <label style="color: white;">
         API Key:
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:30px;" type="password" value="${data.apiKey}">
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
+          data.apiKey
+        }">
       </label>
       </div>
     `;
 
     const apiKeyInput = this.container.querySelector("#apiKey");
-    apiKeyInput.addEventListener("paste", function(e) {
+    apiKeyInput.addEventListener("paste", function (e) {
       e.stopPropagation();
     });
 
     const deployOption = this.container.querySelector("#deployOption");
-    const container = this.container
-    deployOption.addEventListener("change", function() {
+    const container = this.container;
+    deployOption.addEventListener("change", function () {
       const selectedOption = this.value;
       const data = getData(selectedOption);
       localStorage.setItem("comfy_deploy_env", selectedOption);
-      
+
       container.querySelector("#endpoint").value = data.endpoint;
       container.querySelector("#apiKey").value = data.apiKey;
     });
