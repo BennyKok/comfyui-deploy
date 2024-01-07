@@ -189,6 +189,16 @@ async function buildMachine(
       })
       .where(eq(machinesTable.id, b.id));
     throw new Error(`Error: ${result.statusText} ${error_log}`);
+  } else {
+    // setting the build machine id
+    const json = await result.json();
+    await db
+      .update(machinesTable)
+      .set({
+        ...data,
+        build_machine_instance_id: json.build_machine_instance_id,
+      })
+      .where(eq(machinesTable.id, b.id));
   }
 }
 

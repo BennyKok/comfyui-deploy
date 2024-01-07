@@ -169,6 +169,13 @@
       "when": 1704540132567,
       "tag": "0023_fair_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1704632758591,
+      "tag": "0024_smiling_triton",
+      "breakpoints": true
     }
   ]
 }

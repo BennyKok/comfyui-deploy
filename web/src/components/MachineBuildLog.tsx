@@ -9,20 +9,24 @@ import useWebSocket from "react-use-websocket";
 export function MachineBuildLog({
   machine_id,
   endpoint,
+  instance_id,
 }: {
   machine_id: string;
   endpoint: string;
+  instance_id: string;
 }) {
   const [logs, setLogs] = useState<LogsType>([]);
   const [finished, setFinished] = useState(false);
 
   const wsEndpoint = endpoint.replace(/^http/, "ws");
+  const query = { fly_instance_id: instance_id };
   const { lastMessage, readyState } = useWebSocket(
     `${wsEndpoint}/ws/${machine_id}`,
     {
       shouldReconnect: () => !finished,
       reconnectAttempts: 20,
       reconnectInterval: 1000,
+      queryParams: query,
     }
   );
 

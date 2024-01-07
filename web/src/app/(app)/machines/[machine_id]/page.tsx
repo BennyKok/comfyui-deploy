@@ -29,6 +29,7 @@ export default async function Page({
         <CardContent>
           {machine.status == "building" && (
             <MachineBuildLog
+              instance_id={machine.build_machine_instance_id!}
               machine_id={params.machine_id}
               endpoint={process.env.MODAL_BUILDER_URL!}
             />
