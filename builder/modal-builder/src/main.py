@@ -310,11 +310,11 @@ async def build_logic(item: Item):
                             "timestamp": time.time()
                         }}))
 
-                    if "Created comfyui_api =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
-                        if "Created comfyui_api =>" in l:
+                    if "Created comfyui-api =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
+                        if "Created comfyui-api =>" in l:
                             url = l.split("=>")[1].strip()
                         # making sure it is a url
-                        elif "comfyui_api" in l:
+                        elif "comfyui-api" in l:
                             # Some case it only prints the url on a blank line
                             url = l
 
@@ -361,12 +361,15 @@ async def build_logic(item: Item):
     stderr_task = asyncio.create_task(
         read_stream(process.stderr, True, url_queue))
 
-    url = await url_queue.get()
-
     await asyncio.wait([stdout_task, stderr_task])
 
     # Wait for the subprocess to finish
     await process.wait()
+
+    if not url_queue.empty():
+        # The queue is not empty, you can get an item
+        url = await url_queue.get()
+
     # Close the ws connection and also pop the item
     if item.machine_id in machine_id_websocket_dict and machine_id_websocket_dict[item.machine_id] is not None:
         await machine_id_websocket_dict[item.machine_id].close()

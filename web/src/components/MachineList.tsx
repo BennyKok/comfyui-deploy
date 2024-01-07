@@ -198,6 +198,17 @@ export const columns: ColumnDef<Machine>[] = [
                 Disable Machine
               </DropdownMenuItem>
             )}
+            {machine.type === "comfy-deploy-serverless" && (
+              <DropdownMenuItem
+                onClick={async () => {
+                  window.open(
+                    machine.endpoint.replace("comfyui-api", "comfyui-app")
+                  );
+                }}
+              >
+                Open ComfyUI
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => setOpen(true)}>
               Edit
             </DropdownMenuItem>
