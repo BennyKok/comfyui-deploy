@@ -57,6 +57,7 @@ WORKDIR /
 
 COPY /data/install_deps.py .
 COPY /data/deps.json .
+COPY /data/models.json .
 RUN python3 install_deps.py
 
 WORKDIR /comfyui/custom_nodes

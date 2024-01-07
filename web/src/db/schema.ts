@@ -37,6 +37,7 @@ export const workflowTable = dbSchema.table("workflows", {
 
 export const workflowRelations = relations(workflowTable, ({ many }) => ({
   versions: many(workflowVersionTable),
+  deployments: many(deploymentsTable),
 }));
 
 export const workflowType = z.any();
@@ -203,6 +204,7 @@ export const machinesTable = dbSchema.table("machines", {
   type: machinesType("type").notNull().default("classic"),
   status: machinesStatus("status").notNull().default("ready"),
   snapshot: jsonb("snapshot").$type<any>(),
+  models: jsonb("models").$type<any>(),
   build_log: text("build_log"),
 });
 
@@ -254,6 +256,10 @@ export const deploymentsRelations = relations(deploymentsTable, ({ one }) => ({
   version: one(workflowVersionTable, {
     fields: [deploymentsTable.workflow_version_id],
     references: [workflowVersionTable.id],
+  }),
+  workflow: one(workflowTable, {
+    fields: [deploymentsTable.workflow_id],
+    references: [workflowTable.id],
   }),
 }));
 

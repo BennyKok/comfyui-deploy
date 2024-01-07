@@ -28,9 +28,10 @@ def check_server(url, retries=50, delay=500):
     )
     return False
 
-check_server("http://127.0.0.1:8188")
+root_url = "http://127.0.0.1:8188"
 
-url = "http://127.0.0.1:8188/customnode/install"
+check_server(root_url)
+
 headers = {"Content-Type": "application/json"}
 
 # Load JSON array from deps.json
@@ -39,12 +40,15 @@ with open('deps.json') as f:
 
 # Make a POST request for each package
 for package in packages:
-    response = requests.request("POST", url, json=package, headers=headers)
+    response = requests.request("POST", f"{root_url}/customnode/install", json=package, headers=headers)
     print(response.text)
 
-# restore_snapshot_url = "http://127.0.0.1:8188/snapshot/restore?target=snapshot"
-# response = requests.request("GET", restore_snapshot_url, headers=headers)
-# print(response.text)
+with open('models.json') as f:
+    models = json.load(f)
+
+for model in models:
+    response = requests.request("POST", f"{root_url}/model/install", json=model, headers=headers)
+    print(response.text)
 
 # Close the server
 server_process.terminate()

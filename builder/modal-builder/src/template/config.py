@@ -1,1 +1,1 @@
-config = {"name": "my-app", "deploy_test": "True"}
+config = {"name": "my-app", "deploy_test": "True", "gpu": "T4"}

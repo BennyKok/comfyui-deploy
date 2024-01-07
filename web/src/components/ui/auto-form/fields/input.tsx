@@ -6,7 +6,7 @@ import {
   FormMessage,
 } from "../../form";
 import { Input } from "../../input";
-import { AutoFormInputComponentProps } from "../types";
+import type { AutoFormInputComponentProps } from "../types";
 
 export default function AutoFormInput({
   label,

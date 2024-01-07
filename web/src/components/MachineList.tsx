@@ -33,6 +33,7 @@ import {
   deleteMachine,
   disableMachine,
   enableMachine,
+  updateCustomMachine,
   updateMachine,
 } from "@/server/curdMachine";
 import type {
@@ -95,7 +96,7 @@ export const columns: ColumnDef<Machine>[] = [
     cell: ({ row }) => {
       return (
         // <a className="hover:underline" href={`/${row.original.id}`}>
-        <div className="flex flex-row gap-2 items-center">
+        <div className="flex flex-row gap-2 items-center truncate">
           <a href={`/machines/${row.original.id}`} className="hover:underline">
             {row.getValue("name")}
           </a>
@@ -115,7 +116,9 @@ export const columns: ColumnDef<Machine>[] = [
     header: () => <div className="text-left">Endpoint</div>,
     cell: ({ row }) => {
       return (
-        <div className="text-left font-medium">{row.original.endpoint}</div>
+        <div className="text-left font-medium truncate max-w-[400px]">
+          {row.original.endpoint}
+        </div>
       );
     },
   },
@@ -123,7 +126,11 @@ export const columns: ColumnDef<Machine>[] = [
     accessorKey: "type",
     header: () => <div className="text-left">Type</div>,
     cell: ({ row }) => {
-      return <div className="text-left font-medium">{row.original.type}</div>;
+      return (
+        <div className="text-left font-medium truncate">
+          {row.original.type}
+        </div>
+      );
     },
   },
   {
@@ -133,7 +140,7 @@ export const columns: ColumnDef<Machine>[] = [
     header: ({ column }) => {
       return (
         <button
-          className="w-full flex items-center justify-end hover:underline"
+          className="w-full flex items-center justify-end hover:underline truncate"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Update Date
@@ -195,22 +202,50 @@ export const columns: ColumnDef<Machine>[] = [
               Edit
             </DropdownMenuItem>
           </DropdownMenuContent>
-          <UpdateModal
-            data={machine}
-            open={open}
-            setOpen={setOpen}
-            title="Edit"
-            description="Edit machines"
-            serverAction={updateMachine}
-            formSchema={addMachineSchema}
-            fieldConfig={{
-              auth_token: {
-                inputProps: {
-                  type: "password",
+          {machine.type === "comfy-deploy-serverless" ? (
+            <UpdateModal
+              data={machine}
+              open={open}
+              setOpen={setOpen}
+              title="Edit"
+              description="Edit machines"
+              serverAction={updateCustomMachine}
+              formSchema={addCustomMachineSchema}
+              fieldConfig={{
+                type: {
+                  fieldType: "fallback",
+                  inputProps: {
+                    disabled: true,
+                    showLabel: false,
+                    type: "hidden",
+                  },
                 },
-              },
-            }}
-          />
+                snapshot: {
+                  fieldType: "snapshot",
+                },
+                models: {
+                  fieldType: "models",
+                },
+              }}
+            />
+          ) : (
+            <UpdateModal
+              data={machine}
+              open={open}
+              setOpen={setOpen}
+              title="Edit"
+              description="Edit machines"
+              serverAction={updateMachine}
+              formSchema={addMachineSchema}
+              fieldConfig={{
+                auth_token: {
+                  inputProps: {
+                    type: "password",
+                  },
+                },
+              }}
+            />
+          )}
         </DropdownMenu>
       );
     },
@@ -273,7 +308,15 @@ export function MachineList({ data }: { data: Machine[] }) {
                 fieldType: "fallback",
                 inputProps: {
                   disabled: true,
+                  showLabel: false,
+                  type: "hidden",
                 },
+              },
+              snapshot: {
+                fieldType: "snapshot",
+              },
+              models: {
+                fieldType: "models",
               },
             }}
           />

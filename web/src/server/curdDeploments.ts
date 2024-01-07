@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db/db";
-import { deploymentsTable } from "@/db/schema";
+import { deploymentsTable, workflowTable } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import "server-only";
 
@@ -46,4 +46,37 @@ export async function createDeployments(
   return {
     message: `Successfully created deployment for ${environment}`,
   };
+}
+
+export async function findAllDeployments() {
+  const { userId, orgId } = auth();
+  if (!userId) throw new Error("No user id");
+
+  const deployments = await db.query.workflowTable.findMany({
+    where: and(
+      orgId
+        ? eq(workflowTable.org_id, orgId)
+        : and(eq(workflowTable.user_id, userId), isNull(workflowTable.org_id))
+    ),
+    columns: {
+      name: true,
+    },
+    with: {
+      deployments: {
+        columns: {
+          environment: true,
+        },
+        with: {
+          version: {
+            columns: {
+              id: true,
+              snapshot: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return deployments;
 }

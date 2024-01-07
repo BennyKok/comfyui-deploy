@@ -6,6 +6,7 @@ import type {
 } from "./addMachineSchema";
 import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
+import type { MachineType } from "@/db/schema";
 import { machinesTable } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
 import { and, eq, isNull } from "drizzle-orm";
@@ -25,7 +26,11 @@ export async function getMachines() {
       and(
         orgId
           ? eq(machinesTable.org_id, orgId)
-          : eq(machinesTable.user_id, userId),
+          : // make sure org_id is null
+            and(
+              eq(machinesTable.user_id, userId),
+              isNull(machinesTable.org_id)
+            ),
         eq(machinesTable.disabled, false)
       )
     );
@@ -67,10 +72,59 @@ export const addMachine = withServerPromise(
   }
 );
 
+export const updateCustomMachine = withServerPromise(
+  async ({
+    id,
+    ...data
+  }: z.infer<typeof addCustomMachineSchema> & {
+    id: string;
+  }) => {
+    const { userId } = auth();
+    if (!userId) return { error: "No user id" };
+
+    const currentMachine = await db.query.machinesTable.findFirst({
+      where: eq(machinesTable.id, id),
+    });
+
+    if (!currentMachine) return { error: "Machine not found" };
+
+    // Check if snapshot or models have changed
+    const snapshotChanged =
+      JSON.stringify(data.snapshot) !== JSON.stringify(currentMachine.snapshot);
+    const modelsChanged =
+      JSON.stringify(data.models) !== JSON.stringify(currentMachine.models);
+
+    // return {
+    //   message: `snapshotChanged: ${snapshotChanged}, modelsChanged: ${modelsChanged}`,
+    // };
+
+    await db.update(machinesTable).set(data).where(eq(machinesTable.id, id));
+
+    // If there are changes
+    if (snapshotChanged || modelsChanged) {
+      // Update status to building
+      await db
+        .update(machinesTable)
+        .set({
+          status: "building",
+          endpoint: "not-ready",
+        })
+        .where(eq(machinesTable.id, id));
+
+      // Perform custom build if there are changes
+      await buildMachine(data, currentMachine);
+      redirect(`/machines/${id}`);
+    } else {
+      revalidatePath("/machines");
+    }
+
+    return { message: "Machine Updated" };
+  }
+);
+
 export const addCustomMachine = withServerPromise(
   async (data: z.infer<typeof addCustomMachineSchema>) => {
     const { userId, orgId } = auth();
-    const headersList = headers();
 
     if (!userId) return { error: "No user id" };
 
@@ -88,50 +142,55 @@ export const addCustomMachine = withServerPromise(
 
     const b = a[0];
 
-    // const origin = new URL(request.url).origin;
-    const domain = headersList.get("x-forwarded-host") || "";
-    const protocol = headersList.get("x-forwarded-proto") || "";
-    // console.log("domain", domain);
-    // console.log("domain", `${protocol}://${domain}/api/machine-built`);
-    // return { message: "Machine Building" };
-
-    if (domain === "") {
-      throw new Error("No domain");
-    }
-
-    // Call remote builder
-    const result = await fetch(`${process.env.MODAL_BUILDER_URL!}/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        machine_id: b.id,
-        name: b.id,
-        snapshot: JSON.parse(data.snapshot as string),
-        callback_url: `${protocol}://${domain}/api/machine-built`,
-      }),
-    });
-
-    if (!result.ok) {
-      const error_log = await result.text();
-      await db
-        .update(machinesTable)
-        .set({
-          ...data,
-          status: "error",
-          build_log: error_log,
-        })
-        .where(eq(machinesTable.id, b.id));
-      throw new Error(`Error: ${result.statusText} ${error_log}`);
-    }
-
+    await buildMachine(data, b);
     redirect(`/machines/${b.id}`);
-
     // revalidatePath("/machines");
     return { message: "Machine Building" };
   }
 );
+
+async function buildMachine(
+  data: z.infer<typeof addCustomMachineSchema>,
+  b: MachineType
+) {
+  const headersList = headers();
+
+  const domain = headersList.get("x-forwarded-host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+
+  if (domain === "") {
+    throw new Error("No domain");
+  }
+
+  // Call remote builder
+  const result = await fetch(`${process.env.MODAL_BUILDER_URL!}/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      machine_id: b.id,
+      name: b.id,
+      snapshot: data.snapshot, //JSON.parse( as string),
+      callback_url: `${protocol}://${domain}/api/machine-built`,
+      models: data.models, //JSON.parse(data.models as string),
+      gpu: "T4",
+    }),
+  });
+
+  if (!result.ok) {
+    const error_log = await result.text();
+    await db
+      .update(machinesTable)
+      .set({
+        ...data,
+        status: "error",
+        build_log: error_log,
+      })
+      .where(eq(machinesTable.id, b.id));
+    throw new Error(`Error: ${result.statusText} ${error_log}`);
+  }
+}
 
 export const updateMachine = withServerPromise(
   async ({

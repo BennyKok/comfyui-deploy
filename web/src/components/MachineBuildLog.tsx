@@ -14,12 +14,13 @@ export function MachineBuildLog({
   endpoint: string;
 }) {
   const [logs, setLogs] = useState<LogsType>([]);
+  const [finished, setFinished] = useState(false);
 
   const wsEndpoint = endpoint.replace(/^http/, "ws");
   const { lastMessage, readyState } = useWebSocket(
     `${wsEndpoint}/ws/${machine_id}`,
     {
-      shouldReconnect: () => true,
+      shouldReconnect: () => !finished,
       reconnectAttempts: 20,
       reconnectInterval: 1000,
     }
@@ -36,6 +37,8 @@ export function MachineBuildLog({
 
     if (message?.event === "LOGS") {
       setLogs((logs) => [...(logs ?? []), message.data]);
+    } else if (message?.event === "FINISHED") {
+      setFinished(true);
     }
   }, [lastMessage]);
 

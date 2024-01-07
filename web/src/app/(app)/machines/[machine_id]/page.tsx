@@ -33,7 +33,7 @@ export default async function Page({
               endpoint={process.env.MODAL_BUILDER_URL!}
             />
           )}
-          {machine.build_log && (
+          {machine.status !== "building" && machine.build_log && (
             <LogsViewer logs={JSON.parse(machine.build_log)} />
           )}
         </CardContent>

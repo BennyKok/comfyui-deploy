@@ -17,4 +17,5 @@ export const addCustomMachineSchema = insertCustomMachineSchema.pick({
   name: true,
   type: true,
   snapshot: true,
+  models: true,
 });

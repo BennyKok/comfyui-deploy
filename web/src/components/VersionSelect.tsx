@@ -191,9 +191,11 @@ export function RunWorkflowButton({
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Run inputs</DialogTitle>
+          <DialogTitle>Confirm run</DialogTitle>
           <DialogDescription>
-            Run your workflow with custom inputs
+            {schema
+              ? "Run your workflow with custom inputs"
+              : "Confirm to run your workflow"}
           </DialogDescription>
         </DialogHeader>
         {/* <div className="max-h-96 overflow-y-scroll"> */}
@@ -203,6 +205,7 @@ export function RunWorkflowButton({
             values={values}
             onValuesChange={setValues}
             onSubmit={runWorkflow}
+            className="px-1"
           >
             <div className="flex justify-end">
               <AutoFormSubmit>

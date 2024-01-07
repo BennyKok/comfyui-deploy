@@ -1,9 +1,10 @@
-from typing import Union, Optional, Dict
-from pydantic import BaseModel
+from typing import Union, Optional, Dict, List
+from pydantic import BaseModel, Field, field_validator
 from fastapi import FastAPI, HTTPException, WebSocket, BackgroundTasks, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.logger import logger as fastapi_logger
 import os
+from enum import Enum
 import json
 import subprocess
 import time
@@ -104,17 +105,49 @@ class Snapshot(BaseModel):
     comfyui: str
     git_custom_nodes: Dict[str, GitCustomNodes]
 
+class Model(BaseModel):
+    name: str
+    type: str
+    base: str
+    save_path: str
+    description: str
+    reference: str
+    filename: str
+    url: str
+
+class GPUType(str, Enum):
+    T4 = "T4"
+    A10G = "A10G"
+    A100 = "A100"
+    L4 = "L4"
+
 class Item(BaseModel):
     machine_id: str
     name: str
     snapshot: Snapshot
+    models: List[Model]
     callback_url: str
+    gpu: GPUType = Field(default=GPUType.T4)
+
+    @field_validator('gpu')
+    @classmethod
+    def check_gpu(cls, value):
+        if value not in GPUType.__members__:
+            raise ValueError(f"Invalid GPU option. Choose from: {', '.join(GPUType.__members__.keys())}")
+        return GPUType(value)
 
 
 @app.websocket("/ws/{machine_id}")
 async def websocket_endpoint(websocket: WebSocket, machine_id: str):
     await websocket.accept()
     machine_id_websocket_dict[machine_id] = websocket
+    # Send existing logs
+    if machine_id in machine_logs_cache:
+        await websocket.send_text(json.dumps({"event": "LOGS", "data": {
+            "machine_id": machine_id,
+            "logs": json.dumps(machine_logs_cache[machine_id]) ,
+            "timestamp": time.time()
+        }}))
     try:
         while True:
             data = await websocket.receive_text()
@@ -156,6 +189,9 @@ async def create_item(item: Item):
     return JSONResponse(status_code=200, content={"message": "Build Queued"})
 
 
+# Initialize the logs cache
+machine_logs_cache = {}
+
 async def build_logic(item: Item):
     # Deploy to modal
     folder_path = f"/app/builds/{item.machine_id}"
@@ -175,7 +211,8 @@ async def build_logic(item: Item):
     # Write the config file
     config = {
         "name": item.name,
-        "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False")
+        "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
+        "gpu": item.gpu
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))
@@ -183,79 +220,99 @@ async def build_logic(item: Item):
     with open(f"{folder_path}/data/snapshot.json", "w") as f:
         f.write(item.snapshot.json())
 
+    with open(f"{folder_path}/data/models.json", "w") as f:
+        models_json_list = [model.dict() for model in item.models]
+        models_json_string = json.dumps(models_json_list)
+        f.write(models_json_string)
+
     # os.chdir(folder_path)
     # process = subprocess.Popen(f"modal deploy {folder_path}/app.py", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     process = await asyncio.subprocess.create_subprocess_shell(
         f"modal deploy app.py",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        cwd=folder_path
+        cwd=folder_path,
+        # env={**os.environ, "PYTHONUNBUFFERED": "1"}
     )
 
     url = None
 
-    # Initialize the logs cache
-    machine_logs_cache = []
-
-    # Stream the output
-    # Read output
-    while True:
-        line = await process.stdout.readline()
-        error = await process.stderr.readline()
-        if not line and not error:
-            break
-        l = line.decode('utf-8').strip()
-        e = error.decode('utf-8').strip()
+    if item.machine_id not in machine_logs_cache:
+        machine_logs_cache[item.machine_id] = []
         
-        if l != "":
-            logger.info(l)
-            machine_logs_cache.append({
-                "logs": l,
-                "timestamp": time.time()
-            })
+    machine_logs = machine_logs_cache[item.machine_id]
 
-            if item.machine_id in machine_id_websocket_dict:
-                await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
-                    "machine_id": item.machine_id,
-                    "logs": l,
-                    "timestamp": time.time()
-                }}))
+    async def read_stream(stream, isStderr):
+       while True:
+           line = await stream.readline()
+           if line:
+                l = line.decode('utf-8').strip()
 
+                if l == "": 
+                    continue
 
-            if "Created comfyui_app =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
-                if "Created comfyui_app =>" in l:
-                    url = l.split("=>")[1].strip()
-                else:
-                # Some case it only prints the url on a blank line
-                    url = l
-
-                if url:
-                    machine_logs_cache.append({
-                        "logs": f"App image built, url: {url}",
+                if not isStderr:
+                    logger.info(l)
+                    machine_logs.append({
+                        "logs": l,
                         "timestamp": time.time()
                     })
 
                     if item.machine_id in machine_id_websocket_dict:
                         await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
                             "machine_id": item.machine_id,
-                            "logs": f"App image built, url: {url}",
+                            "logs": l,
                             "timestamp": time.time()
                         }}))
-        
-        if e != "":
-            logger.info(e)
-            machine_logs_cache.append({
-                "logs": e,
-                "timestamp": time.time()
-            })
 
-            if item.machine_id in machine_id_websocket_dict:
-                await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
-                    "machine_id": item.machine_id,
-                    "logs": e,
-                    "timestamp": time.time()
-                }}))
 
+                    if "Created comfyui_app =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
+                        if "Created comfyui_app =>" in l:
+                            url = l.split("=>")[1].strip()
+                        else:
+                        # Some case it only prints the url on a blank line
+                            url = l
+
+                        if url:
+                            machine_logs.append({
+                                "logs": f"App image built, url: {url}",
+                                "timestamp": time.time()
+                            })
+
+                            if item.machine_id in machine_id_websocket_dict:
+                                await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
+                                    "machine_id": item.machine_id,
+                                    "logs": f"App image built, url: {url}",
+                                    "timestamp": time.time()
+                                }}))
+                                await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "FINISHED", "data": {
+                                    "status": "succuss",
+                                }}))
+                                
+                else:
+                    # is error
+                    logger.error(l)
+                    machine_logs.append({
+                        "logs": e,
+                        "timestamp": time.time()
+                    })
+
+                    if item.machine_id in machine_id_websocket_dict:
+                        await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
+                            "machine_id": item.machine_id,
+                            "logs": e,
+                            "timestamp": time.time()
+                        }}))
+                        await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "FINISHED", "data": {
+                            "status": "failed",
+                        }}))
+           else:
+               break
+
+    stdout_task = asyncio.create_task(read_stream(process.stdout, False))
+    stderr_task = asyncio.create_task(read_stream(process.stderr, True))
+
+    await asyncio.wait([stdout_task, stderr_task])
 
     # Wait for the subprocess to finish
     await process.wait()
@@ -273,29 +330,39 @@ async def build_logic(item: Item):
     if process.returncode != 0:
         logger.info("An error occurred.")
         # Send a post request with the json body machine_id to the callback url
-        machine_logs_cache.append({
+        machine_logs.append({
             "logs": "Unable to build the app image.",
             "timestamp": time.time()
         })
-        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs_cache)})
+        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
+        
+        if item.machine_id in machine_logs_cache:
+            del machine_logs_cache[item.machine_id]
+
         return
         # return JSONResponse(status_code=400, content={"error": "Unable to build the app image."})
 
     # app_suffix = "comfyui-app"
 
     if url is None:
-        machine_logs_cache.append({
+        machine_logs.append({
             "logs": "App image built, but url is None, unable to parse the url.",
             "timestamp": time.time()
         })
-        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs_cache)})
+        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
+
+        if item.machine_id in machine_logs_cache:
+            del machine_logs_cache[item.machine_id]
+
         return
         # return JSONResponse(status_code=400, content={"error": "App image built, but url is None, unable to parse the url."})
     # example https://bennykok--my-app-comfyui-app.modal.run/
     # my_url = f"https://{MODAL_ORG}--{item.container_id}-{app_suffix}.modal.run"
 
-    requests.post(item.callback_url, json={"machine_id": item.machine_id, "endpoint": url, "build_log": json.dumps(machine_logs_cache)})
-
+    requests.post(item.callback_url, json={"machine_id": item.machine_id, "endpoint": url, "build_log": json.dumps(machine_logs)})
+    if item.machine_id in machine_logs_cache:
+            del machine_logs_cache[item.machine_id]
+            
     logger.info("done")
     logger.info(url)
 

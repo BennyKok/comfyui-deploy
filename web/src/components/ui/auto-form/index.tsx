@@ -6,6 +6,7 @@ import type { FieldConfig } from "./types";
 import type { ZodObjectOrWrapped } from "./utils";
 import { getDefaultValues, getObjectFormSchema } from "./utils";
 import AutoFormObject from "@/components/ui/auto-form/fields/object";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { DefaultValues } from "react-hook-form";
@@ -68,11 +69,15 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
         }}
         className={cn("space-y-5", className)}
       >
-        <AutoFormObject
-          schema={objectFormSchema}
-          form={form}
-          fieldConfig={fieldConfig}
-        />
+        <ScrollArea>
+          <div className="max-h-[400px] px-1 py-1 w-full">
+            <AutoFormObject
+              schema={objectFormSchema}
+              form={form}
+              fieldConfig={fieldConfig}
+            />
+          </div>
+        </ScrollArea>
 
         {children}
       </form>

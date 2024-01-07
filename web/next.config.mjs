@@ -1,3 +1,4 @@
+import million from 'million/compiler';
 import { recmaPlugins } from "./src/mdx/recma.mjs";
 import { rehypePlugins } from "./src/mdx/rehype.mjs";
 import { remarkPlugins } from "./src/mdx/remark.mjs";
@@ -20,4 +21,6 @@ const nextConfig = {
   },
 };
 
-export default withSearch(withMDX(nextConfig));
+export default million.next(
+  withSearch(withMDX(nextConfig)), { auto: { rsc: true } }
+);

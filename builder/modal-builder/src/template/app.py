@@ -105,7 +105,7 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-@stub.function(image=target_image, gpu="T4")
+@stub.function(image=target_image, gpu=config["gpu"])
 def run(input: Input):
     import subprocess
     import time

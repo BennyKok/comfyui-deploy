@@ -43,6 +43,7 @@ export function InsertModal<
           <DialogTitle>{props.title}</DialogTitle>
           <DialogDescription>{props.description}</DialogDescription>
         </DialogHeader>
+        {/* <ScrollArea> */}
         <AutoForm
           fieldConfig={props.fieldConfig}
           formSchema={props.formSchema}
@@ -60,6 +61,7 @@ export function InsertModal<
             </AutoFormSubmit>
           </div>
         </AutoForm>
+        {/* </ScrollArea> */}
       </DialogContent>
     </Dialog>
   );

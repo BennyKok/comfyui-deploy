@@ -6,6 +6,8 @@ import AutoFormNumber from "./fields/number";
 import AutoFormRadioGroup from "./fields/radio-group";
 import AutoFormSwitch from "./fields/switch";
 import AutoFormTextarea from "./fields/textarea";
+import AutoFormModelsPicker from "@/components/custom-form/model-picker";
+import AutoFormSnapshotPicker from "@/components/custom-form/snapshot-picker";
 
 export const INPUT_COMPONENTS = {
   checkbox: AutoFormCheckbox,
@@ -16,6 +18,10 @@ export const INPUT_COMPONENTS = {
   textarea: AutoFormTextarea,
   number: AutoFormNumber,
   fallback: AutoFormInput,
+
+  // Customs
+  snapshot: AutoFormSnapshotPicker,
+  models: AutoFormModelsPicker,
 };
 
 /**
