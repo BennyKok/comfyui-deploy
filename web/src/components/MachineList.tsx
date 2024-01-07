@@ -199,14 +199,13 @@ export const columns: ColumnDef<Machine>[] = [
               </DropdownMenuItem>
             )}
             {machine.type === "comfy-deploy-serverless" && (
-              <DropdownMenuItem
-                onClick={async () => {
-                  window.open(
-                    machine.endpoint.replace("comfyui-api", "comfyui-app")
-                  );
-                }}
-              >
-                Open ComfyUI
+              <DropdownMenuItem asChild>
+                <a
+                  target="_blank"
+                  href={machine.endpoint.replace("comfyui-api", "comfyui-app")}
+                >
+                  Open ComfyUI
+                </a>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => setOpen(true)}>
