@@ -3,9 +3,9 @@ import requests
 import time
 import subprocess
 
-command = ["python3", "/comfyui/main.py", "--disable-auto-launch", "--disable-metadata", "--cpu"]
+command = ["python", "main.py", "--disable-auto-launch", "--disable-metadata", "--cpu"]
 # Start the server
-server_process = subprocess.Popen(command)
+server_process = subprocess.Popen(command, cwd="/comfyui")
 
 def check_server(url, retries=50, delay=500):
     for i in range(retries):

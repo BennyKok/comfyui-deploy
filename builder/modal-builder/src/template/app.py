@@ -1,3 +1,4 @@
+from config import config
 import modal
 from modal import Image, Mount, web_endpoint, Stub, asgi_app
 import json
@@ -12,7 +13,6 @@ from fastapi.responses import HTMLResponse
 import os
 current_directory = os.path.dirname(os.path.realpath(__file__))
 
-from config import config
 deploy_test = config["deploy_test"] == "True"
 # MODAL_IMAGE_ID = os.environ.get('MODAL_IMAGE_ID', None)
 
@@ -30,8 +30,41 @@ print("deploy_test ", deploy_test)
 stub = Stub(name=config["name"])
 
 if not deploy_test:
-    dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
+    # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
+    # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
 
+    dockerfile_image = (
+        modal.Image.debian_slim()
+        .apt_install("git", "wget")
+        .run_commands(
+            # Basic comfyui setup
+            "git clone https://github.com/comfyanonymous/ComfyUI.git /comfyui",
+            "cd /comfyui && pip install xformers!=0.0.18 -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121",
+
+            # Install comfyui manager
+            "cd /comfyui/custom_nodes && git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git",
+            "cd /comfyui/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt",
+            "cd /comfyui/custom_nodes/ComfyUI-Manager && mkdir startup-scripts",
+
+            # Install comfy deploy
+            "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
+        )
+        .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
+        .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
+
+        .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
+        .run_commands("chmod +x /start.sh")
+
+        .copy_local_file(f"{current_directory}/data/install_deps.py", "/")
+        .copy_local_file(f"{current_directory}/data/models.json", "/")
+        .copy_local_file(f"{current_directory}/data/deps.json", "/")
+
+        .run_commands("python install_deps.py")
+
+        .pip_install(
+            "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
+        )
+    )
 
 # Time to wait between API check attempts in milliseconds
 COMFY_API_AVAILABLE_INTERVAL_MS = 50
@@ -43,6 +76,7 @@ COMFY_POLLING_INTERVAL_MS = 250
 COMFY_POLLING_MAX_RETRIES = 500
 # Host where ComfyUI is running
 COMFY_HOST = "127.0.0.1:8188"
+
 
 def check_server(url, retries=50, delay=500):
     import requests
@@ -71,7 +105,6 @@ def check_server(url, retries=50, delay=500):
             # If an exception occurs, the server may not be ready
             pass
 
-
         # print(f"runpod-worker-comfy - trying")
 
         # Wait for the specified delay before retrying
@@ -82,9 +115,12 @@ def check_server(url, retries=50, delay=500):
     )
     return False
 
+
 def check_status(prompt_id):
-    req = urllib.request.Request(f"http://{COMFY_HOST}/comfyui-deploy/check-status?prompt_id={prompt_id}")
+    req = urllib.request.Request(
+        f"http://{COMFY_HOST}/comfyui-deploy/check-status?prompt_id={prompt_id}")
     return json.loads(urllib.request.urlopen(req).read())
+
 
 class Input(BaseModel):
     prompt_id: str
@@ -92,18 +128,23 @@ class Input(BaseModel):
     status_endpoint: str
     file_upload_endpoint: str
 
+
 def queue_workflow_comfy_deploy(data: Input):
     data_str = data.json()
-    data_bytes = data_str.encode('utf-8') 
-    req = urllib.request.Request(f"http://{COMFY_HOST}/comfyui-deploy/run", data=data_bytes)
+    data_bytes = data_str.encode('utf-8')
+    req = urllib.request.Request(
+        f"http://{COMFY_HOST}/comfyui-deploy/run", data=data_bytes)
     return json.loads(urllib.request.urlopen(req).read())
+
 
 class RequestInput(BaseModel):
     input: Input
 
+
 image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
+
 
 @stub.function(image=target_image, gpu=config["gpu"])
 def run(input: Input):
@@ -112,8 +153,9 @@ def run(input: Input):
     # Make sure that the ComfyUI API is available
     print(f"comfy-modal - check server")
 
-    command = ["python3", "/comfyui/main.py", "--disable-auto-launch", "--disable-metadata"]
-    server_process = subprocess.Popen(command)
+    command = ["python", "main.py",
+               "--disable-auto-launch", "--disable-metadata"]
+    server_process = subprocess.Popen(command, cwd="/comfyui")
 
     check_server(
         f"http://{COMFY_HOST}",
@@ -128,7 +170,8 @@ def run(input: Input):
     # Queue the workflow
     try:
         # job_input is the json input
-        queued_workflow = queue_workflow_comfy_deploy(job_input) # queue_workflow(workflow)
+        queued_workflow = queue_workflow_comfy_deploy(
+            job_input)  # queue_workflow(workflow)
         prompt_id = queued_workflow["prompt_id"]
         print(f"comfy-modal - queued workflow with ID {prompt_id}")
     except Exception as e:
@@ -170,10 +213,11 @@ def run(input: Input):
     # Get the generated image and return it as URL in an AWS bucket or as base64
     # images_result = process_output_images(history[prompt_id].get("outputs"), job["id"])
     # result = {**images_result, "refresh_worker": REFRESH_WORKER}
-    result = { "status": status }
+    result = {"status": status}
 
     return result
     print("Running remotely on Modal!")
+
 
 @web_app.post("/run")
 async def bar(request_input: RequestInput):
@@ -182,7 +226,73 @@ async def bar(request_input: RequestInput):
         return run.remote(request_input.input)
     # pass
 
+
 @stub.function(image=image)
 @asgi_app()
-def comfyui_app():
+def comfyui_api():
     return web_app
+
+
+HOST = "127.0.0.1"
+PORT = "8188"
+
+
+def spawn_comfyui_in_background():
+    import socket
+    import subprocess
+
+    process = subprocess.Popen(
+        [
+            "python",
+            "main.py",
+            "--dont-print-server",
+            "--port",
+            PORT,
+        ],
+        cwd="/comfyui",
+    )
+
+    # Poll until webserver accepts connections before running inputs.
+    while True:
+        try:
+            socket.create_connection((HOST, int(PORT)), timeout=1).close()
+            print("ComfyUI webserver ready!")
+            break
+        except (socket.timeout, ConnectionRefusedError):
+            # Check if launcher webserving process has exited.
+            # If so, a connection can never be made.
+            retcode = process.poll()
+            if retcode is not None:
+                raise RuntimeError(
+                    f"comfyui main.py exited unexpectedly with code {retcode}"
+                )
+
+
+@stub.function(
+    image=target_image,
+    gpu=config["gpu"],
+    # Allows 100 concurrent requests per container.
+    allow_concurrent_inputs=100,
+    # Restrict to 1 container because we want to our ComfyUI session state
+    # to be on a single container.
+    concurrency_limit=1,
+    timeout=10 * 60,
+)
+@asgi_app()
+def comfyui_app():
+    from asgiproxy.config import BaseURLProxyConfigMixin, ProxyConfig
+    from asgiproxy.context import ProxyContext
+    from asgiproxy.simple_proxy import make_simple_proxy_app
+
+    spawn_comfyui_in_background()
+
+    config = type(
+        "Config",
+        (BaseURLProxyConfigMixin, ProxyConfig),
+        {
+            "upstream_base_url": f"http://{HOST}:{PORT}",
+            "rewrite_host_header": f"{HOST}:{PORT}",
+        },
+    )()
+
+    return make_simple_proxy_app(ProxyContext(config))

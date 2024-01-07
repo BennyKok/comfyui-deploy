@@ -15,6 +15,9 @@ import signal
 import logging
 from fastapi.logger import logger as fastapi_logger
 import requests
+from urllib.parse import parse_qs
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Scope, Receive, Send
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -41,6 +44,34 @@ global_timeout = 60 * 4
 machine_id_websocket_dict = {}
 machine_id_status = {}
 
+fly_instance_id = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
+
+class FlyReplayMiddleware(BaseHTTPMiddleware):
+    """
+    If the wrong instance was picked by the fly.io load balancer we use the fly-replay header
+    to repeat the request again on the right instance.
+
+    This only works if the right instance is provided as a query_string parameter.
+    """
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        query_string = scope.get('query_string', b'').decode()
+        query_params = parse_qs(query_string)
+        target_instance = query_params.get('fly_instance_id', [fly_instance_id])[0]
+        async def send_wrapper(message):
+            if target_instance != fly_instance_id:
+                if message['type'] == 'websocket.close' and 'Invalid session' in message['reason']:
+                    # fly.io only seems to look at the fly-replay header if websocket is accepted
+                    message = {'type': 'websocket.accept'}
+                if 'headers' not in message:
+                    message['headers'] = []
+                message['headers'].append([b'fly-replay', f'instance={target_instance}'.encode()])
+            await send(message)
+        await self.app(scope, receive, send_wrapper)
+
+
 async def check_inactivity():
     global last_activity_time
     while True:
@@ -49,7 +80,8 @@ async def check_inactivity():
             if len(machine_id_status) == 0:
                 # The application has been inactive for more than 60 seconds.
                 # Scale it down to zero here.
-                logger.info(f"No activity for {global_timeout} seconds, exiting...")
+                logger.info(
+                    f"No activity for {global_timeout} seconds, exiting...")
                 # os._exit(0)
                 os.kill(os.getpid(), signal.SIGINT)
                 break
@@ -66,10 +98,11 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Cancelling")
 
-# 
+#
 app = FastAPI(lifespan=lifespan)
-
+app.add_middleware(FlyReplayMiddleware)
 # MODAL_ORG = os.environ.get("MODAL_ORG")
+
 
 @app.get("/")
 def read_root():
@@ -97,13 +130,16 @@ def read_root():
 #     }
 # }
 
+
 class GitCustomNodes(BaseModel):
     hash: str
     disabled: bool
 
+
 class Snapshot(BaseModel):
     comfyui: str
     git_custom_nodes: Dict[str, GitCustomNodes]
+
 
 class Model(BaseModel):
     name: str
@@ -115,11 +151,13 @@ class Model(BaseModel):
     filename: str
     url: str
 
+
 class GPUType(str, Enum):
     T4 = "T4"
     A10G = "A10G"
     A100 = "A100"
     L4 = "L4"
+
 
 class Item(BaseModel):
     machine_id: str
@@ -133,7 +171,8 @@ class Item(BaseModel):
     @classmethod
     def check_gpu(cls, value):
         if value not in GPUType.__members__:
-            raise ValueError(f"Invalid GPU option. Choose from: {', '.join(GPUType.__members__.keys())}")
+            raise ValueError(
+                f"Invalid GPU option. Choose from: {', '.join(GPUType.__members__.keys())}")
         return GPUType(value)
 
 
@@ -143,9 +182,11 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
     machine_id_websocket_dict[machine_id] = websocket
     # Send existing logs
     if machine_id in machine_logs_cache:
+        combined_logs = "\n".join(
+            log_entry['logs'] for log_entry in machine_logs_cache[machine_id])
         await websocket.send_text(json.dumps({"event": "LOGS", "data": {
             "machine_id": machine_id,
-            "logs": json.dumps(machine_logs_cache[machine_id]) ,
+            "logs": combined_logs,
             "timestamp": time.time()
         }}))
     try:
@@ -173,6 +214,7 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
 
 #     return {"Hello": "World"}
 
+
 @app.post("/create")
 async def create_item(item: Item):
     global last_activity_time
@@ -185,12 +227,13 @@ async def create_item(item: Item):
     # Run the building logic in a separate thread
     # future = executor.submit(build_logic, item)
     task = asyncio.create_task(build_logic(item))
-    
-    return JSONResponse(status_code=200, content={"message": "Build Queued"})
+
+    return JSONResponse(status_code=200, content={"message": "Build Queued", "build_machine_instance_id": fly_instance_id})
 
 
 # Initialize the logs cache
 machine_logs_cache = {}
+
 
 async def build_logic(item: Item):
     # Deploy to modal
@@ -239,16 +282,18 @@ async def build_logic(item: Item):
 
     if item.machine_id not in machine_logs_cache:
         machine_logs_cache[item.machine_id] = []
-        
+
     machine_logs = machine_logs_cache[item.machine_id]
 
-    async def read_stream(stream, isStderr):
-       while True:
-           line = await stream.readline()
-           if line:
+    url_queue = asyncio.Queue()
+
+    async def read_stream(stream, isStderr, url_queue: asyncio.Queue):
+        while True:
+            line = await stream.readline()
+            if line:
                 l = line.decode('utf-8').strip()
 
-                if l == "": 
+                if l == "":
                     continue
 
                 if not isStderr:
@@ -265,12 +310,12 @@ async def build_logic(item: Item):
                             "timestamp": time.time()
                         }}))
 
-
-                    if "Created comfyui_app =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
-                        if "Created comfyui_app =>" in l:
+                    if "Created comfyui_api =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
+                        if "Created comfyui_api =>" in l:
                             url = l.split("=>")[1].strip()
-                        else:
-                        # Some case it only prints the url on a blank line
+                        # making sure it is a url
+                        elif "comfyui_api" in l:
+                            # Some case it only prints the url on a blank line
                             url = l
 
                         if url:
@@ -278,6 +323,8 @@ async def build_logic(item: Item):
                                 "logs": f"App image built, url: {url}",
                                 "timestamp": time.time()
                             })
+
+                            await url_queue.put(url)
 
                             if item.machine_id in machine_id_websocket_dict:
                                 await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
@@ -288,7 +335,7 @@ async def build_logic(item: Item):
                                 await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "FINISHED", "data": {
                                     "status": "succuss",
                                 }}))
-                                
+
                 else:
                     # is error
                     logger.error(l)
@@ -306,11 +353,15 @@ async def build_logic(item: Item):
                         await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "FINISHED", "data": {
                             "status": "failed",
                         }}))
-           else:
-               break
+            else:
+                break
 
-    stdout_task = asyncio.create_task(read_stream(process.stdout, False))
-    stderr_task = asyncio.create_task(read_stream(process.stderr, True))
+    stdout_task = asyncio.create_task(
+        read_stream(process.stdout, False, url_queue))
+    stderr_task = asyncio.create_task(
+        read_stream(process.stderr, True, url_queue))
+
+    url = await url_queue.get()
 
     await asyncio.wait([stdout_task, stderr_task])
 
@@ -334,8 +385,9 @@ async def build_logic(item: Item):
             "logs": "Unable to build the app image.",
             "timestamp": time.time()
         })
-        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
-        
+        requests.post(item.callback_url, json={
+                      "machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
+
         if item.machine_id in machine_logs_cache:
             del machine_logs_cache[item.machine_id]
 
@@ -349,7 +401,8 @@ async def build_logic(item: Item):
             "logs": "App image built, but url is None, unable to parse the url.",
             "timestamp": time.time()
         })
-        requests.post(item.callback_url, json={"machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
+        requests.post(item.callback_url, json={
+                      "machine_id": item.machine_id, "build_log": json.dumps(machine_logs)})
 
         if item.machine_id in machine_logs_cache:
             del machine_logs_cache[item.machine_id]
@@ -359,16 +412,19 @@ async def build_logic(item: Item):
     # example https://bennykok--my-app-comfyui-app.modal.run/
     # my_url = f"https://{MODAL_ORG}--{item.container_id}-{app_suffix}.modal.run"
 
-    requests.post(item.callback_url, json={"machine_id": item.machine_id, "endpoint": url, "build_log": json.dumps(machine_logs)})
+    requests.post(item.callback_url, json={
+                  "machine_id": item.machine_id, "endpoint": url, "build_log": json.dumps(machine_logs)})
     if item.machine_id in machine_logs_cache:
-            del machine_logs_cache[item.machine_id]
-            
+        del machine_logs_cache[item.machine_id]
+
     logger.info("done")
     logger.info(url)
+
 
 def start_loop(loop):
     asyncio.set_event_loop(loop)
     loop.run_forever()
+
 
 def run_in_new_thread(coroutine):
     new_loop = asyncio.new_event_loop()
@@ -376,6 +432,7 @@ def run_in_new_thread(coroutine):
     t.start()
     asyncio.run_coroutine_threadsafe(coroutine, new_loop)
     return t
+
 
 if __name__ == "__main__":
     import uvicorn
