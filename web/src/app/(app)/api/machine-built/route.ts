@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 
-  console.log(data);
+  // console.log(data);
 
   const { machine_id, endpoint, build_log } = data;
 
