@@ -176,6 +176,13 @@
       "when": 1704632758591,
       "tag": "0024_smiling_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1704640269305,
+      "tag": "0025_hard_jean_grey",
+      "breakpoints": true
     }
   ]
 }
