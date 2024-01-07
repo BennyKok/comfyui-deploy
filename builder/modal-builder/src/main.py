@@ -310,13 +310,16 @@ async def build_logic(item: Item):
                             "timestamp": time.time()
                         }}))
 
-                    if "Created comfyui-api =>" in l or (l.startswith("https://") and l.endswith(".modal.run")):
-                        if "Created comfyui-api =>" in l:
+                    if "Created comfyui_api =>" in l or ((l.startswith("https://") or l.startswith("│   https://")) and l.endswith(".modal.run")):
+                        if "Created comfyui_api =>" in l:
                             url = l.split("=>")[1].strip()
                         # making sure it is a url
                         elif "comfyui-api" in l:
                             # Some case it only prints the url on a blank line
-                            url = l
+                            if l.startswith("│   https://"):
+                                url = l.split("│")[1].strip()
+                            else:
+                                url = l
 
                         if url:
                             machine_logs.append({
