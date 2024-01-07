@@ -304,13 +304,15 @@ export function MachineList({ data }: { data: Machine[] }) {
         />
         <div className="ml-auto flex gap-2">
           <InsertModal
-            title="Add Machine"
-            description="Add Comfyui machines to your account."
-            serverAction={addMachine}
-            formSchema={addMachineSchema}
-          />
-          <InsertModal
-            title="Custom Machine"
+            disabled={data.some(
+              (machine) => machine.type === "comfy-deploy-serverless"
+            )}
+            tooltip={
+              data.some((machine) => machine.type === "comfy-deploy-serverless")
+                ? "Only one hosted machine at preview stage"
+                : undefined
+            }
+            title="New Machine"
             description="Add custom Comfyui machines to your account."
             serverAction={addCustomMachine}
             formSchema={addCustomMachineSchema}
@@ -330,6 +332,12 @@ export function MachineList({ data }: { data: Machine[] }) {
                 fieldType: "models",
               },
             }}
+          />
+          <InsertModal
+            title="Custom Machine"
+            description="Add custom comfyui machines to your account."
+            serverAction={addMachine}
+            formSchema={addMachineSchema}
           />
         </div>
       </div>

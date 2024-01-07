@@ -11,8 +11,12 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import * as React from "react";
 import { useState } from "react";
 import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
@@ -22,6 +26,8 @@ export function InsertModal<
   Y extends UnknownKeysParam,
   Z extends ZodObject<K, Y>
 >(props: {
+  tooltip?: string;
+  disabled?: boolean;
   title: string;
   description: string;
   serverAction: (data: z.infer<Z>) => Promise<unknown>;
@@ -33,11 +39,37 @@ export function InsertModal<
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" className="">
+      {/* <DialogTrigger disabled={props.disabled}> */}
+      {props.tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="default"
+              className={props.disabled ? "opacity-50" : ""}
+              onClick={() => {
+                if (props.disabled) return;
+                setOpen(true);
+              }}
+            >
+              {props.title}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{props.tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Button
+          variant="default"
+          disabled={props.disabled}
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
           {props.title}
         </Button>
-      </DialogTrigger>
+      )}
+      {/* </DialogTrigger> */}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{props.title}</DialogTitle>

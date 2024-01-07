@@ -29,7 +29,7 @@ export function PaginationControl(props: {
   );
 
   return (
-    <Pagination>
+    <Pagination className="mt-2">
       <PaginationContent>
         <PaginationPrevious
           href={
