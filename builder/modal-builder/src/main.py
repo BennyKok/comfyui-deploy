@@ -343,14 +343,14 @@ async def build_logic(item: Item):
                     # is error
                     logger.error(l)
                     machine_logs.append({
-                        "logs": e,
+                        "logs": l,
                         "timestamp": time.time()
                     })
 
                     if item.machine_id in machine_id_websocket_dict:
                         await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "LOGS", "data": {
                             "machine_id": item.machine_id,
-                            "logs": e,
+                            "logs": l,
                             "timestamp": time.time()
                         }}))
                         await machine_id_websocket_dict[item.machine_id].send_text(json.dumps({"event": "FINISHED", "data": {
