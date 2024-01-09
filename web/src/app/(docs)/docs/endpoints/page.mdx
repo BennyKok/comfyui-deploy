@@ -1,0 +1,91 @@
+export const metadata = {
+  title: 'Workflow API',
+  description:
+    'Get started with API integration to run any deploy ComfyUI workflow',
+}
+
+{/* # Workflow API */}
+
+{/* Get started with API integration to run any deploy ComfyUI workflow */}
+
+<SwaggerUI url={"/api/doc"}></SwaggerUI>
+
+{/* ## Trigger a run {{ tag: 'POST', label: '/api/run' }}
+
+<Row>
+  <Col>
+
+    Trigger a run with a deployment id
+
+    ### Optional attributes
+
+    <Properties>
+      <Property name="conversation_id" type="string">
+        Limit to attachments from a given conversation.
+      </Property>
+      <Property name="limit" type="integer">
+        Limit the number of attachments returned.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/v1/attachments">
+
+    ```bash {{ title: 'cURL' }}
+    curl -G https://api.protocol.chat/v1/attachments \
+      -H "Authorization: Bearer {token}" \
+      -d conversation_id="xgQQXg3hrtjh7AvZ" \
+      -d limit=10
+    ```
+
+    ```js
+    import ApiClient from '@example/protocol-api'
+
+    const client = new ApiClient(token)
+
+    await client.attachments.list()
+    ```
+
+    ```python
+    from protocol_api import ApiClient
+
+    client = ApiClient(token)
+
+    client.attachments.list()
+    ```
+
+    ```php
+    $client = new \Protocol\ApiClient($token);
+
+    $client->attachments->list();
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Response' }}
+    {
+      "has_more": false,
+      "data": [
+        {
+          "id": "Nc6yKKMpcxiiFxp6",
+          "message_id": "LoPsJaMcPBuFNjg1",
+          "filename": "Invoice_room_service__Plaza_Hotel.pdf",
+          "file_url": "https://assets.protocol.chat/attachments/Invoice_room_service__Plaza_Hotel.pdf",
+          "file_type": "application/pdf",
+          "file_size": 21352,
+          "created_at": 692233200
+        },
+        {
+          "id": "hSIhXBhNe8X1d8Et"
+          // ...
+        }
+      ]
+    }
+    ```
+
+  </Col>
+</Row>
+
+--- */}

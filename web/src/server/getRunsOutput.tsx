@@ -20,29 +20,7 @@ export async function getRunsOutput(run_id: string) {
 
 export async function getRunsData(user: APIKeyUserType, run_id: string) {
   const data = await db.query.workflowRunsTable.findFirst({
-    where: and(
-      eq(workflowRunsTable.id, run_id)
-      // inArray(
-      //   workflowRunsTable.workflow_id,
-      //   db
-      //     .select({
-      //       id: workflowTable.id,
-      //     })
-      //     .from(workflowTable)
-      //     .innerJoin(
-      //       workflowRunsTable,
-      //       eq(workflowTable.id, workflowRunsTable.workflow_id)
-      //     )
-      //     .where(
-      //       and(
-      //         eq(workflowTable.id, workflowRunsTable.workflow_id),
-      //         user.org_id
-      //           ? eq(workflowTable.org_id, user.org_id)
-      //           : eq(workflowTable.user_id, user.user_id!)
-      //       )
-      //     )
-      // )
-    ),
+    where: and(eq(workflowRunsTable.id, run_id)),
     with: {
       workflow: {
         columns: {

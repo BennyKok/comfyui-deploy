@@ -2,8 +2,15 @@ import { Feedback } from "@/components/docs/Feedback";
 import { Heading } from "@/components/docs/Heading";
 import { Prose } from "@/components/docs/Prose";
 import { cn } from "@/lib/utils";
+// import { SwaggerUI } from "@hono/swagger-ui";
 import clsx from "clsx";
+import dynamic from "next/dynamic";
+// import _SwaggerUI from "swagger-ui-react";
 import Link from "next/link";
+
+export const SwaggerUI = dynamic(() => import("./SwaggerUIClient"), {
+  ssr: false,
+});
 
 export const a = Link;
 export { Button } from "@/components/docs/Button";
