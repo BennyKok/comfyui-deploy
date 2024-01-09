@@ -21,7 +21,6 @@
     "@clerk/nextjs": "^4.27.4",
     "@headlessui/react": "^1.7.17",
     "@headlessui/tailwindcss": "^0.2.0",
-    "@hono/node-server": "^1.4.0",
     "@hono/swagger-ui": "^0.2.1",
     "@hono/zod-openapi": "^0.9.5",
     "@hono/zod-validator": "^0.1.11",
