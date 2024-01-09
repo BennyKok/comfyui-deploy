@@ -14,7 +14,7 @@ import { handle } from "hono/vercel";
 
 export const dynamic = "force-dynamic";
 
-export const app = new OpenAPIHono().basePath("/api");
+const app = new OpenAPIHono().basePath("/api");
 
 declare module "hono" {
   interface ContextVariableMap {
