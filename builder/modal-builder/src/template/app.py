@@ -28,6 +28,7 @@ web_app = FastAPI()
 print(config)
 print("deploy_test ", deploy_test)
 stub = Stub(name=config["name"])
+# print(stub.app_id)
 
 if not deploy_test:
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
@@ -36,6 +37,10 @@ if not deploy_test:
     dockerfile_image = (
         modal.Image.debian_slim()
         .apt_install("git", "wget")
+        .pip_install(
+            "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
+        )
+        .apt_install("libgl1-mesa-glx", "libglib2.0-0")
         .run_commands(
             # Basic comfyui setup
             "git clone https://github.com/comfyanonymous/ComfyUI.git /comfyui",
@@ -50,7 +55,6 @@ if not deploy_test:
             "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
         )
         .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
-        .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
 
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
         .run_commands("chmod +x /start.sh")
@@ -61,9 +65,9 @@ if not deploy_test:
 
         .run_commands("python install_deps.py")
 
-        .pip_install(
-            "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
-        )
+        .copy_local_file(f"{current_directory}/data/restore_snapshot.py", "/")
+        .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
+        .run_commands("python restore_snapshot.py")
     )
 
 # Time to wait between API check attempts in milliseconds
