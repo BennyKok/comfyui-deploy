@@ -219,6 +219,28 @@ export const updateMachine = withServerPromise(
 
 export const deleteMachine = withServerPromise(
   async (machine_id: string): Promise<{ message: string }> => {
+    const machine = await db.query.machinesTable.findFirst({
+      where: eq(machinesTable.id, machine_id),
+    });
+
+    if (machine?.type === "comfy-deploy-serverless") {
+      // Call remote builder to stop the app on modal
+      const result = await fetch(`${process.env.MODAL_BUILDER_URL!}/stop-app`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          machine_id: machine_id,
+        }),
+      });
+
+      if (!result.ok) {
+        const error_log = await result.text();
+        throw new Error(`Error: ${result.statusText} ${error_log}`);
+      }
+    }
+
     await db.delete(machinesTable).where(eq(machinesTable.id, machine_id));
     revalidatePath("/machines");
     return { message: "Machine Deleted" };
