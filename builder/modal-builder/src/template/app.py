@@ -59,15 +59,17 @@ if not deploy_test:
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
         .run_commands("chmod +x /start.sh")
 
+        # Restore the custom nodes first
+        .copy_local_file(f"{current_directory}/data/restore_snapshot.py", "/")
+        .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
+        .run_commands("python restore_snapshot.py")
+
+        # Then install the models
         .copy_local_file(f"{current_directory}/data/install_deps.py", "/")
         .copy_local_file(f"{current_directory}/data/models.json", "/")
         .copy_local_file(f"{current_directory}/data/deps.json", "/")
 
         .run_commands("python install_deps.py")
-
-        .copy_local_file(f"{current_directory}/data/restore_snapshot.py", "/")
-        .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
-        .run_commands("python restore_snapshot.py")
     )
 
 # Time to wait between API check attempts in milliseconds
