@@ -140,11 +140,15 @@ class GitCustomNodes(BaseModel):
     hash: str
     disabled: bool
 
+class FileCustomNodes(BaseModel):
+    filename: str
+    disabled: bool
+
 
 class Snapshot(BaseModel):
     comfyui: str
     git_custom_nodes: Dict[str, GitCustomNodes]
-
+    file_custom_nodes: List[FileCustomNodes]
 
 class Model(BaseModel):
     name: str
