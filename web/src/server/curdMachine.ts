@@ -175,7 +175,7 @@ async function buildMachine(
       snapshot: data.snapshot, //JSON.parse( as string),
       callback_url: `${protocol}://${domain}/api/machine-built`,
       models: data.models, //JSON.parse(data.models as string),
-      gpu: data.gpu ?? "T4",
+      gpu: data.gpu && data.gpu.length > 0 ? data.gpu : "T4",
     }),
   });
 
