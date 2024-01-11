@@ -316,9 +316,11 @@ export function MachineList({
         <div className="ml-auto flex gap-2">
           <InsertModal
             dialogClassName="sm:max-w-[600px]"
-            disabled={data.some(
-              (machine) => machine.type === "comfy-deploy-serverless"
-            )}
+            disabled={
+              data.some(
+                (machine) => machine.type === "comfy-deploy-serverless"
+              ) && !userMetadata.betaFeaturesAccess
+            }
             tooltip={
               data.some((machine) => machine.type === "comfy-deploy-serverless")
                 ? "Only one hosted machine at preview stage"
