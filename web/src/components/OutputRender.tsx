@@ -5,7 +5,12 @@ export async function OutputRender(props: {
   run_id: string;
   filename: string;
 }) {
-  if (props.filename.endsWith(".png")) {
+  if (
+    props.filename.endsWith(".png") ||
+    props.filename.endsWith(".gif") ||
+    props.filename.endsWith(".jpg") ||
+    props.filename.endsWith(".jpeg")
+  ) {
     const url = await getFileDownloadUrl(
       `outputs/runs/${props.run_id}/${props.filename}`
     );
@@ -15,7 +20,7 @@ export async function OutputRender(props: {
     const url = await getFileDownloadUrl(
       `outputs/runs/${props.run_id}/${props.filename}`
     );
-    console.log(url);
+    // console.log(url);
 
     return <DownloadButton filename={props.filename} href={url} />;
   }

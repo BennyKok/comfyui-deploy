@@ -34,7 +34,7 @@ class ComfyUIDeployExternalImage:
                 print("Fetching image from url: ", input_id)
                 response = requests.get(input_id)
                 image = Image.open(BytesIO(response.content))
-            elif input_id.startswith('data:image/png;base64,'):
+            elif input_id.startswith('data:image/png;base64,') or input_id.startswith('data:image/jpeg;base64,') or input_id.startswith('data:image/jpg;base64,'):
                 import base64
                 from io import BytesIO
                 print("Decoding base64 image")
