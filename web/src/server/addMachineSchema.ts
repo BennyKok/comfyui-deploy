@@ -11,6 +11,7 @@ export const addMachineSchema = insertMachineSchema.pick({
 export const insertCustomMachineSchema = createInsertSchema(machinesTable, {
   name: (schema) => schema.name.default("My Machine"),
   type: (schema) => schema.type.default("comfy-deploy-serverless"),
+  gpu: (schema) => schema.gpu.default("T4"),
   snapshot: (schema) =>
     schema.snapshot.default({
       comfyui: "d0165d819afe76bd4e6bdd710eb5f3e571b6a804",
@@ -37,4 +38,5 @@ export const addCustomMachineSchema = insertCustomMachineSchema.pick({
   type: true,
   snapshot: true,
   models: true,
+  gpu: true,
 });

@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type MachineType } from "@/db/schema";
+import type { AccessType } from "@/lib/AccessType";
 import {
   addCustomMachineSchema,
   addMachineSchema,
@@ -53,6 +54,7 @@ import {
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
+import type { z } from "zod";
 
 export type Machine = MachineType;
 
@@ -237,6 +239,9 @@ export const columns: ColumnDef<Machine>[] = [
                 models: {
                   fieldType: "models",
                 },
+                gpu: {
+                  inputProps: {},
+                },
               }}
             />
           ) : (
@@ -263,7 +268,13 @@ export const columns: ColumnDef<Machine>[] = [
   },
 ];
 
-export function MachineList({ data }: { data: Machine[] }) {
+export function MachineList({
+  data,
+  userMetadata,
+}: {
+  data: Machine[];
+  userMetadata: z.infer<typeof AccessType>;
+}) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -331,6 +342,14 @@ export function MachineList({ data }: { data: Machine[] }) {
               },
               models: {
                 fieldType: "models",
+              },
+              gpu: {
+                fieldType: !userMetadata.betaFeaturesAccess
+                  ? "fallback"
+                  : "select",
+                inputProps: {
+                  disabled: !userMetadata.betaFeaturesAccess,
+                },
               },
             }}
           />

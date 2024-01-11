@@ -104,6 +104,8 @@ export const workflowRunOrigin = pgEnum("workflow_run_origin", [
   "api",
 ]);
 
+export const machineGPUOptions = pgEnum("machine_gpu", ["T4", "A10G", "A100"]);
+
 export const machinesType = pgEnum("machine_type", [
   "classic",
   "runpod-serverless",
@@ -205,6 +207,7 @@ export const machinesTable = dbSchema.table("machines", {
   status: machinesStatus("status").notNull().default("ready"),
   snapshot: jsonb("snapshot").$type<any>(),
   models: jsonb("models").$type<any>(),
+  gpu: machineGPUOptions("gpu"),
   build_machine_instance_id: text("build_machine_instance_id"),
   build_log: text("build_log"),
 });

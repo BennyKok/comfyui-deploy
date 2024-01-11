@@ -93,6 +93,7 @@ export const updateCustomMachine = withServerPromise(
       JSON.stringify(data.snapshot) !== JSON.stringify(currentMachine.snapshot);
     const modelsChanged =
       JSON.stringify(data.models) !== JSON.stringify(currentMachine.models);
+    const gpuChanged = data.gpu !== currentMachine.gpu;
 
     // return {
     //   message: `snapshotChanged: ${snapshotChanged}, modelsChanged: ${modelsChanged}`,
@@ -101,7 +102,7 @@ export const updateCustomMachine = withServerPromise(
     await db.update(machinesTable).set(data).where(eq(machinesTable.id, id));
 
     // If there are changes
-    if (snapshotChanged || modelsChanged) {
+    if (snapshotChanged || modelsChanged || gpuChanged) {
       // Update status to building
       await db
         .update(machinesTable)
@@ -174,7 +175,7 @@ async function buildMachine(
       snapshot: data.snapshot, //JSON.parse( as string),
       callback_url: `${protocol}://${domain}/api/machine-built`,
       models: data.models, //JSON.parse(data.models as string),
-      gpu: "T4",
+      gpu: data.gpu ?? "T4",
     }),
   });
 

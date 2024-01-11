@@ -59,7 +59,7 @@ function SnapshotPresetPicker({
 
   React.useEffect(() => {
     findAllDeployments().then((a) => {
-      console.log(a);
+      // console.log(a);
 
       const frameworks = a
         .map((item) => {
