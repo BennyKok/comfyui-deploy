@@ -11,6 +11,10 @@ Open source comfyui deployment platform, a `vercel` for generative workflow infr
 
 https://github.com/BennyKok/comfyui-deploy/assets/18395202/85f85325-a4bb-446d-aa67-ed225ee03479
 
+# Setting up a basic sd txt2img API
+
+https://github.com/BennyKok/comfyui-deploy/assets/18395202/0fb1829b-401a-41f2-b21a-5b77483c6ee2
+
 # Comfy Deploy Plugin Installation
 
 > Plugin lets you set up the machine as a target machine, and also upload workflow directly from there
@@ -19,7 +23,8 @@ https://github.com/BennyKok/comfyui-deploy/assets/18395202/85f85325-a4bb-446d-aa
 2. `git clone https://github.com/BennyKok/comfyui-deploy.git`
 3. Go to (https://comfydeploy.com) or a self-hosted version
    - Machines -> Add Machines
-   - Enter a name and the URL of your machines (set up Ngrok for a public URL for your machines)
+      - Enter a name and the URL of your machines (set up Ngrok for a public URL for your machines)
+      - Create a new ComfyDeploy machines (pick any custom nodes).
 
 # Usecase
 
