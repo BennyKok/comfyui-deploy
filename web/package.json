@@ -47,6 +47,7 @@
     "@sindresorhus/slugify": "^2.2.1",
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/react-table": "^8.10.7",
+    "@tanstack/react-virtual": "beta",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/react-highlight-words": "^0.16.7",
     "@types/swagger-ui-react": "^4.18.3",

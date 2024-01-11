@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useState } from "react";
 import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
@@ -30,6 +31,7 @@ export function InsertModal<
   disabled?: boolean;
   title: string;
   description: string;
+  dialogClassName?: string;
   serverAction: (data: z.infer<Z>) => Promise<unknown>;
   formSchema: Z;
   fieldConfig?: FieldConfig<z.infer<Z>>;
@@ -70,7 +72,7 @@ export function InsertModal<
         </Button>
       )}
       {/* </DialogTrigger> */}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className={cn("sm:max-w-[425px]", props.dialogClassName)}>
         <DialogHeader>
           <DialogTitle>{props.title}</DialogTitle>
           <DialogDescription>{props.description}</DialogDescription>
@@ -108,6 +110,7 @@ export function UpdateModal<
   setOpen: (open: boolean) => void;
   title: string;
   description: string;
+  dialogClassName?: string;
   data: z.infer<Z>;
   serverAction: (
     data: z.infer<Z> & {
@@ -130,7 +133,7 @@ export function UpdateModal<
       {/* <DialogTrigger asChild>
         <DropdownMenuItem>{props.title}</DropdownMenuItem>
       </DialogTrigger> */}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className={cn("sm:max-w-[425px]", props.dialogClassName)}>
         <DialogHeader>
           <DialogTitle>{props.title}</DialogTitle>
           <DialogDescription>{props.description}</DialogDescription>

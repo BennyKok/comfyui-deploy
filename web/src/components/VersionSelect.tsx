@@ -1,6 +1,7 @@
 "use client";
 
 import { callServerPromise } from "./callServerPromise";
+import fetcher from "./fetcher";
 import { LoadingIcon } from "@/components/LoadingIcon";
 import AutoForm, { AutoFormSubmit } from "@/components/ui/auto-form";
 import { Badge } from "@/components/ui/badge";
@@ -359,14 +360,6 @@ export function getWorkflowVersionFromVersionIndex(
   const workflow_version = workflow?.versions.find((x) => x.version == version);
 
   return workflow_version;
-}
-
-export default async function fetcher<JSON = unknown>(
-  input: RequestInfo,
-  init?: RequestInit
-): Promise<JSON> {
-  const res = await fetch(input, init);
-  return res.json();
 }
 
 export function ViewWorkflowDetailsButton({

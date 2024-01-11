@@ -214,6 +214,7 @@ export const columns: ColumnDef<Machine>[] = [
           </DropdownMenuContent>
           {machine.type === "comfy-deploy-serverless" ? (
             <UpdateModal
+              dialogClassName="sm:max-w-[600px]"
               data={machine}
               open={open}
               setOpen={setOpen}
@@ -303,6 +304,7 @@ export function MachineList({ data }: { data: Machine[] }) {
         />
         <div className="ml-auto flex gap-2">
           <InsertModal
+            dialogClassName="sm:max-w-[600px]"
             disabled={data.some(
               (machine) => machine.type === "comfy-deploy-serverless"
             )}

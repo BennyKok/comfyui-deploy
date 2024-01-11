@@ -112,7 +112,7 @@ export function ModelPickerView({
         </PopoverTrigger>
         <PopoverContent className="w-[375px] p-0" side="top">
           <Command>
-            <CommandInput placeholder="Search framework..." className="h-9" />
+            <CommandInput placeholder="Search models..." className="h-9" />
             <CommandEmpty>No framework found.</CommandEmpty>
             <CommandList className="pointer-events-auto">
               <CommandGroup>
@@ -144,7 +144,7 @@ export function ModelPickerView({
         </PopoverContent>
       </Popover>
       {field.value && (
-        <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[360px] rounded-lg mt-2">
+        <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[500px] rounded-lg mt-2">
           <div className="max-h-[200px]">
             <pre className="p-2 rounded-md text-xs ">
               {JSON.stringify(field.value, null, 2)}
