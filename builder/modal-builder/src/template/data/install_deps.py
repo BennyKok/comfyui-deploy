@@ -3,6 +3,8 @@ import requests
 import time
 import subprocess
 
+print("Starting ComfyUI")
+
 command = ["python", "main.py", "--disable-auto-launch", "--disable-metadata", "--cpu"]
 # Start the server
 server_process = subprocess.Popen(command, cwd="/comfyui")

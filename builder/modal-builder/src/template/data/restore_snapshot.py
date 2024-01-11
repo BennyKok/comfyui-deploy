@@ -6,7 +6,8 @@ import asyncio
 import logging
 
 # Set up the logger
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger("restore_snapshot")
 
 # Start the server
 # server_process = subprocess.Popen(command, cwd="/comfyui", stdout=subprocess.PIPE)
@@ -47,19 +48,19 @@ async def read_stream(stream, isStderr):
                 continue
 
             if not isStderr:
-                logging.info(l)
+                logger.info(l)
 
                 # If the output matches one of the messages, print it and break the loop
                 if success_message in l:
-                    logging.info("Snapshot restore succeeded.")
+                    logger.info("Snapshot restore succeeded.")
                     break
                 elif failure_message in l:
-                    logging.info("Snapshot restore failed.")
+                    logger.info("Snapshot restore failed.")
                     break
             else:
                 # is error
                 # logger.error(l)
-                logging.error(l)
+                logger.error(l)
                 break
                 
         else:
