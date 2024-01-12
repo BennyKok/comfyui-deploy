@@ -170,7 +170,7 @@ async def websocket_handler(request):
 async def comfy_deploy_check_status(request):
     prompt_server = server.PromptServer.instance
     prompt_id = request.rel_url.query.get('prompt_id', None)
-    if prompt_id in prompt_metadata:
+    if prompt_id in prompt_metadata and 'status' in prompt_metadata[prompt_id]:
         return web.json_response({
             "status": prompt_metadata[prompt_id]['status'].value
         })
