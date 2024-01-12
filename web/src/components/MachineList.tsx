@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -363,7 +364,7 @@ export function MachineList({
           />
         </div>
       </div>
-      <div className="rounded-md border overflow-x-auto w-full">
+      <ScrollArea className="rounded-md  border w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -412,7 +413,8 @@ export function MachineList({
             )}
           </TableBody>
         </Table>
-      </div>
+      </ScrollArea>
+
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
