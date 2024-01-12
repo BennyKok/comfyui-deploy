@@ -249,6 +249,7 @@ def update_run(prompt_id, status: Status):
             "status": status.value,
         }
         prompt_metadata[prompt_id]['status'] = status
+        print(f"Status: {status.value}")
 
         try:
             requests.post(status_endpoint, json=body)
@@ -371,7 +372,6 @@ async def update_file_status(prompt_id, data, uploading, have_error=False, node_
     if uploading:
         if prompt_metadata[prompt_id]['status'] != Status.UPLOADING:
             update_run(prompt_id, Status.UPLOADING)
-            print("Status: UPLOADING")
             await send("uploading", {
                 "prompt_id": prompt_id,
             })
