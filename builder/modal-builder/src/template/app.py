@@ -51,10 +51,10 @@ if not deploy_test:
             "cd /comfyui/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt",
             "cd /comfyui/custom_nodes/ComfyUI-Manager && mkdir startup-scripts",
         )
-        .run_commands(
-            # Install comfy deploy
-            "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
-        )
+        # .run_commands(
+        #     # Install comfy deploy
+        #     "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
+        # )
         .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
 
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
