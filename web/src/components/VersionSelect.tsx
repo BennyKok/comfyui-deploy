@@ -87,9 +87,8 @@ export function MachineSelect({
 }: {
   machines: Awaited<ReturnType<typeof getMachines>>;
 }) {
-  const [machine, setMachine] = useQueryState("machine", {
-    defaultValue: machines?.[0].id ?? "",
-  });
+  const [machine, setMachine] = useSelectedMachine(machines);
+
   return (
     <Select
       value={machine}
@@ -114,6 +113,14 @@ export function MachineSelect({
   );
 }
 
+function useSelectedMachine(machines: Awaited<ReturnType<typeof getMachines>>) {
+  const a = useQueryState("machine", {
+    defaultValue: machines?.[0]?.id ?? "",
+  });
+
+  return a;
+}
+
 export function RunWorkflowButton({
   workflow,
   machines,
@@ -125,9 +132,7 @@ export function RunWorkflowButton({
     defaultValue: workflow?.versions[0].version ?? 1,
     ...parseAsInteger,
   });
-  const [machine] = useQueryState("machine", {
-    defaultValue: machines[0].id ?? "",
-  });
+  const [machine] = useSelectedMachine(machines);
   const [isLoading, setIsLoading] = useState(false);
 
   const [values, setValues] = useState<Record<string, string>>({});
@@ -241,9 +246,8 @@ export function CreateDeploymentButton({
     defaultValue: workflow?.versions[0].version ?? 1,
     ...parseAsInteger,
   });
-  const [machine] = useQueryState("machine", {
-    defaultValue: machines[0].id ?? "",
-  });
+  const [machine] = useSelectedMachine(machines);
+
   const [isLoading, setIsLoading] = useState(false);
   const workflow_version_id = workflow?.versions.find(
     (x) => x.version === version

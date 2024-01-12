@@ -209,7 +209,7 @@ export function APIKeyList({ data }: { data: APIKey[] }) {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter machines..."
+          placeholder="Filter keys..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
