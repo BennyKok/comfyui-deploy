@@ -180,7 +180,6 @@ async def comfy_deploy_check_status(request):
         })
 
 async def send(event, data, sid=None):
-    print(event, data)
     try:
         if sid:
             ws = sockets.get(sid)
