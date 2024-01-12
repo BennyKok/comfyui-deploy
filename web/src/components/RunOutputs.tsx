@@ -23,7 +23,9 @@ export async function RunOutputs({ run_id }: { run_id: string }) {
       <TableBody>
         {outputs?.map((run) => {
           const fileName =
-            run.data.images?.[0].filename || run.data.files?.[0].filename;
+            run.data.images?.[0].filename ||
+            run.data.files?.[0].filename ||
+            run.data.gifs?.[0].filename;
 
           if (!fileName)
             return (

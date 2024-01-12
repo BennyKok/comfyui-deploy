@@ -200,12 +200,10 @@ prompt_server = server.PromptServer.instance
 send_json = prompt_server.send_json
 async def send_json_override(self, event, data, sid=None):
     # print("INTERNAL:", event, data, sid)
-
     prompt_id = data.get('prompt_id')
 
     # now we send everything
-    await send(event, data)
-    await self.send_json_original(event, data, sid)
+    await asyncio.wait([send(event, data), self.send_json_original(event, data, sid)])
 
     if event == 'execution_start':
         update_run(prompt_id, Status.RUNNING)
@@ -217,12 +215,13 @@ async def send_json_override(self, event, data, sid=None):
             update_run(prompt_id, Status.SUCCESS)
 
     if event == 'execution_error':
+        # Careful this might not be fully awaited.
+        await update_run_with_output(prompt_id, data)
         update_run(prompt_id, Status.FAILED)
-        asyncio.create_task(update_run_with_output(prompt_id, data))
         # await update_run_with_output(prompt_id, data)
 
     if event == 'executed' and 'node' in data and 'output' in data:
-        asyncio.create_task(update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node')))
+        await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # update_run_with_output(prompt_id, data.get('output'))
 
@@ -329,6 +328,25 @@ def is_prompt_done(prompt_id):
     
     return False
 
+# Use to handle upload error and send back to ComfyDeploy
+async def handle_error(prompt_id, data, e: Exception):
+    error_type = type(e).__name__
+    stack_trace = traceback.format_exc().strip()
+    body = {
+        "run_id": prompt_id,
+        "output_data": {
+            "error": {
+                "type": error_type,
+                "message": str(e),
+                "stack_trace": stack_trace
+            }
+        }
+    }
+    await update_file_status(prompt_id, data, False, have_error=True)
+    print(body)
+    print(f"Error occurred while uploading file: {e}")
+
+# Mark the current prompt requires upload, and block it from being marked as success
 async def update_file_status(prompt_id, data, uploading, have_error=False, node_id=None):
     if 'uploading_nodes' not in prompt_metadata[prompt_id]:
         prompt_metadata[prompt_id]['uploading_nodes'] = set()
@@ -366,6 +384,26 @@ async def update_file_status(prompt_id, data, uploading, have_error=False, node_
             "prompt_id": prompt_id,
         })
 
+# Upload files in the background
+async def upload_in_background(prompt_id, data, node_id=None, have_upload=True):
+    try:
+        images = data.get('images', [])
+        for image in images:
+            await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type"), content_type=image.get("content_type", "image/png"))
+
+        files = data.get('files', [])
+        for file in files:
+            await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=file.get("content_type", "image/png"))
+
+        gifs = data.get('gifs', [])
+        for gif in gifs:
+            await upload_file(prompt_id, gif.get("filename"), subfolder=gif.get("subfolder"), type=gif.get("type"), content_type=gif.get("format", "image/gif"))
+            
+        if have_upload:
+            await update_file_status(prompt_id, data, False, node_id=node_id)
+    except Exception as e:
+        await handle_error(prompt_id, data, e)
+
 async def update_run_with_output(prompt_id, data, node_id=None):
     if prompt_id in prompt_metadata:
         status_endpoint = prompt_metadata[prompt_id]['status_endpoint']
@@ -377,43 +415,16 @@ async def update_run_with_output(prompt_id, data, node_id=None):
 
         try:
             have_upload = 'images' in data or 'files' in data or 'gifs' in data
-
             print("\nhave_upload", have_upload, node_id)
 
             if have_upload:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
 
-            images = data.get('images', [])
-            for image in images:
-                await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type"), content_type=image.get("content_type", "image/png"))
-
-            files = data.get('files', [])
-            for file in files:
-                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=file.get("content_type", "image/png"))
-
-            gifs = data.get('gifs', [])
-            for gif in gifs:
-                await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=file.get("format", "image/gif"))
-                
-            if have_upload:
-                await update_file_status(prompt_id, data, False, node_id=node_id)
+            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
 
         except Exception as e:
-            error_type = type(e).__name__
-            stack_trace = traceback.format_exc().strip()
-            body = {
-                "run_id": prompt_id,
-                "output_data": {
-                    "error": {
-                        "type": error_type,
-                        "message": str(e),
-                        "stack_trace": stack_trace
-                    }
-                }
-            }
-            await update_file_status(prompt_id, data, False, have_error=True)
-            print(body)
-            print(f"Error occurred while uploading file: {e}")
+            await handle_error(prompt_id, data, e)
+            
 
         requests.post(status_endpoint, json=body)
 
