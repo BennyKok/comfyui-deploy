@@ -50,7 +50,8 @@ if not deploy_test:
             "cd /comfyui/custom_nodes && git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git",
             "cd /comfyui/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt",
             "cd /comfyui/custom_nodes/ComfyUI-Manager && mkdir startup-scripts",
-
+        )
+        .run_commands(
             # Install comfy deploy
             "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
         )
