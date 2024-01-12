@@ -180,6 +180,7 @@ async def comfy_deploy_check_status(request):
         })
 
 async def send(event, data, sid=None):
+    print(event, data)
     try:
         if sid:
             ws = sockets.get(sid)
@@ -285,7 +286,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
     filename = os.path.basename(filename)
     file = os.path.join(output_dir, filename)
 
-    # print("uploading file", file)
+    print("uploading file", file)
 
     file_upload_endpoint = prompt_metadata[prompt_id]['file_upload_endpoint']
 
