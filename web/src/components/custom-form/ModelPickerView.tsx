@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
@@ -144,12 +145,20 @@ export function ModelPickerView({
         </PopoverContent>
       </Popover>
       {field.value && (
-        <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[500px] rounded-lg mt-2">
-          <div className="max-h-[200px]">
+        <ScrollArea className="w-full bg-gray-100 mx-auto rounded-lg mt-2">
+          {/* <div className="max-h-[200px]">
             <pre className="p-2 rounded-md text-xs ">
               {JSON.stringify(field.value, null, 2)}
             </pre>
-          </div>
+          </div> */}
+          <Textarea
+            className="min-h-[150px] max-h-[300px] p-2 rounded-md text-xs w-full"
+            value={JSON.stringify(field.value, null, 2)}
+            onChange={(e) => {
+              // Update field.onChange to pass the array of selected models
+              field.onChange(JSON.parse(e.target.value));
+            }}
+          />
         </ScrollArea>
       )}
     </div>
