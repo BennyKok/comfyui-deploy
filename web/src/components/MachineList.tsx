@@ -32,6 +32,7 @@ import {
 import {
   addCustomMachine,
   addMachine,
+  buildMachine,
   deleteMachine,
   disableMachine,
   enableMachine,
@@ -202,14 +203,28 @@ export const columns: ColumnDef<Machine>[] = [
               </DropdownMenuItem>
             )}
             {machine.type === "comfy-deploy-serverless" && (
-              <DropdownMenuItem asChild>
-                <a
-                  target="_blank"
-                  href={machine.endpoint.replace("comfyui-api", "comfyui-app")}
+              <>
+                <DropdownMenuItem asChild>
+                  <a
+                    target="_blank"
+                    href={machine.endpoint.replace(
+                      "comfyui-api",
+                      "comfyui-app"
+                    )}
+                  >
+                    Open ComfyUI
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    buildMachine({
+                      id: machine.id,
+                    });
+                  }}
                 >
-                  Open ComfyUI
-                </a>
-              </DropdownMenuItem>
+                  Rebuild
+                </DropdownMenuItem>
+              </>
             )}
             <DropdownMenuItem onClick={() => setOpen(true)}>
               Edit

@@ -113,13 +113,39 @@ export const updateCustomMachine = withServerPromise(
         .where(eq(machinesTable.id, id));
 
       // Perform custom build if there are changes
-      await buildMachine(data, currentMachine);
+      await _buildMachine(data, currentMachine);
       redirect(`/machines/${id}`);
     } else {
       revalidatePath("/machines");
     }
 
     return { message: "Machine Updated" };
+  }
+);
+
+export const buildMachine = withServerPromise(
+  async ({ id }: { id: string }) => {
+    const { userId } = auth();
+    if (!userId) return { error: "No user id" };
+
+    const currentMachine = await db.query.machinesTable.findFirst({
+      where: eq(machinesTable.id, id),
+    });
+
+    if (!currentMachine) return { error: "Machine not found" };
+
+    const datas = await db
+      .update(machinesTable)
+      .set({
+        status: "building",
+        endpoint: "not-ready",
+      })
+      .where(eq(machinesTable.id, id))
+      .returning();
+
+    // Perform custom build if there are changes
+    await _buildMachine(datas[0], currentMachine);
+    redirect(`/machines/${id}`);
   }
 );
 
@@ -143,14 +169,14 @@ export const addCustomMachine = withServerPromise(
 
     const b = a[0];
 
-    await buildMachine(data, b);
+    await _buildMachine(data, b);
     redirect(`/machines/${b.id}`);
     // revalidatePath("/machines");
     return { message: "Machine Building" };
   }
 );
 
-async function buildMachine(
+async function _buildMachine(
   data: z.infer<typeof addCustomMachineSchema>,
   b: MachineType
 ) {
