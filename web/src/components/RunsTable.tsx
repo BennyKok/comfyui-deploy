@@ -35,7 +35,9 @@ export async function RunsTable(props: {
     <div>
       <div className="overflow-auto h-fit w-full">
         <Table className="">
-          {/* <TableCaption>A list of your recent runs.</TableCaption> */}
+          {allRuns.length == 0 && (
+            <TableCaption>A list of your recent runs.</TableCaption>
+          )}
           <TableHeader className="bg-background top-0 sticky">
             <TableRow>
               <TableHead className="w-[100px]">Number</TableHead>
@@ -54,10 +56,12 @@ export async function RunsTable(props: {
         </Table>
       </div>
 
-      <PaginationControl
-        totalPage={Math.ceil(total / itemPerPage)}
-        currentPage={page}
-      />
+      {Math.ceil(total / itemPerPage) > 0 && (
+        <PaginationControl
+          totalPage={Math.ceil(total / itemPerPage)}
+          currentPage={page}
+        />
+      )}
     </div>
   );
 }
