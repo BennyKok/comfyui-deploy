@@ -181,7 +181,7 @@ function mapModelsList(
       const v = item.modelVersions[0];
       return {
         name: `${item.name} ${v.name} (${v.files[0].name})`,
-        type: v.files[0].type.toLowerCase(),
+        type: item.type.toLowerCase(),
         base: v.baseModel,
         save_path: "default",
         description: item.description,
