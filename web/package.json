@@ -18,7 +18,7 @@
     "@algolia/autocomplete-core": "^1.13.0",
     "@aws-sdk/client-s3": "^3.472.0",
     "@aws-sdk/s3-request-presigner": "^3.472.0",
-    "@clerk/nextjs": "^4.27.4",
+    "@clerk/nextjs": "^4.29.3",
     "@headlessui/react": "^1.7.17",
     "@headlessui/tailwindcss": "^0.2.0",
     "@hono/swagger-ui": "^0.2.1",
