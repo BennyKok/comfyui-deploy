@@ -185,18 +185,19 @@ function mapModelsList(
   models: z.infer<typeof CivitalModelSchema>
 ): z.infer<typeof ModelListWrapper> {
   return {
-    models: models.items.map((item) => {
-      const v = item.modelVersions[0];
-      return {
-        name: `${item.name} ${v.name} (${v.files[0].name})`,
-        type: mapType(item.type.toLowerCase()),
-        base: v.baseModel,
-        save_path: "default",
-        description: item.description,
-        reference: "",
-        filename: v.files[0].name,
-        url: v.files[0].downloadUrl,
-      } as z.infer<typeof Model>;
+    models: models.items.flatMap((item) => {
+      return item.modelVersions.map((v) => {
+        return {
+          name: `${item.name} ${v.name} (${v.files[0].name})`,
+          type: mapType(item.type.toLowerCase()),
+          base: v.baseModel,
+          save_path: "default",
+          description: item.description,
+          reference: "",
+          filename: v.files[0].name,
+          url: v.files[0].downloadUrl,
+        } as z.infer<typeof Model>;
+      });
     }),
   };
 }
