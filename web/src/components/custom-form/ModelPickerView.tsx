@@ -173,6 +173,14 @@ export function ModelPickerView({
   );
 }
 
+function mapType(type: string) {
+  switch (type) {
+    case "checkpoint":
+      return "checkpoints";
+  }
+  return type;
+}
+
 function mapModelsList(
   models: z.infer<typeof CivitalModelSchema>
 ): z.infer<typeof ModelListWrapper> {
@@ -181,7 +189,7 @@ function mapModelsList(
       const v = item.modelVersions[0];
       return {
         name: `${item.name} ${v.name} (${v.files[0].name})`,
-        type: item.type.toLowerCase(),
+        type: mapType(item.type.toLowerCase()),
         base: v.baseModel,
         save_path: "default",
         description: item.description,
