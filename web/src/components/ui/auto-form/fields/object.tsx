@@ -37,7 +37,7 @@ export default function AutoFormObject<
   const { shape } = getBaseSchema<SchemaType>(schema);
 
   return (
-    <Accordion type="multiple" className="space-y-5">
+    <Accordion type="multiple" className="space-y-5 py-1">
       {Object.keys(shape).map((name) => {
         const item = shape[name] as z.ZodAny;
         const zodBaseType = getBaseType(item);

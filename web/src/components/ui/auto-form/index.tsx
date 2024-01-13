@@ -70,7 +70,7 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
         className={cn("space-y-5", className)}
       >
         <ScrollArea>
-          <div className="max-h-[400px] px-1 py-1 w-full">
+          <div className="max-h-[400px] px-1 w-full">
             <AutoFormObject
               schema={objectFormSchema}
               form={form}
