@@ -3,9 +3,8 @@ import { db } from "@/db/db";
 import { deploymentsTable, workflowRunsTable } from "@/db/schema";
 import { createSelectSchema } from "@/lib/drizzle-zod-hono";
 import { isKeyRevoked } from "@/server/curdApiKeys";
-import { getRunsData } from "@/server/getRunsOutput";
+import { getRunsData } from "@/server/getRunsData";
 import { parseJWT } from "@/server/parseJWT";
-import { replaceCDNUrl } from "@/server/replaceCDNUrl";
 import type { ResponseConfig } from "@asteasolutions/zod-to-openapi";
 import { z, createRoute } from "@hono/zod-openapi";
 import { OpenAPIHono } from "@hono/zod-openapi";
@@ -122,7 +121,7 @@ app.openapi(getOutputRoute, async (c) => {
   const apiKeyTokenData = c.get("apiKeyTokenData")!;
 
   try {
-    const run = await getRunsData(apiKeyTokenData, data.run_id);
+    const run = await getRunsData(data.run_id, apiKeyTokenData);
 
     if (!run)
       return c.json(
@@ -132,29 +131,6 @@ app.openapi(getOutputRoute, async (c) => {
         },
         400
       );
-
-    // Fill in the CDN url
-    if (run?.status === "success" && run?.outputs?.length > 0) {
-      for (let i = 0; i < run.outputs.length; i++) {
-        const output = run.outputs[i];
-
-        if (output.data?.images !== undefined) {
-          for (let j = 0; j < output.data?.images.length; j++) {
-            const element = output.data?.images[j];
-            element.url = replaceCDNUrl(
-              `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
-            );
-          }
-        } else if (output.data?.files !== undefined) {
-          for (let j = 0; j < output.data?.files.length; j++) {
-            const element = output.data?.files[j];
-            element.url = replaceCDNUrl(
-              `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${run.id}/${element.filename}`
-            );
-          }
-        }
-      }
-    }
 
     return c.json(run, 200);
   } catch (error: any) {

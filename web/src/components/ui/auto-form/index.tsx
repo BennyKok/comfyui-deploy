@@ -13,8 +13,18 @@ import type { DefaultValues } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-export function AutoFormSubmit({ children }: { children?: React.ReactNode }) {
-  return <Button type="submit">{children ?? "Submit"}</Button>;
+export function AutoFormSubmit({
+  children,
+  disabled,
+}: {
+  children?: React.ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <Button type="submit" disabled={disabled}>
+      {children ?? "Submit"}
+    </Button>
+  );
 }
 
 function AutoForm<SchemaType extends ZodObjectOrWrapped>({

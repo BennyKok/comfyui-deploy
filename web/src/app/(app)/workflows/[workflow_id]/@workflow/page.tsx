@@ -3,6 +3,7 @@ import { VersionDetails } from "@/components/VersionDetails";
 import {
   CopyWorkflowVersion,
   CreateDeploymentButton,
+  CreateShareButton,
   MachineSelect,
   RunWorkflowButton,
   VersionSelect,
@@ -18,7 +19,6 @@ import {
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { getMachines } from "@/server/curdMachine";
 import { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import { redirect } from "next/navigation";
 
 export default async function Page({
   params,
@@ -45,6 +45,7 @@ export default async function Page({
           <MachineSelect machines={machines} />
           <RunWorkflowButton workflow={workflow} machines={machines} />
           <CreateDeploymentButton workflow={workflow} machines={machines} />
+          <CreateShareButton workflow={workflow} machines={machines} />
           <CopyWorkflowVersion workflow={workflow} />
           <ViewWorkflowDetailsButton workflow={workflow} />
         </div>

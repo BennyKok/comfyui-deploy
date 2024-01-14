@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  plainInputsToZod,
+  workflowVersionInputsToZod,
+} from "../lib/workflowVersionInputsToZod";
 import { callServerPromise } from "./callServerPromise";
 import fetcher from "./fetcher";
 import { LoadingIcon } from "@/components/LoadingIcon";
@@ -29,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -38,17 +43,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { workflowAPINodeType } from "@/db/schema";
-import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
-import { createRun } from "@/server/createRun";
+import type { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
+import { checkStatus, createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
 import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import { Copy, ExternalLink, Info, MoreVertical, Play } from "lucide-react";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import {
+  Copy,
+  ExternalLink,
+  Info,
+  MoreVertical,
+  Play,
+  Share,
+} from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { z } from "zod";
+import type { z } from "zod";
+import { create } from "zustand";
 
 export function VersionSelect({
   workflow,
@@ -121,6 +135,168 @@ function useSelectedMachine(machines: Awaited<ReturnType<typeof getMachines>>) {
   return a;
 }
 
+type PublicRunStore = {
+  image: string;
+  loading: boolean;
+  runId: string;
+  status: string;
+
+  setImage: (image: string) => void;
+  setLoading: (loading: boolean) => void;
+  setRunId: (runId: string) => void;
+  setStatus: (status: string) => void;
+};
+
+const publicRunStore = create<PublicRunStore>((set) => ({
+  image: "",
+  loading: false,
+  runId: "",
+  status: "",
+
+  setImage: (image) => set({ image }),
+  setLoading: (loading) => set({ loading }),
+  setRunId: (runId) => set({ runId }),
+  setStatus: (status) => set({ status }),
+}));
+
+export function PublicRunOutputs() {
+  const { image, loading, runId, status, setStatus, setImage, setLoading } =
+    publicRunStore();
+
+  useEffect(() => {
+    if (!runId) return;
+    const interval = setInterval(() => {
+      checkStatus(runId).then((res) => {
+        console.log(res?.status);
+        if (res) setStatus(res.status);
+        if (res && res.status === "success") {
+          setImage(res.outputs[0]?.data.images[0].url);
+          setLoading(false);
+          clearInterval(interval);
+        }
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [runId]);
+
+  return (
+    <div className="border border-gray-200 w-full square h-[400px] rounded-lg relative">
+      {!loading && image && (
+        <img
+          className="w-full h-full object-contain"
+          src={image}
+          alt="Generated image"
+        />
+      )}
+      {loading && (
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2">
+          {status} <LoadingIcon />
+        </div>
+      )}
+      {loading && <Skeleton className="w-full h-full" />}
+    </div>
+  );
+}
+
+export function RunWorkflowInline({
+  inputs,
+  workflow_version_id,
+  machine_id,
+}: {
+  inputs: ReturnType<typeof getInputsFromWorkflow>;
+  workflow_version_id: string;
+  machine_id: string;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const user = useAuth();
+  const clerk = useClerk();
+
+  const schema = useMemo(() => {
+    return plainInputsToZod(inputs);
+  }, [inputs]);
+
+  const {
+    setRunId,
+    loading,
+    setLoading: setLoading2,
+    setStatus,
+  } = publicRunStore();
+
+  const runWorkflow = async () => {
+    console.log();
+
+    if (!user.isSignedIn) {
+      clerk.openSignIn({
+        redirectUrl: window.location.href,
+      });
+      console.log("hi");
+      return;
+    }
+    console.log(values);
+
+    const val = Object.keys(values).length > 0 ? values : undefined;
+    setLoading2(true);
+    setIsLoading(true);
+    setStatus("preparing");
+    try {
+      const origin = window.location.origin;
+      const a = await callServerPromise(
+        createRun({
+          origin,
+          workflow_version_id: workflow_version_id,
+          machine_id: machine_id,
+          inputs: val,
+          isManualRun: true,
+        })
+      );
+      if (a && !("error" in a)) {
+        setRunId(a.workflow_run_id);
+      } else {
+        setLoading2(false);
+      }
+      console.log(a);
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      setLoading2(false);
+    }
+  };
+
+  return (
+    <>
+      {schema && (
+        <AutoForm
+          formSchema={schema}
+          values={values}
+          onValuesChange={setValues}
+          onSubmit={runWorkflow}
+          className="px-1"
+        >
+          <div className="flex justify-end">
+            <AutoFormSubmit disabled={isLoading || loading}>
+              Run
+              <span className="ml-2">
+                {isLoading || loading ? <LoadingIcon /> : <Play size={14} />}
+              </span>
+            </AutoFormSubmit>
+          </div>
+        </AutoForm>
+      )}
+      {!schema && (
+        <Button
+          className="gap-2"
+          disabled={isLoading || loading}
+          onClick={runWorkflow}
+        >
+          Confirm {isLoading || loading ? <LoadingIcon /> : <Play size={14} />}
+        </Button>
+      )}
+    </>
+  );
+}
+
 export function RunWorkflowButton({
   workflow,
   machines,
@@ -143,17 +319,10 @@ export function RunWorkflowButton({
       workflow,
       version
     );
-    const inputs = getInputsFromWorkflow(workflow_version);
 
-    if (!inputs) return null;
+    if (!workflow_version) return null;
 
-    return z.object({
-      ...Object.fromEntries(
-        inputs?.map((x) => {
-          return [x?.input_id, z.string().optional()];
-        })
-      ),
-    });
+    return workflowVersionInputsToZod(workflow_version);
   }, [version]);
 
   const runWorkflow = async () => {
@@ -228,8 +397,6 @@ export function RunWorkflowButton({
             Confirm {isLoading ? <LoadingIcon /> : <Play size={14} />}
           </Button>
         )}
-        {/* </div> */}
-        {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}
       </DialogContent>
     </Dialog>
   );
@@ -295,6 +462,55 @@ export function CreateDeploymentButton({
           }}
         >
           Staging
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function CreateShareButton({
+  workflow,
+  machines,
+}: {
+  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
+  machines: Awaited<ReturnType<typeof getMachines>>;
+}) {
+  const [version] = useQueryState("version", {
+    defaultValue: workflow?.versions[0].version ?? 1,
+    ...parseAsInteger,
+  });
+  const [machine] = useSelectedMachine(machines);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const workflow_version_id = workflow?.versions.find(
+    (x) => x.version === version
+  )?.id;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="gap-2" disabled={isLoading} variant="outline">
+          Share {isLoading ? <LoadingIcon /> : <Share size={14} />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuItem
+          onClick={async () => {
+            if (!workflow_version_id) return;
+
+            setIsLoading(true);
+            await callServerPromise(
+              createDeployments(
+                workflow.id,
+                workflow_version_id,
+                machine,
+                "public-share"
+              )
+            );
+            setIsLoading(false);
+          }}
+        >
+          Public
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

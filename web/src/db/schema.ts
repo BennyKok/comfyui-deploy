@@ -97,6 +97,7 @@ export const workflowRunStatus = pgEnum("workflow_run_status", [
 export const deploymentEnvironment = pgEnum("deployment_environment", [
   "staging",
   "production",
+  "public-share",
 ]);
 
 export const workflowRunOrigin = pgEnum("workflow_run_origin", [
@@ -265,6 +266,10 @@ export const deploymentsRelations = relations(deploymentsTable, ({ one }) => ({
     fields: [deploymentsTable.workflow_id],
     references: [workflowTable.id],
   }),
+  user: one(usersTable, {
+    fields: [deploymentsTable.user_id],
+    references: [usersTable.id],
+  }),
 }));
 
 export const apiKeyTable = dbSchema.table("api_keys", {
@@ -286,3 +291,4 @@ export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
+export type DeploymentType = InferSelectModel<typeof deploymentsTable>;

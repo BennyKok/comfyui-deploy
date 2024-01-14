@@ -5,7 +5,7 @@ import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
 // See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
 export default authMiddleware({
   // debug: true,
-  publicRoutes: ["/", "/api/(.*)", "/docs(.*)"],
+  publicRoutes: ["/", "/api/(.*)", "/docs(.*)", "/share(.*)"],
   // publicRoutes: ["/", "/(.*)"],
   async afterAuth(auth, req, evt) {
     // redirect them to organization selection page

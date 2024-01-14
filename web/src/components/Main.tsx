@@ -1,26 +1,22 @@
 "use client";
 
-import { Badge } from "./ui/badge";
-import macBookMainImage from "@/assets/images/macbook-main.png";
 import { Section } from "@/components/Section";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import { Fragment } from "react";
-import meta from 'next-gen/config';
+import meta from "next-gen/config";
 
 function isDevelopment() {
   return process.env.NODE_ENV === "development";
 }
 
 function FeatureCard(props: {
-  className?: String;
+  className?: string;
   title: React.ReactNode;
-  description: String;
+  description: string;
 }) {
   return (
     <div
       className={cn(
-        "group relative text-center bg-opacity-20 rounded-lg py-6 ring-1 shadow-sm ring-stone-200/50 overflow-hidden",
+        "group relative text-center bg-opacity-20 rounded-lg py-6 ring-1 shadow-sm ring-stone-200/50 overflow-hidden"
         // props.className,
       )}
     >
@@ -28,14 +24,14 @@ function FeatureCard(props: {
       <div
         className={cn(
           "opacity-60 group-hover:opacity-100 transition-all -z-[5] absolute top-0 h-full w-full duration-700",
-          props.className,
+          props.className
         )}
-      ></div>
-      <div className="opacity-60 group-hover:opacity-100 absolute top-0 inset-0 -z-[5] h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+      />
+      <div className="opacity-60 group-hover:opacity-100 absolute top-0 inset-0 -z-[5] h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
       <div className="">
         <div className="font-mono text-lg ">{props.title}</div>
-        <div className="divider px-4 py-0 h-[1px] opacity-30 my-2"></div>
+        <div className="divider px-4 py-0 h-[1px] opacity-30 my-2" />
         <div className="px-8 text-stone-800 ">{props.description}</div>
       </div>
     </div>
@@ -86,7 +82,6 @@ export default function Main() {
             ></Image> */}
           </div>
         </Section>
-
       </div>
 
       <footer className="text-base-content mx-auto flex flex-col md:flex-row items-center justify-center w-full max-w-5xl  gap-4 p-10 ">

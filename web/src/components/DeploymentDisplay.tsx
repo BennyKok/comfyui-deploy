@@ -1,4 +1,5 @@
 import { CodeBlock } from "@/components/CodeBlock";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import type { findAllDeployments } from "@/server/findAllRuns";
+import { ExternalLink } from "lucide-react";
 import { headers } from "next/headers";
+import Link from "next/link";
 
 const curlTemplate = `
 curl --request POST \
@@ -72,7 +75,9 @@ export function DeploymentDisplay({
     <Dialog>
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
         <TableRow>
-          <TableCell className="capitalize">{deployment.environment}</TableCell>
+          <TableCell className="capitalize truncate">
+            {deployment.environment}
+          </TableCell>
           <TableCell className="font-medium truncate">
             {deployment.version?.version}
           </TableCell>
@@ -92,34 +97,53 @@ export function DeploymentDisplay({
           <DialogDescription>Code for your deployment client</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[600px]">
-          <Tabs defaultValue="js" className="w-full">
-            <TabsList className="grid w-fit grid-cols-2">
-              <TabsTrigger value="js">js</TabsTrigger>
-              <TabsTrigger value="curl">curl</TabsTrigger>
-            </TabsList>
-            <TabsContent className="flex flex-col gap-2" value="js">
-              Trigger the workflow
-              <CodeBlock
-                lang="js"
-                code={formatCode(jsTemplate, deployment, domain, workflowInput)}
-              />
-              Check the status of the run, and retrieve the outputs
-              <CodeBlock
-                lang="js"
-                code={formatCode(jsTemplate_checkStatus, deployment, domain)}
-              />
-            </TabsContent>
-            <TabsContent className="flex flex-col gap-2" value="curl">
-              <CodeBlock
-                lang="bash"
-                code={formatCode(curlTemplate, deployment, domain)}
-              />
-              <CodeBlock
-                lang="bash"
-                code={formatCode(curlTemplate_checkStatus, deployment, domain)}
-              />
-            </TabsContent>
-          </Tabs>
+          {deployment.environment !== "public-share" ? (
+            <Tabs defaultValue="js" className="w-full">
+              <TabsList className="grid w-fit grid-cols-2">
+                <TabsTrigger value="js">js</TabsTrigger>
+                <TabsTrigger value="curl">curl</TabsTrigger>
+              </TabsList>
+              <TabsContent className="flex flex-col gap-2" value="js">
+                Trigger the workflow
+                <CodeBlock
+                  lang="js"
+                  code={formatCode(
+                    jsTemplate,
+                    deployment,
+                    domain,
+                    workflowInput
+                  )}
+                />
+                Check the status of the run, and retrieve the outputs
+                <CodeBlock
+                  lang="js"
+                  code={formatCode(jsTemplate_checkStatus, deployment, domain)}
+                />
+              </TabsContent>
+              <TabsContent className="flex flex-col gap-2" value="curl">
+                <CodeBlock
+                  lang="bash"
+                  code={formatCode(curlTemplate, deployment, domain)}
+                />
+                <CodeBlock
+                  lang="bash"
+                  code={formatCode(
+                    curlTemplate_checkStatus,
+                    deployment,
+                    domain
+                  )}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="w-full text-right">
+              <Button asChild className="gap-2">
+                <Link href={`/share/${deployment.id}`} target="_blank">
+                  View Share Page <ExternalLink size={14} />
+                </Link>
+              </Button>
+            </div>
+          )}
         </ScrollArea>
       </DialogContent>
     </Dialog>

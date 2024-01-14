@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
 export function Navbar() {
-  const _isDesktop = useMediaQuery("(min-width: 768px)");
+  const _isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDesktop, setIsDesktop] = useState(true);
   useEffect(() => {
     setIsDesktop(_isDesktop);

@@ -34,13 +34,19 @@ export function NavbarMenu({ className }: { className?: string }) {
       <Tabs
         defaultValue={pathname}
         className="w-[300px] hidden lg:flex pointer-events-auto"
-        onValueChange={(value) => {
-          router.push(value);
-        }}
+        // onValueChange={(value) => {
+
+        // }}
       >
         <TabsList className="grid w-full grid-cols-3">
           {pages.map((page) => (
-            <TabsTrigger key={page.name} value={page.path}>
+            <TabsTrigger
+              key={page.name}
+              value={page.path}
+              onClick={() => {
+                router.push(page.path);
+              }}
+            >
               {page.name}
             </TabsTrigger>
           ))}

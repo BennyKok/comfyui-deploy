@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/db/db";
+import type { DeploymentType } from "@/db/schema";
 import { deploymentsTable, workflowTable } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
 import { and, eq, isNull } from "drizzle-orm";
@@ -11,7 +12,7 @@ export async function createDeployments(
   workflow_id: string,
   version_id: string,
   machine_id: string,
-  environment: "production" | "staging"
+  environment: DeploymentType["environment"]
 ) {
   const { userId } = auth();
   if (!userId) throw new Error("No user id");
@@ -79,4 +80,27 @@ export async function findAllDeployments() {
   });
 
   return deployments;
+}
+
+export async function findSharedDeployment(workflow_id: string) {
+  const deploymentData = await db.query.deploymentsTable.findFirst({
+    where: and(
+      eq(deploymentsTable.environment, "public-share"),
+      eq(deploymentsTable.id, workflow_id)
+    ),
+    with: {
+      user: true,
+      machine: true,
+      workflow: {
+        columns: {
+          name: true,
+          org_id: true,
+          user_id: true,
+        },
+      },
+      version: true,
+    },
+  });
+
+  return deploymentData;
 }
