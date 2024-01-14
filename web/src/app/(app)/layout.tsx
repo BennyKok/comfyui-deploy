@@ -36,11 +36,11 @@ export default function RootLayout({
     <html lang="en">
       <ClerkProvider>
         <TooltipProvider>
-          <head>
-            {process.env.PLAUSIBLE_DOMAIN && (
+          {process.env.PLAUSIBLE_DOMAIN && (
+            <head>
               <PlausibleProvider domain={process.env.PLAUSIBLE_DOMAIN} />
-            )}
-          </head>
+            </head>
+          )}
           <body className={inter.className}>
             <main className="w-full flex min-h-[100dvh] flex-col items-center justify-start">
               <div className="z-[-1] fixed h-full w-full bg-white">

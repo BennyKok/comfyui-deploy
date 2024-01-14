@@ -29,11 +29,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <head>
-        {process.env.PLAUSIBLE_DOMAIN && (
+      {process.env.PLAUSIBLE_DOMAIN && (
+        <head>
           <PlausibleProvider domain={process.env.PLAUSIBLE_DOMAIN} />
-        )}
-      </head>
+        </head>
+      )}
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
