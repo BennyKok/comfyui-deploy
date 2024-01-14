@@ -4,7 +4,7 @@ Open source comfyui deployment platform, a `vercel` for generative workflow infr
 
 Join [Discord](https://discord.gg/EEYcQmdYZw) to chat more or visit [Comfy Deploy](https://comfydeploy.com/) to get started!
 
-![63shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/c0b88377-0135-4d9a-8a20-8b38b975bb48)# How it works
+![63shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/c0b88377-0135-4d9a-8a20-8b38b975bb48)\# How it works
 
 1. Comfy Deploy Dashboard (https://comfydeploy.com) or self-hosted version
 2. Machines (Long running, on-premise ComfyUI machines and serverless)
@@ -34,7 +34,7 @@ https://github.com/BennyKok/comfyui-deploy/assets/18395202/0fb1829b-401a-41f2-b2
 3. Persistent API generated for Production and Staging environment
 4. Run the same comfyui workflow across different remote machines
 
-![467shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/e49a0360-de94-4e3b-802b-0eadabe3c166)# Status & Timeline
+![467shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/e49a0360-de94-4e3b-802b-0eadabe3c166)\# Status & Timeline
 
 WIP, welcomes contributors!! Please join Discord -&gt; https://discord.gg/EEYcQmdYZw
 
@@ -87,3 +87,49 @@ Major areas
 
 - comfyui
 - oss/acc
+
+# Self Hosting with Vercel
+
+Build command
+
+```
+next build && bun run migrate-production
+```
+
+Install command
+
+```
+npx bun@1.0.16 install
+```
+
+Env key setup
+
+```
+POSTGRES_URL=
+
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+
+SPACES_ENDPOINT="http://localhost:4566"
+SPACES_ENDPOINT_CDN="http://localhost:4566"
+SPACES_BUCKET="comfyui-deploy"
+SPACES_KEY="xyz"
+SPACES_SECRET="aaa"
+
+# generate using -> openssl rand -hex 32
+JWT_SECRET=
+
+# r2 settings
+SPACES_REGION="auto"
+SPACES_CDN_FORCE_PATH_STYLE="true"
+SPACES_CDN_DONT_INCLUDE_BUCKET="true"
+
+# digital ocean settings
+SPACES_REGION="nyc3"
+SPACES_CDN_FORCE_PATH_STYLE="false"
+
+# s3 settings
+SPACES_REGION="nyc3"
+SPACES_CDN_DONT_INCLUDE_BUCKET="false"
+SPACES_CDN_FORCE_PATH_STYLE="true"
+```
