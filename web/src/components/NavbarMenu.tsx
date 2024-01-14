@@ -1,18 +1,13 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 
-export function NavbarMenu() {
+export function NavbarMenu({ className }: { className?: string }) {
   const pathnames = usePathname();
   const pathname = `/${pathnames.split("/")[1]}`;
 
@@ -34,7 +29,7 @@ export function NavbarMenu() {
   ];
 
   return (
-    <div className="mr-2">
+    <div className={cn("mr-2", className)}>
       {/* <div className="w-full h-full absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"> */}
       <Tabs
         defaultValue={pathname}
@@ -53,31 +48,19 @@ export function NavbarMenu() {
       </Tabs>
       {/* </div> */}
 
-      <div className="w-[100px] flex lg:hidden">
-        <Select
-          defaultValue={pathname == "/" ? "" : pathname}
-          onValueChange={(v) => {
-            router.push(v);
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Menu" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {pages.map((page, i) => (
-                <SelectItem
-                  key={page.name}
-                  value={page.path}
-                  defaultChecked={i == 0}
-                >
-                  {page.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
+      <ScrollArea>
+        <div className="w-full flex lg:hidden flex-col h-full">
+          {pages.map((page) => (
+            <Link
+              key={page.name}
+              href={page.path}
+              className="p-2 hover:bg-gray-100/20 hover:underline"
+            >
+              {page.name}
+            </Link>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
