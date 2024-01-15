@@ -28,3 +28,4 @@ services:
       - 4566:4566
     volumes:
       - ./aws:/etc/localstack/init/ready.d
+      - ./aws:/app/web/aws

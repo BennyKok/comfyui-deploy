@@ -23,6 +23,7 @@ export type ResourceObject = {
   resourceId: string;
   resourceType: "image/png" | "application/zip" | string;
   isPublic?: boolean;
+  size?: number;
 };
 
 export async function handleResourceUpload(
@@ -32,6 +33,7 @@ export async function handleResourceUpload(
     Key: resource.resourceId,
     Bucket: resource.resourceBucket,
     ContentType: resource.resourceType,
+    ContentLength: resource.size,
   };
 
   // Only set ACL if resource is public

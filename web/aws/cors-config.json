@@ -1,0 +1,15 @@
+{
+    "CORSRules": [
+        {
+            "AllowedHeaders": [
+                "*"
+            ],
+            "AllowedMethods": [
+                "PUT"
+            ],
+            "AllowedOrigins": [
+                "*"
+            ]
+        }
+    ]
+}
