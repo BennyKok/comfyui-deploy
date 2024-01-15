@@ -1,12 +1,12 @@
 "use client";
 
 import { GpuPricingPlan } from "@/app/(app)/pricing/components/gpuPricingTable";
-import { PricingPlan } from "@/app/(app)/pricing/components/pricingPlanTable";
+import PricingList from "@/app/(app)/pricing/components/pricePlanList";
 
 export default function Home() {
   return (
     <div>
-      <PricingPlan />
+      <PricingList />
       <GpuPricingPlan />
     </div>
   );
