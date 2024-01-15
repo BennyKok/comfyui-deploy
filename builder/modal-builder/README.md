@@ -23,13 +23,13 @@ If you have the Homebrew package manager installed
 ```
 brew install flyctl // mac only
 ```
-If not, you can run the install script:
+If not, you can run the install script
 ```
 curl -L https://fly.io/install.sh | sh
 ```
 
 ### Window
-Run the PowerShell install script:
+Run the PowerShell install script
 ```
 pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
 ```
@@ -41,6 +41,11 @@ fly secrets set MODAL_TOKEN_SECRET=
 ```
 
 ## To deploy
+
+```
+// model-builder/fly.toml
+app = <APP_NAME>
+```
 
 if you're first time deploy, run this
 ```
