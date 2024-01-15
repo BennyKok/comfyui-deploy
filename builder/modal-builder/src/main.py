@@ -332,7 +332,7 @@ async def build_logic(item: Item):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=folder_path,
-        # env={**os.environ, "PYTHONUNBUFFERED": "1"}
+        env={**os.environ, "COLUMNS": "10000"}
     )
 
     url = None
