@@ -15,8 +15,8 @@ const people = [
 
 export function GpuPricingPlan() {
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="-mx-4 mt-8 sm:-mx-0">
+    <div className="flex justify-center w-full py-8">
+      <div className="w-full max-w-4xl">
         <table className="min-w-full divide-y divide-gray-300">
           <thead>
             <tr>
