@@ -34,7 +34,7 @@ app.use("/run", async (c, next) => {
   return checkAuth(c, next);
 });
 
-app.use("/upload", async (c, next) => {
+app.use("/upload-url", async (c, next) => {
   return checkAuth(c, next);
 });
 
