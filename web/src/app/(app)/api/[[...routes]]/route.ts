@@ -1,19 +1,13 @@
-import { createRun } from "../../../../server/createRun";
-import { db } from "@/db/db";
-import { deploymentsTable, workflowRunsTable } from "@/db/schema";
-import { createSelectSchema } from "@/lib/drizzle-zod-hono";
+import { app } from "../../../../routes/app";
+import { registerCreateRunRoute } from "@/routes/registerCreateRunRoute";
+import { registerGetOutputRoute } from "@/routes/registerGetOutputRoute";
+import { registerUploadRoute } from "@/routes/registerUploadRoute";
 import { isKeyRevoked } from "@/server/curdApiKeys";
-import { getRunsData } from "@/server/getRunsData";
 import { parseJWT } from "@/server/parseJWT";
-import type { ResponseConfig } from "@asteasolutions/zod-to-openapi";
-import { z, createRoute } from "@hono/zod-openapi";
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import type { Context, Next } from "hono";
 import { handle } from "hono/vercel";
 
 export const dynamic = "force-dynamic";
-
-const app = new OpenAPIHono().basePath("/api");
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -21,23 +15,7 @@ declare module "hono" {
   }
 }
 
-const authError = {
-  401: {
-    content: {
-      "text/plain": {
-        schema: z.string().openapi({
-          type: "string",
-          example: "Invalid or expired token",
-        }),
-      },
-    },
-    description: "Invalid or expired token",
-  },
-} satisfies {
-  [statusCode: string]: ResponseConfig;
-};
-
-app.use("/run", async (c, next) => {
+async function checkAuth(c: Context, next: Next) {
   const token = c.req.raw.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
   const userData = token ? parseJWT(token) : undefined;
   if (!userData || token === undefined) {
@@ -50,198 +28,19 @@ app.use("/run", async (c, next) => {
   c.set("apiKeyTokenData", userData);
 
   await next();
+}
+
+app.use("/run", async (c, next) => {
+  return checkAuth(c, next);
 });
 
-// console.log(RunOutputZod.shape);
-
-const getOutputRoute = createRoute({
-  method: "get",
-  path: "/run",
-  tags: ["workflows"],
-  summary: "Get workflow run output",
-  description:
-    "Call this to get a run's output, usually in conjunction with polling method",
-  request: {
-    query: z.object({
-      run_id: z.string(),
-    }),
-  },
-  responses: {
-    200: {
-      content: {
-        "application/json": {
-          // https://github.com/asteasolutions/zod-to-openapi/issues/194
-          schema: createSelectSchema(workflowRunsTable, {
-            workflow_inputs: (schema) =>
-              schema.workflow_inputs.openapi({
-                type: "object",
-                example: {
-                  input_text: "some external text input",
-                  input_image: "https://somestatic.png",
-                },
-              }),
-          }),
-        },
-      },
-      description: "Retrieve the output",
-    },
-    400: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            code: z.number().openapi({
-              type: "string",
-              example: 400,
-            }),
-            message: z.string().openapi({
-              type: "string",
-              example: "Workflow not found",
-            }),
-          }),
-        },
-      },
-      description: "Workflow not found",
-    },
-    500: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            error: z.string(),
-          }),
-        },
-      },
-      description: "Error getting output",
-    },
-    ...authError,
-  },
+app.use("/upload", async (c, next) => {
+  return checkAuth(c, next);
 });
 
-app.openapi(getOutputRoute, async (c) => {
-  const data = c.req.valid("query");
-  const apiKeyTokenData = c.get("apiKeyTokenData")!;
-
-  try {
-    const run = await getRunsData(data.run_id, apiKeyTokenData);
-
-    if (!run)
-      return c.json(
-        {
-          code: 400,
-          message: "Workflow not found",
-        },
-        400
-      );
-
-    return c.json(run, 200);
-  } catch (error: any) {
-    return c.json(
-      {
-        error: error.message,
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-});
-
-const createRunRoute = createRoute({
-  method: "post",
-  path: "/run",
-  tags: ["workflows"],
-  summary: "Run a workflow via deployment_id",
-  request: {
-    body: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            deployment_id: z.string(),
-            inputs: z.record(z.string()).optional(),
-          }),
-        },
-      },
-    },
-    // headers: z.object({
-    //   "Authorization": z.
-    // })
-  },
-  responses: {
-    200: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            run_id: z.string(),
-          }),
-        },
-      },
-      description: "Workflow queued",
-    },
-    500: {
-      content: {
-        "application/json": {
-          schema: z.object({
-            error: z.string(),
-          }),
-        },
-      },
-      description: "Error creating run",
-    },
-    ...authError,
-  },
-});
-
-app.openapi(createRunRoute, async (c) => {
-  const data = c.req.valid("json");
-  const origin = new URL(c.req.url).origin;
-  const apiKeyTokenData = c.get("apiKeyTokenData")!;
-
-  const { deployment_id, inputs } = data;
-
-  try {
-    const deploymentData = await db.query.deploymentsTable.findFirst({
-      where: eq(deploymentsTable.id, deployment_id),
-      with: {
-        machine: true,
-        version: {
-          with: {
-            workflow: {
-              columns: {
-                org_id: true,
-                user_id: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!deploymentData) throw new Error("Deployment not found");
-
-    const run_id = await createRun({
-      origin,
-      workflow_version_id: deploymentData.version,
-      machine_id: deploymentData.machine,
-      inputs,
-      isManualRun: false,
-      apiUser: apiKeyTokenData,
-    });
-
-    if ("error" in run_id) throw new Error(run_id.error);
-
-    return c.json({
-      run_id: "workflow_run_id" in run_id ? run_id.workflow_run_id : "",
-    });
-  } catch (error: any) {
-    return c.json(
-      {
-        error: error.message,
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-});
+registerCreateRunRoute(app);
+registerGetOutputRoute(app);
+registerUploadRoute(app);
 
 // The OpenAPI documentation will be available at /doc
 app.doc("/doc", {
