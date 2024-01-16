@@ -3,6 +3,7 @@
 import { db } from "@/db/db";
 import type { DeploymentType } from "@/db/schema";
 import { deploymentsTable, workflowTable } from "@/db/schema";
+import { withServerPromise } from "@/server/withServerPromise";
 import { auth } from "@clerk/nextjs";
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -104,3 +105,17 @@ export async function findSharedDeployment(workflow_id: string) {
 
   return deploymentData;
 }
+
+export const removePublicShareDeployment = withServerPromise(
+  async (deployment_id: string) => {
+    // throw new Error("Not implemented");
+    await db
+      .delete(deploymentsTable)
+      .where(
+        and(
+          eq(deploymentsTable.environment, "public-share"),
+          eq(deploymentsTable.id, deployment_id)
+        )
+      );
+  }
+);

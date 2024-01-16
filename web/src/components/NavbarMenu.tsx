@@ -6,8 +6,16 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useMediaQuery } from "usehooks-ts";
 
 export function NavbarMenu({ className }: { className?: string }) {
+  const _isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    setIsDesktop(_isDesktop);
+  }, [_isDesktop]);
+
   const pathnames = usePathname();
   const pathname = `/${pathnames.split("/")[1]}`;
 
@@ -31,42 +39,43 @@ export function NavbarMenu({ className }: { className?: string }) {
   return (
     <div className={cn("mr-2", className)}>
       {/* <div className="w-full h-full absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"> */}
-      <Tabs
-        defaultValue={pathname}
-        className="w-[300px] hidden lg:flex pointer-events-auto"
-        // onValueChange={(value) => {
-
-        // }}
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          {pages.map((page) => (
-            <TabsTrigger
-              key={page.name}
-              value={page.path}
-              onClick={() => {
-                router.push(page.path);
-              }}
-            >
-              {page.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {isDesktop && (
+        <Tabs
+          defaultValue={pathname}
+          className="w-[300px] flex pointer-events-auto"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            {pages.map((page) => (
+              <TabsTrigger
+                key={page.name}
+                value={page.path}
+                onClick={() => {
+                  router.push(page.path);
+                }}
+              >
+                {page.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
       {/* </div> */}
 
-      <ScrollArea>
-        <div className="w-full flex lg:hidden flex-col h-full">
-          {pages.map((page) => (
-            <Link
-              key={page.name}
-              href={page.path}
-              className="p-2 hover:bg-gray-100/20 hover:underline"
-            >
-              {page.name}
-            </Link>
-          ))}
-        </div>
-      </ScrollArea>
+      {!isDesktop && (
+        <ScrollArea>
+          <div className="w-full flex flex-col h-full">
+            {pages.map((page) => (
+              <Link
+                key={page.name}
+                href={page.path}
+                className="p-2 hover:bg-gray-100/20 hover:underline"
+              >
+                {page.name}
+              </Link>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 }

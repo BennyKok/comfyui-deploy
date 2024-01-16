@@ -1,3 +1,4 @@
+import { ButtonAction } from "@/components/ButtonActionLoader";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { getRelativeTime } from "@/lib/getRelativeTime";
+import { removePublicShareDeployment } from "@/server/curdDeploments";
 import type { findAllDeployments } from "@/server/findAllRuns";
 import { ExternalLink } from "lucide-react";
 import { headers } from "next/headers";
@@ -136,7 +138,14 @@ export function DeploymentDisplay({
               </TabsContent>
             </Tabs>
           ) : (
-            <div className="w-full text-right">
+            <div className="w-full justify-end flex gap-2 py-1">
+              <Button asChild className="gap-2" variant="outline" type="submit">
+                <ButtonAction
+                  action={removePublicShareDeployment.bind(null, deployment.id)}
+                >
+                  Remove
+                </ButtonAction>
+              </Button>
               <Button asChild className="gap-2">
                 <Link href={`/share/${deployment.id}`} target="_blank">
                   View Share Page <ExternalLink size={14} />
