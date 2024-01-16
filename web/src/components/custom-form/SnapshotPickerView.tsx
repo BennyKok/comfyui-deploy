@@ -2,6 +2,12 @@
 
 import type { AutoFormInputComponentProps } from "../ui/auto-form/types";
 import fetcher from "@/components/fetcher";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -27,22 +33,27 @@ export function SnapshotPickerView({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
   return (
-    <div className="flex gap-2 flex-col">
-      <SnapshotPresetPicker field={field} />
-      <CustomNodesSelector field={field} />
-      {field.value && (
-        // <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[500px] rounded-lg">
-        <Textarea
-          className="min-h-[150px] max-h-[300px] p-2 rounded-md text-xs w-full"
-          value={JSON.stringify(field.value, null, 2)}
-          onChange={(e) => {
-            // Update field.onChange to pass the array of selected models
-            field.onChange(JSON.parse(e.target.value));
-          }}
-        />
-        // </ScrollArea>
-      )}
-    </div>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1">
+        <AccordionTrigger className="text-sm">Custom Nodes</AccordionTrigger>
+        <AccordionContent className="flex gap-2 flex-col px-1">
+          <SnapshotPresetPicker field={field} />
+          <CustomNodesSelector field={field} />
+          {field.value && (
+            // <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[500px] rounded-lg">
+            <Textarea
+              className="min-h-[150px] max-h-[300px] p-2 rounded-md text-xs w-full"
+              value={JSON.stringify(field.value, null, 2)}
+              onChange={(e) => {
+                // Update field.onChange to pass the array of selected models
+                field.onChange(JSON.parse(e.target.value));
+              }}
+            />
+            // </ScrollArea>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
@@ -97,14 +108,16 @@ function SnapshotPresetPicker({
           aria-expanded={open}
           className="w-full justify-between flex"
         >
-          {selected ? findItem(selected)?.label : "Select snapshot..."}
+          {selected
+            ? findItem(selected)?.label
+            : "Select snapshot (From deployments)"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[375px] p-0">
         <Command>
-          <CommandInput placeholder="Search framework..." className="h-9" />
-          <CommandEmpty>No framework found.</CommandEmpty>
+          <CommandInput placeholder="Search snapshot..." className="h-9" />
+          <CommandEmpty>No snapshot found.</CommandEmpty>
           <CommandGroup>
             {frameworks?.map((framework) => (
               <CommandItem
@@ -188,7 +201,7 @@ function CustomNodesSelector({
           aria-expanded={open}
           className="w-full justify-between flex"
         >
-          Select custom nodes... {keys.length} selected
+          Add custom nodes - {keys.length} selected
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

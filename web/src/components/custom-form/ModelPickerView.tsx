@@ -2,6 +2,12 @@
 
 import type { AutoFormInputComponentProps } from "../ui/auto-form/types";
 import { LoadingIcon } from "@/components/LoadingIcon";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -154,22 +160,31 @@ export function ModelPickerView({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
   return (
-    <div className="flex gap-2 flex-col">
-      <ComfyUIManagerModelRegistry field={field} />
-      <CivitaiModelRegistry field={field} />
-      {/* <span>{field.value.length} selected</span> */}
-      {field.value && (
-        <ScrollArea className="w-full bg-gray-100 mx-auto rounded-lg mt-2">
-          <Textarea
-            className="min-h-[150px] max-h-[300px] p-2 rounded-lg text-xs w-full"
-            value={JSON.stringify(field.value, null, 2)}
-            onChange={(e) => {
-              field.onChange(JSON.parse(e.target.value));
-            }}
-          />
-        </ScrollArea>
-      )}
-    </div>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1">
+        <AccordionTrigger className="text-sm">
+          Models (ComfyUI Manager & Civitai)
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="flex gap-2 flex-col px-1">
+            <ComfyUIManagerModelRegistry field={field} />
+            <CivitaiModelRegistry field={field} />
+            {/* <span>{field.value.length} selected</span> */}
+            {field.value && (
+              <ScrollArea className="w-full bg-gray-100 mx-auto rounded-lg mt-2">
+                <Textarea
+                  className="min-h-[150px] max-h-[300px] p-2 rounded-lg text-xs w-full"
+                  value={JSON.stringify(field.value, null, 2)}
+                  onChange={(e) => {
+                    field.onChange(JSON.parse(e.target.value));
+                  }}
+                />
+              </ScrollArea>
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
@@ -307,7 +322,13 @@ export function ComfyUIManagerModelRegistry({
     };
   }, []);
 
-  return <ModelSelector field={field} modelList={modelList} label="common" />;
+  return (
+    <ModelSelector
+      field={field}
+      modelList={modelList}
+      label="ComfyUI Manager"
+    />
+  );
 }
 
 export function ModelSelector({
@@ -358,7 +379,7 @@ export function ModelSelector({
             aria-expanded={open}
             className="w-full justify-between flex"
           >
-            Select {label}
+            Add from {label}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -371,7 +392,7 @@ export function ModelSelector({
             >
               {isLoading && <LoadingIcon />}
             </CommandInput>
-            <CommandEmpty>No framework found.</CommandEmpty>
+            <CommandEmpty>No models found.</CommandEmpty>
             <CommandList className="pointer-events-auto">
               <CommandGroup>
                 {modelList?.models.map((model) => (

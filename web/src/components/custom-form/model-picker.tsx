@@ -21,10 +21,12 @@ export default function AutoFormModelsPicker({
 }: AutoFormInputComponentProps) {
   return (
     <FormItem>
-      <FormLabel>
-        {label}
-        {isRequired && <span className="text-destructive"> *</span>}
-      </FormLabel>
+      {fieldConfigItem.inputProps?.showLabel && (
+        <FormLabel>
+          {label}
+          {isRequired && <span className="text-destructive"> *</span>}
+        </FormLabel>
+      )}
       <FormControl>
         <Suspense fallback={<LoadingIcon />}>
           <ModelPickerView field={field} />

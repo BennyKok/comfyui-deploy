@@ -357,9 +357,15 @@ export function MachineList({
               },
               snapshot: {
                 fieldType: "snapshot",
+                inputProps: {
+                  showLabel: false,
+                },
               },
               models: {
                 fieldType: "models",
+                inputProps: {
+                  showLabel: false,
+                },
               },
               gpu: {
                 fieldType: !userMetadata.betaFeaturesAccess
