@@ -27,7 +27,9 @@ import { cn } from "@/lib/utils";
 import { findAllDeployments } from "@/server/curdDeploments";
 import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
 import useSWR from "swr";
+import { z } from "zod";
 
 export function SnapshotPickerView({
   field,
@@ -161,6 +163,24 @@ type CustomNodeList = {
   }[];
 };
 
+const RepoSchema = z.object({
+  default_branch: z.string(),
+});
+
+const BranchInfoSchema = z.object({
+  commit: z.object({
+    sha: z.string(),
+  }),
+});
+
+function extractRepoName(repoUrl: string) {
+  const url = new URL(repoUrl);
+  const pathParts = url.pathname.split("/");
+  const repoName = pathParts[2].replace(".git", "");
+  const author = pathParts[1];
+  return `${author}/${repoName}`;
+}
+
 function CustomNodesSelector({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
@@ -216,7 +236,52 @@ function CustomNodesSelector({
                   <CommandItem
                     key={index}
                     value={framework.reference}
-                    onSelect={(currentValue) => {
+                    onSelect={async (currentValue) => {
+                      const repoName = extractRepoName(currentValue);
+
+                      console.log(repoName);
+
+                      const id = toast.loading(`Fetching repo info...`);
+                      // toast.info("hi");
+
+                      const repo = await fetch(
+                        `https://api.github.com/repos/${repoName}`
+                      )
+                        .then((x) => x.json())
+                        .then((x) => {
+                          console.log(x);
+                          return x;
+                        })
+                        .then((x) => RepoSchema.parse(x))
+                        .catch((e) => {
+                          console.error(e);
+                          toast.dismiss(id);
+                          toast.error(`Failed to fetch repo info ${e.message}`);
+                          return null;
+                        });
+
+                      if (!repo) return;
+
+                      const branch = repo.default_branch;
+
+                      const branchInfo = await fetch(
+                        `https://api.github.com/repos/${repoName}/branches/${branch}`
+                      )
+                        .then((x) => x.json())
+                        .then((x) => BranchInfoSchema.parse(x))
+                        .catch((e) => {
+                          console.error(e);
+                          toast.dismiss(id);
+                          toast.error(
+                            `Failed to fetch branch info ${e.message}`
+                          );
+                          return null;
+                        });
+
+                      toast.dismiss(id);
+
+                      if (!branchInfo) return;
+
                       let nodeList: Record<
                         string,
                         {
@@ -233,7 +298,7 @@ function CustomNodesSelector({
                       } else {
                         nodeList = {
                           [currentValue]: {
-                            hash: "latest",
+                            hash: branchInfo?.commit.sha,
                             disabled: false,
                           },
                           ...x,

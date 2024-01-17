@@ -343,7 +343,7 @@ export function MachineList({
                 : undefined
             }
             title="New Machine"
-            description="Add custom Comfyui machines to your account."
+            description="Add custom ComfyUI machines to your account."
             serverAction={addCustomMachine}
             formSchema={addCustomMachineSchema}
             fieldConfig={{
