@@ -44,16 +44,14 @@ function FeatureCard(props: {
 export default async function Main() {
   const { userId } = await auth();
 
-  if (!userId) {
-    return <div>No auth</div>;
-  }
+  if (userId) {
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, userId),
+    });
 
-  const user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.id, userId),
-  });
-
-  if (!user) {
-    await setInitialUserData(userId);
+    if (!user) {
+      await setInitialUserData(userId);
+    }
   }
 
   return (
