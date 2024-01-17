@@ -1,7 +1,10 @@
-"use client";
-
 import { Section } from "@/components/Section";
+import { db } from "@/db/db";
+import { usersTable } from "@/db/schema";
+import { setInitialUserData } from "@/lib/setInitialUserData";
 import { cn } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
 import meta from "next-gen/config";
 
 function isDevelopment() {
@@ -38,7 +41,21 @@ function FeatureCard(props: {
   );
 }
 
-export default function Main() {
+export default async function Main() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return <div>No auth</div>;
+  }
+
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.id, userId),
+  });
+
+  if (!user) {
+    await setInitialUserData(userId);
+  }
+
   return (
     <div className="flex flex-col w-full">
       <div className="flex flex-col items-center gap-10">

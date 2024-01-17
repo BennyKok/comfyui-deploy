@@ -6,7 +6,8 @@ export async function setInitialUserData(userId: string) {
   const user = await clerkClient.users.getUser(userId);
 
   // incase we dont have username such as google login, fallback to first name + last name
-  const usernameFallback = user.username ?? (user.firstName ?? "") + (user.lastName ?? "");
+  const usernameFallback =
+    user.username ?? (user.firstName ?? "") + (user.lastName ?? "");
 
   // For the display name, if it for some reason is empty, fallback to username
   let nameFallback = (user.firstName ?? "") + (user.lastName ?? "");
