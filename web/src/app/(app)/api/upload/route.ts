@@ -1,9 +1,9 @@
+import { createNewWorkflow } from "../../../../server/createNewWorkflow";
 import { parseJWT } from "../../../../server/parseJWT";
 import { db } from "@/db/db";
 import {
   snapshotType,
   workflowAPIType,
-  workflowTable,
   workflowType,
   workflowVersionTable,
 } from "@/db/schema";
@@ -76,29 +76,44 @@ export async function POST(request: Request) {
   try {
     if ((!workflow_id || workflow_id.length == 0) && workflow_name) {
       // Create a new parent workflow
-      const workflow_parent = await db
-        .insert(workflowTable)
-        .values({
-          user_id,
-          name: workflow_name,
+      const { workflow_id: _workflow_id, version: _version } =
+        await createNewWorkflow({
+          user_id: user_id,
           org_id: org_id,
-        })
-        .returning();
+          workflow_name: workflow_name,
+          workflowData: {
+            workflow,
+            workflow_api,
+            snapshot,
+          },
+        });
 
-      workflow_id = workflow_parent[0].id;
+      workflow_id = _workflow_id;
+      version = _version;
 
-      // Create a new version
-      const data = await db
-        .insert(workflowVersionTable)
-        .values({
-          workflow_id: workflow_id,
-          workflow,
-          workflow_api,
-          version: 1,
-          snapshot: snapshot,
-        })
-        .returning();
-      version = data[0].version;
+      // const workflow_parent = await db
+      //   .insert(workflowTable)
+      //   .values({
+      //     user_id,
+      //     name: workflow_name,
+      //     org_id: org_id,
+      //   })
+      //   .returning();
+
+      // workflow_id = workflow_parent[0].id;
+
+      // // Create a new version
+      // const data = await db
+      //   .insert(workflowVersionTable)
+      //   .values({
+      //     workflow_id: workflow_id,
+      //     workflow,
+      //     workflow_api,
+      //     version: 1,
+      //     snapshot: snapshot,
+      //   })
+      //   .returning();
+      // version = data[0].version;
     } else if (workflow_id) {
       // Case 2 update workflow
       const data = await db

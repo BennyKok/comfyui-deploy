@@ -1,7 +1,9 @@
+import { ButtonAction } from "@/components/ButtonActionLoader";
 import {
   PublicRunOutputs,
   RunWorkflowInline,
 } from "@/components/VersionSelect";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,7 +16,7 @@ import { usersTable } from "@/db/schema";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { setInitialUserData } from "@/lib/setInitialUserData";
-import { findSharedDeployment } from "@/server/curdDeploments";
+import { cloneWorkflow, findSharedDeployment } from "@/server/curdDeploments";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -55,10 +57,19 @@ export default async function Page({
     <div className="mt-4 w-full grid grid-rows-[1fr,1fr] lg:grid-cols-[minmax(auto,500px),1fr] gap-4 max-h-[calc(100dvh-100px)]">
       <Card className="w-full h-fit mt-4">
         <CardHeader>
-          <CardTitle>
-            {userName}
-            {" / "}
-            {sharedDeployment.workflow.name}
+          <CardTitle className="flex justify-between items-center">
+            <div>
+              {userName}
+              {" / "}
+              {sharedDeployment.workflow.name}
+            </div>
+            <Button asChild className="gap-2" variant="outline" type="submit">
+              <ButtonAction
+                action={cloneWorkflow.bind(null, sharedDeployment.id)}
+              >
+                Clone
+              </ButtonAction>
+            </Button>
           </CardTitle>
           <CardDescription suppressHydrationWarning={true}>
             {getRelativeTime(sharedDeployment?.updated_at)}

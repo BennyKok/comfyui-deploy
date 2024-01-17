@@ -3,10 +3,12 @@
 import { db } from "@/db/db";
 import type { DeploymentType } from "@/db/schema";
 import { deploymentsTable, workflowTable } from "@/db/schema";
+import { createNewWorkflow } from "@/server/createNewWorkflow";
 import { withServerPromise } from "@/server/withServerPromise";
 import { auth } from "@clerk/nextjs";
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import "server-only";
 
 export async function createDeployments(
@@ -17,6 +19,10 @@ export async function createDeployments(
 ) {
   const { userId } = auth();
   if (!userId) throw new Error("No user id");
+
+  if (!machine_id) {
+    throw new Error("No machine id provided");
+  }
 
   // Same environment and same workflow
   const existingDeployment = await db.query.deploymentsTable.findFirst({
@@ -108,7 +114,6 @@ export async function findSharedDeployment(workflow_id: string) {
 
 export const removePublicShareDeployment = withServerPromise(
   async (deployment_id: string) => {
-    // throw new Error("Not implemented");
     await db
       .delete(deploymentsTable)
       .where(
@@ -117,5 +122,43 @@ export const removePublicShareDeployment = withServerPromise(
           eq(deploymentsTable.id, deployment_id)
         )
       );
+  }
+);
+
+export const cloneWorkflow = withServerPromise(
+  async (deployment_id: string) => {
+    const deployment = await db.query.deploymentsTable.findFirst({
+      where: and(
+        eq(deploymentsTable.environment, "public-share"),
+        eq(deploymentsTable.id, deployment_id)
+      ),
+      with: {
+        version: true,
+        workflow: true,
+      },
+    });
+
+    if (!deployment) throw new Error("No deployment found");
+
+    const { userId, orgId } = auth();
+
+    if (!userId) throw new Error("No user id");
+
+    await createNewWorkflow({
+      user_id: userId,
+      org_id: orgId,
+      workflow_name: `${deployment.workflow.name} (Cloned)`,
+      workflowData: {
+        workflow: deployment.version.workflow,
+        workflow_api: deployment?.version.workflow_api,
+        snapshot: deployment?.version.snapshot,
+      },
+    });
+
+    redirect(`/workflows/${deployment.workflow.id}`);
+
+    return {
+      message: "Successfully cloned workflow",
+    };
   }
 );
