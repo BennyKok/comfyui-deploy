@@ -8,6 +8,7 @@ import type { Context, Next } from "hono";
 import { handle } from "hono/vercel";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes
 
 declare module "hono" {
   interface ContextVariableMap {
