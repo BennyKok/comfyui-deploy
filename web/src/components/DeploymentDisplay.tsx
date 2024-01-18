@@ -138,13 +138,13 @@ export function DeploymentDisplay({
               </TabsList>
               <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
                 <div>
-                  Trigger the workflow with
+                  Trigger the workflow with&nbsp;
                   <a
                     href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
                     className="text-blue-500 hover:underline"
                     target="_blank"
                   >
-                    &nbsp;comfy deploy wrapper
+                    comfy deploy wrapper
                   </a>
                 </div>
                 <div>
