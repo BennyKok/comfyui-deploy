@@ -23,42 +23,72 @@ import Link from "next/link";
 const curlTemplate = `
 curl --request POST \
   --url <URL> \
-  --header 'Content-Type: application/json' \
-  --data '{
+  --header "Content-Type: application/json" \
+  --data "{
   "deployment_id": "<ID>"
-}'
+}"
 `;
 
 const curlTemplate_checkStatus = `
 curl --request GET \
-  --url 'http://localhost:3000/api/run?run_id=xxx' \
-  --header 'Content-Type: application/json'
+  --url "<URL>/api/run?run_id=xxx" \
+  --header "Content-Type: application/json"
 `;
 
 const jsTemplate = `
-const { run_id } = await fetch('<URL>', {
-  method: 'POST',
+const { run_id } = await fetch("<URL>", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + process.env.COMFY_DEPLOY_API_KEY,
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + process.env.COMFY_DEPLOY_API_KEY,
   },
   body: JSON.stringify({
-    deployment_id: '<ID>',
+    deployment_id: "<ID>",
     inputs: {}
   }),
 }).then(response => response.json())
 `;
 
 const jsTemplate_checkStatus = `
-const run_id = '<RUN_ID>';
+const run_id = "<RUN_ID>";
 
-const output = fetch('<URL>?run_id=' + run_id, {
-  method: 'GET',
+const output = fetch("<URL>?run_id=" + run_id, {
+  method: "GET",
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + process.env.COMFY_DEPLOY_API_KEY,
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + process.env.COMFY_DEPLOY_API_KEY,
   },
 }).then(response => response.json())
+`;
+
+const clientTemplate = `
+const client = new ComfyDeployClient({
+  apiBase: "<URLONLY>",
+  apiToken: process.env.COMFY_DEPLOY_API_KEY!,
+});
+
+export async function generateTextures(scrImageId: string) {
+  const result = await client.run("<ID>", {
+    input_image: "",
+  });
+  if (!result || !result.run_id) return { error: "run id not found" };
+  return { id: result.run_id };
+}
+`;
+
+const clientTemplate_checkStatus = `
+const run_id = "<RUN_ID>";
+
+while (true) {
+  const run = await client.getRun(run_id);
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  
+  if (!run) continue;
+  run.outputs.map((val) => {
+    if (!val.data.image) return;
+  });
+}
+
 `;
 
 export function DeploymentDisplay({
@@ -91,21 +121,55 @@ export function DeploymentDisplay({
           </TableCell>
         </TableRow>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="capitalize">
             {deployment.environment} Deployment
           </DialogTitle>
           <DialogDescription>Code for your deployment client</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[600px]">
+        <ScrollArea className="max-h-[600px] pr-4">
           {deployment.environment !== "public-share" ? (
-            <Tabs defaultValue="js" className="w-full">
-              <TabsList className="grid w-fit grid-cols-2">
+            <Tabs defaultValue="client" className="w-full gap-2">
+              <TabsList className="grid w-fit grid-cols-3">
+                <TabsTrigger value="client">client</TabsTrigger>
                 <TabsTrigger value="js">js</TabsTrigger>
                 <TabsTrigger value="curl">curl</TabsTrigger>
               </TabsList>
-              <TabsContent className="flex flex-col gap-2" value="js">
+              <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
+                <div>
+                  Trigger the workflow with
+                  <a
+                    href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
+                    className="text-blue-500 hover:underline"
+                    target="_blank"
+                  >
+                    &nbsp;comfy deploy wrapper
+                  </a>
+                </div>
+                <div>
+                  Copy the wrapper to your project, and import the function
+                </div>
+                <CodeBlock
+                  lang="js"
+                  code={formatCode(
+                    clientTemplate,
+                    deployment,
+                    domain,
+                    workflowInput
+                  )}
+                />
+                Check the status of the run, and retrieve the outputs
+                <CodeBlock
+                  lang="js"
+                  code={formatCode(
+                    clientTemplate_checkStatus,
+                    deployment,
+                    domain
+                  )}
+                />
+              </TabsContent>
+              <TabsContent className="flex flex-col gap-2 !mt-0" value="js">
                 Trigger the workflow
                 <CodeBlock
                   lang="js"
@@ -122,7 +186,7 @@ export function DeploymentDisplay({
                   code={formatCode(jsTemplate_checkStatus, deployment, domain)}
                 />
               </TabsContent>
-              <TabsContent className="flex flex-col gap-2" value="curl">
+              <TabsContent className="flex flex-col gap-2 !mt-2" value="curl">
                 <CodeBlock
                   lang="bash"
                   code={formatCode(curlTemplate, deployment, domain)}
@@ -190,5 +254,6 @@ function formatCode(
   }
   return codeTemplate
     .replace("<URL>", `${domain ?? "http://localhost:3000"}/api/run`)
-    .replace("<ID>", deployment.id);
+    .replace("<ID>", deployment.id)
+    .replace("<URLONLY>", domain ?? "http://localhost:3000");
 }
