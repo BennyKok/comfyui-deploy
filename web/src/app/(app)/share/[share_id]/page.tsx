@@ -1,9 +1,8 @@
-import { ButtonAction } from "@/components/ButtonActionLoader";
+import { ButtonActionMenu } from "@/components/ButtonActionLoader";
 import {
   PublicRunOutputs,
   RunWorkflowInline,
 } from "@/components/VersionSelect";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,7 +15,11 @@ import { usersTable } from "@/db/schema";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { getRelativeTime } from "@/lib/getRelativeTime";
 import { setInitialUserData } from "@/lib/setInitialUserData";
-import { cloneWorkflow, findSharedDeployment } from "@/server/curdDeploments";
+import {
+  cloneMachine,
+  cloneWorkflow,
+  findSharedDeployment,
+} from "@/server/curdDeploments";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -63,13 +66,20 @@ export default async function Page({
               {" / "}
               {sharedDeployment.workflow.name}
             </div>
-            <Button asChild className="gap-2" variant="outline" type="submit">
-              <ButtonAction
-                action={cloneWorkflow.bind(null, sharedDeployment.id)}
-              >
-                Clone
-              </ButtonAction>
-            </Button>
+
+            <ButtonActionMenu
+              title="Clone"
+              actions={[
+                {
+                  title: "Workflow",
+                  action: cloneWorkflow.bind(null, sharedDeployment.id),
+                },
+                {
+                  title: "Machine",
+                  action: cloneMachine.bind(null, sharedDeployment.id),
+                },
+              ]}
+            />
           </CardTitle>
           <CardDescription suppressHydrationWarning={true}>
             {getRelativeTime(sharedDeployment?.updated_at)}
