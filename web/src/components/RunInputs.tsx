@@ -25,14 +25,16 @@ export async function RunInputs({
           </TableHeader>
           <TableBody>
             {Object.entries(run.workflow_inputs).map(([key, data]) => {
-              let imageUrl;
+              let imageUrl: string | undefined;
               try {
-                if (data.startsWith("data:image/")) {
-                  imageUrl = data;
-                } else {
-                  const url = new URL(data);
-                  if (url.pathname.endsWith(".png")) {
+                if (typeof data === "string") {
+                  if (data.startsWith("data:image/")) {
                     imageUrl = data;
+                  } else {
+                    const url = new URL(data);
+                    if (url.pathname.endsWith(".png")) {
+                      imageUrl = data;
+                    }
                   }
                 }
               } catch (_) {}
