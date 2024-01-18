@@ -17,7 +17,7 @@ const createRunRoute = createRoute({
         "application/json": {
           schema: z.object({
             deployment_id: z.string(),
-            inputs: z.record(z.string()).optional(),
+            inputs: z.record(z.union([z.string(), z.number()])).optional(),
           }),
         },
       },
