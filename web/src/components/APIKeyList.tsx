@@ -11,6 +11,7 @@ import {
   FormMessage,
   Form,
 } from "./ui/form";
+import { CopyButton } from "@/components/CopyButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -387,16 +388,19 @@ function AddMachinesDialog() {
               {apiKey && (
                 <FormItem>
                   <FormLabel>API Key (Copy the API key now)</FormLabel>
-                  <FormControl>
-                    <Input readOnly value={apiKey.key} />
-                  </FormControl>
-                  {/* <FormMessage></FormMessage> */}
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input readOnly value={apiKey.key} />
+                    </FormControl>
+                    <CopyButton text={apiKey.key} />
+                  </div>
                 </FormItem>
               )}
             </div>
             <DialogFooter>
               {apiKey ? (
                 <Button
+                  className="flex gap-2"
                   type="button"
                   onClick={() => {
                     setOpen(false);
@@ -405,7 +409,11 @@ function AddMachinesDialog() {
                   Close {form.formState.isSubmitting && <LoadingIcon />}
                 </Button>
               ) : (
-                <Button type="submit" disabled={form.formState.isSubmitting}>
+                <Button
+                  className="flex gap-2"
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                >
                   Create {form.formState.isSubmitting && <LoadingIcon />}
                 </Button>
               )}
