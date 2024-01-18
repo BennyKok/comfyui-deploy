@@ -25,7 +25,7 @@ export const createRun = withServerPromise(
     origin: string;
     workflow_version_id: string | WorkflowVersionType;
     machine_id: string | MachineType;
-    inputs?: Record<string, string>;
+    inputs?: Record<string, string | number>;
     isManualRun?: boolean;
     apiUser?: APIKeyUserType;
   }) => {
