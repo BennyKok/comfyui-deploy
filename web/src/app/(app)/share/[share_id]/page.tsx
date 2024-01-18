@@ -24,6 +24,8 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
+export const maxDuration = 300; // 5 minutes
+
 export default async function Page({
   params,
 }: {
