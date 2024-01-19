@@ -4,11 +4,12 @@ import { db } from "@/db/db";
 import {
   snapshotType,
   workflowAPIType,
+  workflowTable,
   workflowType,
   workflowVersionTable,
 } from "@/db/schema";
 import { parseDataSafe } from "@/lib/parseDataSafe";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -132,6 +133,14 @@ export async function POST(request: Request) {
         })
         .returning();
       version = data[0].version;
+
+      await db
+        .update(workflowTable)
+        .set({
+          updated_at: new Date(),
+        })
+        .where(eq(workflowTable.id, workflow_id))
+        .returning();
     } else {
       return NextResponse.json(
         {
