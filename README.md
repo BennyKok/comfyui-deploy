@@ -4,6 +4,8 @@ Open source comfyui deployment platform, a `vercel` for generative workflow infr
 
 Join [Discord](https://discord.gg/EEYcQmdYZw) to chat more or visit [Comfy Deploy](https://comfydeploy.com/) to get started!
 
+Check out our latest [nextjs starter kit](https://github.com/BennyKok/comfyui-deploy-next-example) with Comfy Deploy
+
 ![63shots_so 1](https://github.com/BennyKok/comfyui-deploy/assets/18395202/c0b88377-0135-4d9a-8a20-8b38b975bb48)\# How it works
 
 1. Comfy Deploy Dashboard (https://comfydeploy.com) or self-hosted version
