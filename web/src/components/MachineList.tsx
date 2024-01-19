@@ -3,6 +3,7 @@
 import { getRelativeTime } from "../lib/getRelativeTime";
 import { InsertModal, UpdateModal } from "./InsertModal";
 import { callServerPromise } from "./callServerPromise";
+import { LoadingIcon } from "@/components/LoadingIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -107,8 +108,20 @@ export const columns: ColumnDef<Machine>[] = [
           {row.original.disabled && (
             <Badge variant="destructive">Disabled</Badge>
           )}
+          {row.original.status == "building" && (
+            <Badge variant="amber" className="capitalize">
+              {row.original.status} <LoadingIcon />
+            </Badge>
+          )}
           {!row.original.disabled && row.original.status && (
-            <Badge variant="outline">{row.original.status}</Badge>
+            <Badge
+              variant={
+                row.original.status == "ready" ? "success" : "destructive"
+              }
+              className="capitalize"
+            >
+              {row.original.status}
+            </Badge>
           )}
         </div>
         // </a>
