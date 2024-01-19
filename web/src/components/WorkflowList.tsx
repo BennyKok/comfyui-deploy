@@ -1,6 +1,7 @@
 "use client";
 
 import { getRelativeTime } from "../lib/getRelativeTime";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -21,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { deleteWorkflow } from "@/server/deleteWorkflow";
+import type { getAllUserWorkflow } from "@/server/getAllUserWorkflow";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -38,14 +40,11 @@ import {
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
 
-export type Payment = {
-  id: string;
-  amount: number;
-  date: Date;
-  email: string;
-};
+export type WorkflowItemList = NonNullable<
+  Awaited<ReturnType<typeof getAllUserWorkflow>>
+>[0];
 
-export const columns: ColumnDef<Payment>[] = [
+export const columns: ColumnDef<WorkflowItemList>[] = [
   {
     accessorKey: "id",
     id: "select",
@@ -70,7 +69,7 @@ export const columns: ColumnDef<Payment>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "email",
+    accessorKey: "name",
     header: ({ column }) => {
       return (
         <button
@@ -83,27 +82,35 @@ export const columns: ColumnDef<Payment>[] = [
       );
     },
     cell: ({ row }) => {
+      const workflow = row.original;
       return (
-        <a className="hover:underline" href={`/workflows/${row.original.id}`}>
-          {row.getValue("email")}
+        <a
+          className="hover:underline flex gap-2"
+          href={`/workflows/${workflow.id}`}
+        >
+          <span className="truncate max-w-[200px]">{row.original.name}</span>
+
+          <Badge variant="default">v{row.original.versions[0]?.version}</Badge>
+          {workflow.deployments?.[0] && <Badge variant="success">Public</Badge>}
         </a>
       );
     },
   },
-
   {
-    accessorKey: "amount",
-    header: () => <div className="text-left">Version</div>,
+    accessorKey: "creator",
+    header: ({ column }) => {
+      return (
+        <button
+          className="flex items-center hover:underline"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Creator
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </button>
+      );
+    },
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-
-      // Format the amount as a dollar amount
-      // const formatted = new Intl.NumberFormat("en-US", {
-      //   style: "currency",
-      //   currency: "USD",
-      // }).format(amount);
-
-      return <div className="text-left font-medium">{amount}</div>;
+      return <Badge variant="cyan">{row.original.user.name}</Badge>;
     },
   },
   {
@@ -113,7 +120,7 @@ export const columns: ColumnDef<Payment>[] = [
     header: ({ column }) => {
       return (
         <button
-          className="w-full flex items-center justify-end hover:underline"
+          className="w-full flex items-center justify-end hover:underline truncate"
           // variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -123,8 +130,8 @@ export const columns: ColumnDef<Payment>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="w-full capitalize text-right">
-        {getRelativeTime(row.original.date)}
+      <div className="w-full capitalize text-right truncate">
+        {getRelativeTime(row.original.updated_at)}
       </div>
     ),
   },
@@ -148,14 +155,10 @@ export const columns: ColumnDef<Payment>[] = [
               className="text-destructive"
               onClick={() => {
                 deleteWorkflow(workflow.id);
-                // navigator.clipboard.writeText(payment.id)
               }}
             >
               Delete Workflow
             </DropdownMenuItem>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -163,7 +166,7 @@ export const columns: ColumnDef<Payment>[] = [
   },
 ];
 
-export function WorkflowList({ data }: { data: Payment[] }) {
+export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -196,38 +199,12 @@ export function WorkflowList({ data }: { data: Payment[] }) {
       <div className="flex flex-row w-full items-center py-4">
         <Input
           placeholder="Filter workflows..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
+            table.getColumn("name")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu> */}
       </div>
       <ScrollArea className="h-full w-full rounded-md border">
         <Table>
