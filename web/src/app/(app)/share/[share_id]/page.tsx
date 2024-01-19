@@ -1,8 +1,8 @@
 import { ButtonActionMenu } from "@/components/ButtonActionLoader";
 import {
   PublicRunOutputs,
-  RunWorkflowInline,
 } from "@/components/VersionSelect";
+import { RunWorkflowInline } from "@/components/RunWorkflowInline";
 import {
   Card,
   CardContent,

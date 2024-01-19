@@ -44,8 +44,9 @@ export async function RunsTable(props: {
               <TableHead className="">Machine</TableHead>
               <TableHead className="">Time</TableHead>
               <TableHead className="w-[100px]">Version</TableHead>
+              <TableHead className="truncate">Origin</TableHead>
               <TableHead className="truncate">Live Status</TableHead>
-              <TableHead className=" text-right">Status</TableHead>
+              <TableHead className="text-right">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

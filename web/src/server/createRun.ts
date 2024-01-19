@@ -2,7 +2,11 @@
 
 import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
-import type { MachineType, WorkflowVersionType } from "@/db/schema";
+import type {
+  MachineType,
+  WorkflowRunOriginType,
+  WorkflowVersionType,
+} from "@/db/schema";
 import { machinesTable, workflowRunsTable } from "@/db/schema";
 import type { APIKeyUserType } from "@/server/APIKeyBodyRequest";
 import { getRunsData } from "@/server/getRunsData";
@@ -19,14 +23,14 @@ export const createRun = withServerPromise(
     workflow_version_id,
     machine_id,
     inputs,
-    isManualRun,
+    runOrigin,
     apiUser,
   }: {
     origin: string;
     workflow_version_id: string | WorkflowVersionType;
     machine_id: string | MachineType;
     inputs?: Record<string, string | number>;
-    isManualRun?: boolean;
+    runOrigin?: WorkflowRunOriginType;
     apiUser?: APIKeyUserType;
   }) => {
     const machine =
@@ -109,7 +113,7 @@ export const createRun = withServerPromise(
         workflow_version_id: workflow_version_data.id,
         workflow_inputs: inputs,
         machine_id: machine.id,
-        origin: isManualRun ? "manual" : "api",
+        origin: runOrigin,
       })
       .returning();
 

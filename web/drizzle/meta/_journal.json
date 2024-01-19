@@ -197,6 +197,13 @@
       "when": 1705228261543,
       "tag": "0027_eminent_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1705642345817,
+      "tag": "0028_futuristic_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

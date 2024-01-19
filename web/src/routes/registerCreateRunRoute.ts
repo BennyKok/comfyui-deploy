@@ -81,7 +81,7 @@ export const registerCreateRunRoute = (app: App) => {
         workflow_version_id: deploymentData.version,
         machine_id: deploymentData.machine,
         inputs,
-        isManualRun: false,
+        runOrigin: "api",
         apiUser: apiKeyTokenData,
       });
 

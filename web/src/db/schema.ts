@@ -103,7 +103,11 @@ export const deploymentEnvironment = pgEnum("deployment_environment", [
 export const workflowRunOrigin = pgEnum("workflow_run_origin", [
   "manual",
   "api",
+  "public-share",
 ]);
+
+export const WorkflowRunOriginSchema = z.enum(workflowRunOrigin.enumValues);
+export type WorkflowRunOriginType = z.infer<typeof WorkflowRunOriginSchema>;
 
 export const machineGPUOptions = pgEnum("machine_gpu", ["T4", "A10G", "A100"]);
 

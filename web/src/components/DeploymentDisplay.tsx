@@ -61,34 +61,31 @@ const output = fetch("<URL>?run_id=" + run_id, {
 }).then(response => response.json())
 `;
 
-const clientTemplate = `
+const jsClientSetupTemplate = `
 const client = new ComfyDeployClient({
   apiBase: "<URLONLY>",
   apiToken: process.env.COMFY_DEPLOY_API_KEY!,
 });
+`;
 
-export async function generateTextures(scrImageId: string) {
-  const result = await client.run("<ID>", {
-    input_image: "",
-  });
-  if (!result || !result.run_id) return { error: "run id not found" };
-  return { id: result.run_id };
-}
+const jsClientSetupTemplateHostedVersion = `
+const client = new ComfyDeployClient({
+  apiToken: process.env.COMFY_DEPLOY_API_KEY!,
+});
+`;
+
+const jsClientCreateRunTemplate = `
+const { run_id } = await client.run("<ID>", {
+  inputs: {}
+});
+`;
+
+const jsClientCreateRunNoInputsTemplate = `
+const { run_id } = await client.run("<ID>");
 `;
 
 const clientTemplate_checkStatus = `
-const run_id = "<RUN_ID>";
-
-while (true) {
-  const run = await client.getRun(run_id);
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-  
-  if (!run) continue;
-  run.outputs.map((val) => {
-    if (!val.data.image) return;
-  });
-}
-
+const run = await client.getRun(run_id);
 `;
 
 export function DeploymentDisplay({
@@ -130,30 +127,41 @@ export function DeploymentDisplay({
         </DialogHeader>
         <ScrollArea className="max-h-[600px] pr-4">
           {deployment.environment !== "public-share" ? (
-            <Tabs defaultValue="client" className="w-full gap-2">
-              <TabsList className="grid w-fit grid-cols-3">
-                <TabsTrigger value="client">client</TabsTrigger>
-                <TabsTrigger value="js">js</TabsTrigger>
-                <TabsTrigger value="curl">curl</TabsTrigger>
+            <Tabs defaultValue="client" className="w-full gap-2 text-sm">
+              <TabsList className="grid w-fit grid-cols-3 mb-2">
+                <TabsTrigger value="client">Server Client</TabsTrigger>
+                <TabsTrigger value="js">NodeJS Fetch</TabsTrigger>
+                <TabsTrigger value="curl">CURL</TabsTrigger>
               </TabsList>
               <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
                 <div>
-                  Trigger the workflow with&nbsp;
+                  Copy and paste the ComfyDeployClient form&nbsp;
                   <a
                     href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
                     className="text-blue-500 hover:underline"
                     target="_blank"
                   >
-                    comfy deploy wrapper
+                    here
                   </a>
-                </div>
-                <div>
-                  Copy the wrapper to your project, and import the function
                 </div>
                 <CodeBlock
                   lang="js"
                   code={formatCode(
-                    clientTemplate,
+                    domain == "https://www.comfydeploy.com"
+                      ? jsClientSetupTemplateHostedVersion
+                      : jsClientSetupTemplate,
+                    deployment,
+                    domain,
+                    workflowInput
+                  )}
+                />
+                Create a run via deployment id
+                <CodeBlock
+                  lang="js"
+                  code={formatCode(
+                    workflowInput && workflowInput.length > 0
+                      ? jsClientCreateRunTemplate
+                      : jsClientCreateRunNoInputsTemplate,
                     deployment,
                     domain,
                     workflowInput
@@ -227,7 +235,8 @@ function formatCode(
   codeTemplate: string,
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0],
   domain: string,
-  inputs?: ReturnType<typeof getInputsFromWorkflow>
+  inputs?: ReturnType<typeof getInputsFromWorkflow>,
+  inputsTabs?: number
 ) {
   if (inputs && inputs.length > 0) {
     codeTemplate = codeTemplate.replace(

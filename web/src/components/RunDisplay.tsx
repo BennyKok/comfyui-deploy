@@ -1,6 +1,7 @@
 import { LiveStatus } from "./LiveStatus";
 import { RunInputs } from "@/components/RunInputs";
 import { RunOutputs } from "@/components/RunOutputs";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,9 @@ export async function RunDisplay({
             {getRelativeTime(run.created_at)}
           </TableCell>
           <TableCell>{run.version?.version}</TableCell>
+          <TableCell>
+            <Badge variant="outline">{run.origin}</Badge>
+          </TableCell>
           <LiveStatus run={run} />
         </TableRow>
       </DialogTrigger>
