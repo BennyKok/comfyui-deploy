@@ -241,7 +241,7 @@ export function RunWorkflowButton({
           workflow_version_id,
           machine_id: machine,
           inputs: val,
-          isManualRun: true,
+          runOrigin: "manual",
         })
       );
       // console.log(res.json());
