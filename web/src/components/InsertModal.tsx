@@ -91,7 +91,7 @@ export function InsertModal<
           <div className="flex justify-end">
             <AutoFormSubmit>
               Save Changes
-              <span className="ml-2">{isLoading && <LoadingIcon />}</span>
+              {isLoading && <LoadingIcon />}
             </AutoFormSubmit>
           </div>
         </AutoForm>

@@ -38,9 +38,9 @@ export function Navbar() {
         {!isDesktop && (
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" className="w-8 h-8 p-2">
+              <button className="flex items-center justify-center w-8 h-8 p-2">
                 <Menu />
-              </Button>
+              </button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col gap-4">
               <SheetHeader>

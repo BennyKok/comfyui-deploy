@@ -21,7 +21,7 @@ export function AutoFormSubmit({
   disabled?: boolean;
 }) {
   return (
-    <Button type="submit" disabled={disabled}>
+    <Button type="submit" disabled={disabled} className="flex gap-2">
       {children ?? "Submit"}
     </Button>
   );
