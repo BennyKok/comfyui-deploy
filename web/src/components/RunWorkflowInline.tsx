@@ -40,13 +40,10 @@ export function RunWorkflowInline({
   } = publicRunStore();
 
   const runWorkflow = async () => {
-    console.log();
-
     if (!user.isSignedIn) {
       clerk.openSignIn({
         redirectUrl: window.location.href,
       });
-      console.log("hi");
       return;
     }
     console.log(values);

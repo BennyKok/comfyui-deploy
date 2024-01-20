@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { parseAsInteger } from "next-usequerystate";
+import { headers } from "next/headers";
 
 const itemPerPage = 6;
 const pageParser = parseAsInteger.withDefault(1);
@@ -69,8 +70,14 @@ export async function RunsTable(props: {
 
 export async function DeploymentsTable(props: { workflow_id: string }) {
   const allRuns = await findAllDeployments(props.workflow_id);
+
+  const headersList = headers();
+  const host = headersList.get("host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const domain = `${protocol}://${host}`;
+
   return (
-    <div className="overflow-auto h-fit  w-full">
+    <div className="overflow-auto h-fit w-full">
       <Table className="">
         <TableCaption>A list of your deployments</TableCaption>
         <TableHeader className="bg-background top-0 sticky">
@@ -83,7 +90,7 @@ export async function DeploymentsTable(props: { workflow_id: string }) {
         </TableHeader>
         <TableBody>
           {allRuns.map((run) => (
-            <DeploymentDisplay deployment={run} key={run.id} />
+            <DeploymentDisplay deployment={run} key={run.id} domain={domain} />
           ))}
         </TableBody>
       </Table>
