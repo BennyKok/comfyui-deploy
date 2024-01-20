@@ -1,15 +1,14 @@
 import { Navbar } from "../../components/Navbar";
 import "./globals.css";
+import { PHProvider } from "./providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import meta from "next-gen/config";
 import PlausibleProvider from "next-plausible";
+import dynamic from "next/dynamic";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
-import { PHProvider } from "./providers";
-
-import dynamic from "next/dynamic";
 
 const PostHogPageView = dynamic(() => import("./PostHogPageView"), {
   ssr: false,
@@ -34,8 +33,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
   return (
     <html lang="en">
@@ -60,6 +61,7 @@ export default function RootLayout({
                   {children}
                 </div>
                 <Toaster richColors />
+                {modal}
               </main>
             </body>
           </PHProvider>

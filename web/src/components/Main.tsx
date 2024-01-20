@@ -69,7 +69,7 @@ export default async function Main() {
             </Section.Announcement>
 
             <Section.Title className="text-left">
-              <span className="text-6xl md:text-7xl pb-2 inline-flex animate-background-shine bg-[linear-gradient(110deg,#1e293b,45%,#939393,55%,#1e293b)] bg-[length:250%_100%] bg-clip-text text-transparent">
+              <span className="text-5xl sm:text-6xl md:text-7xl pb-2 inline-flex animate-background-shine bg-[linear-gradient(110deg,#1e293b,45%,#939393,55%,#1e293b)] bg-[length:250%_100%] bg-clip-text text-transparent">
                 {meta.tagline}
               </span>
             </Section.Title>

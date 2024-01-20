@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/db";
-import type { DeploymentType } from "@/db/schema";
+import type { DeploymentType, publicShareDeployment } from "@/db/schema";
 import { deploymentsTable, workflowTable } from "@/db/schema";
 import { createNewWorkflow } from "@/server/createNewWorkflow";
 import { addCustomMachine } from "@/server/curdMachine";
@@ -11,6 +11,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import "server-only";
+import type { z } from "zod";
 
 export async function createDeployments(
   workflow_id: string,
@@ -18,7 +19,7 @@ export async function createDeployments(
   machine_id: string,
   environment: DeploymentType["environment"]
 ) {
-  const { userId } = auth();
+  const { userId, orgId } = auth();
   if (!userId) throw new Error("No user id");
 
   if (!machine_id) {
@@ -40,6 +41,7 @@ export async function createDeployments(
         workflow_id,
         workflow_version_id: version_id,
         machine_id,
+        org_id: orgId,
       })
       .where(eq(deploymentsTable.id, existingDeployment.id));
   } else {
@@ -49,6 +51,7 @@ export async function createDeployments(
       workflow_version_id: version_id,
       machine_id,
       environment,
+      org_id: orgId,
     });
   }
   revalidatePath(`/${workflow_id}`);
@@ -195,3 +198,56 @@ export const cloneMachine = withServerPromise(async (deployment_id: string) => {
     message: "Successfully cloned workflow",
   };
 });
+
+export async function findUserShareDeployment(share_id: string) {
+  const { userId, orgId } = auth();
+
+  if (!userId) throw new Error("No user id");
+
+  const [deployment] = await db
+    .select()
+    .from(deploymentsTable)
+    .where(
+      and(
+        eq(deploymentsTable.id, share_id),
+        eq(deploymentsTable.environment, "public-share"),
+        orgId
+          ? eq(deploymentsTable.org_id, orgId)
+          : and(
+              eq(deploymentsTable.user_id, userId),
+              isNull(deploymentsTable.org_id)
+            )
+      )
+    );
+
+  if (!deployment) throw new Error("No deployment found");
+
+  return deployment;
+}
+
+export const updateSharePageInfo = withServerPromise(
+  async ({
+    id,
+    ...data
+  }: z.infer<typeof publicShareDeployment> & {
+    id: string;
+  }) => {
+    const { userId } = auth();
+    if (!userId) return { error: "No user id" };
+
+    console.log(data);
+
+    const [deployment] = await db
+      .update(deploymentsTable)
+      .set(data)
+      .where(
+        and(
+          eq(deploymentsTable.environment, "public-share"),
+          eq(deploymentsTable.id, id)
+        )
+      )
+      .returning();
+
+    return { message: "Info Updated" };
+  }
+);

@@ -39,7 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { workflowAPINodeType } from "@/db/schema";
+import type { showcaseMediaNullable, workflowAPINodeType } from "@/db/schema";
 import { checkStatus, createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
@@ -154,7 +154,9 @@ export const publicRunStore = create<PublicRunStore>((set) => ({
   setStatus: (status) => set({ status }),
 }));
 
-export function PublicRunOutputs() {
+export function PublicRunOutputs(props: {
+  preview: z.infer<typeof showcaseMediaNullable>;
+}) {
   const { image, loading, runId, status, setStatus, setImage, setLoading } =
     publicRunStore();
 
@@ -176,6 +178,15 @@ export function PublicRunOutputs() {
 
   return (
     <div className="border border-gray-200 w-full square h-[400px] rounded-lg relative">
+      {!loading && !image && props.preview && props.preview.length > 0 && (
+        <>
+          <img
+            className="w-full h-full object-contain"
+            src={props.preview[0]?.url}
+            alt="Generated image"
+          />
+        </>
+      )}
       {!loading && image && (
         <img
           className="w-full h-full object-contain"

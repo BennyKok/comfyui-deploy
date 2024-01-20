@@ -1,33 +1,37 @@
-import { Button, buttonVariants } from '@/components/ui/button';
-type ButtonProps = React.ComponentProps<typeof Button>;
-type LinkProps = React.ComponentProps<typeof Link>;
-import { Card as BaseCard } from '@/components/ui/card';
-type CardProps = React.ComponentProps<typeof BaseCard>;
-import { Tabs, TabsTrigger as Tab, TabsList } from '@/components/ui/tabs';
-type TabsProps = React.ComponentProps<typeof Tabs>;
 import {
   Accordion,
   AccordionItem,
   AccordionContent,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-type AccordionProps = React.ComponentProps<typeof Accordion>;
-import { Badge as Chip } from '@/components/ui/badge';
-type ChipProps = React.ComponentProps<typeof Chip>;
-
-import Link from 'next/link';
+} from "@/components/ui/accordion";
+import { Badge as Chip } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card as BaseCard } from "@/components/ui/card";
+import { Tabs, TabsTrigger as Tab, TabsList } from "@/components/ui/tabs";
+// import { PiCheckCircleDuotone } from 'react-icons/pi';
+import { cn } from "@/lib/utils";
+import { ChevronRight as MdChevronRight } from "lucide-react";
+import { CheckCircle as PiCheckCircleDuotone } from "lucide-react";
+import Link from "next/link";
 import type {
   HTMLAttributeAnchorTarget,
   HTMLAttributes,
   ReactNode,
-} from 'react';
-import { twMerge } from 'tailwind-merge';
-import { ChevronRight as MdChevronRight} from 'lucide-react'
+} from "react";
 // import { MdChevronRight } from 'react-icons/md';
-import React from 'react';
-import { CheckCircle as PiCheckCircleDuotone } from 'lucide-react'
-// import { PiCheckCircleDuotone } from 'react-icons/pi';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { twMerge } from "tailwind-merge";
+
+type ButtonProps = React.ComponentProps<typeof Button>;
+type LinkProps = React.ComponentProps<typeof Link>;
+
+type CardProps = React.ComponentProps<typeof BaseCard>;
+
+type TabsProps = React.ComponentProps<typeof Tabs>;
+
+type AccordionProps = React.ComponentProps<typeof Accordion>;
+
+type ChipProps = React.ComponentProps<typeof Chip>;
 
 function Section({
   className,
@@ -41,8 +45,8 @@ function Section({
   return (
     <section
       className={twMerge(
-        'flex min-h-[400px] w-full max-w-6xl flex-col justify-center gap-2 rounded-lg px-10 py-10 md:px-20',
-        className,
+        "flex min-h-[400px] w-full max-w-6xl flex-col justify-center gap-2 rounded-lg px-2 sm:px-10 py-10 md:px-20",
+        className
       )}
       {...props}
     >
@@ -64,12 +68,12 @@ function Title({
     <h1
       {...props}
       className={twMerge(
-        'text-center text-4xl font-bold md:text-6xl',
-        className,
+        "text-center text-4xl font-bold md:text-6xl",
+        className
       )}
       style={{
         // @ts-ignore
-        textWrap: 'balance',
+        textWrap: "balance",
       }}
     >
       {children}
@@ -86,12 +90,12 @@ function Subtitle({
     <h2
       {...props}
       className={twMerge(
-        'text text-center overflow-hidden text-ellipsis text-xl',
-        className,
+        "text text-center overflow-hidden text-ellipsis text-xl",
+        className
       )}
       style={{
         // @ts-ignore
-        textWrap: 'balance',
+        textWrap: "balance",
       }}
     >
       {children}
@@ -103,7 +107,7 @@ function Announcement({
   className,
   children,
   href,
-  target = '_blank',
+  target = "_blank",
   ...props
 }: ChipProps & {
   href?: string; //string | UrlObject;
@@ -112,8 +116,8 @@ function Announcement({
   return (
     <Chip
       className={twMerge(
-        'w-fit group bg-foreground-50 text-center transition-colors hover:bg-gray-200',
-        className,
+        "w-fit group bg-foreground-50 text-center transition-colors hover:bg-gray-200",
+        className
       )}
       variant="outline"
       // href={href}
@@ -127,13 +131,13 @@ function Announcement({
       // }
       style={{
         // @ts-ignore
-        textWrap: 'balance',
+        textWrap: "balance",
       }}
       {...props}
     >
       <a href={href} target={target}>
         {children}
-      </a>{' '}
+      </a>{" "}
       <MdChevronRight
         size={20}
         className="pr-1 transition-transform group-hover:translate-x-[2px]"
@@ -143,14 +147,14 @@ function Announcement({
 }
 
 type ActionProps = ButtonProps & {
-  be: 'button';
+  be: "button";
   hideArrow?: boolean;
 };
 
 type ActionLinkProps = LinkProps & {
-  be?: 'a';
+  be?: "a";
   hideArrow?: boolean;
-  variant?: ButtonProps['variant'];
+  variant?: ButtonProps["variant"];
 };
 
 function PrimaryAction({
@@ -160,15 +164,15 @@ function PrimaryAction({
   hideArrow,
   ...props
 }: ActionLinkProps | ActionProps) {
-  if (props.be === 'button') {
+  if (props.be === "button") {
     return (
       <Button
         className={cn(
           buttonVariants({
             variant: variant,
           }),
-          'group',
-          className,
+          "group",
+          className
         )}
         {...props}
       >
@@ -186,8 +190,8 @@ function PrimaryAction({
         buttonVariants({
           variant: variant,
         }),
-        'group',
-        className,
+        "group",
+        className
       )}
       {...props}
     >
@@ -206,17 +210,17 @@ function SecondaryAction({
   hideArrow,
   ...props
 }: ActionLinkProps | ActionProps) {
-  if (props.be === 'button') {
+  if (props.be === "button") {
     return (
       <Button
         className={cn(
           buttonVariants({
             variant: variant,
           }),
-          'group',
-          className,
+          "group",
+          className
         )}
-        variant={'ghost'}
+        variant="ghost"
         {...props}
       >
         {children}
@@ -231,10 +235,10 @@ function SecondaryAction({
     <Link
       className={cn(
         buttonVariants({
-          variant: 'ghost',
+          variant: "ghost",
         }),
-        'group',
-        className,
+        "group",
+        className
       )}
       {...props}
     >
@@ -249,31 +253,31 @@ function PricingCard({
   className,
   children,
   ...props
-}: Omit<CardProps, 'children'> & {
+}: Omit<CardProps, "children"> & {
   children:
     | ReactNode
     | ReactNode[]
     | ((pricingType: PricingType) => ReactNode | ReactNode[]);
 }) {
   // const { pricingType } = usePricingContext();
-  if (typeof children === 'function')
-    children = (children('month') as React.ReactElement).props.children as
+  if (typeof children === "function")
+    children = (children("month") as React.ReactElement).props.children as
       | ReactNode
       | ReactNode[];
 
   // extract the title and subtitle from the children
   // const cardTitleStyles =
   const title = getChildComponent(children, Title, {
-    className: 'text-2xl md:text-2xl text-start font-bold',
+    className: "text-2xl md:text-2xl text-start font-bold",
   });
   const subTitle = getChildComponent(children, Subtitle, {
-    className: 'text-md text-start text-foreground-500 mt-4',
+    className: "text-md text-start text-foreground-500 mt-4",
   });
   const priceTags = getChildComponents(children, PriceTag, {
-    className: 'text-4xl font-bold',
+    className: "text-4xl font-bold",
   });
   const primaryAction = getChildComponent(children, PrimaryAction, {
-    className: 'w-full',
+    className: "w-full",
   });
 
   return (
@@ -281,8 +285,8 @@ function PricingCard({
       // shadow="sm"
       {...props}
       className={twMerge(
-        'flex flex-col min-h-[400px] w-full max-w-full items-start justify-between gap-2 p-8 text-sm',
-        className,
+        "flex flex-col min-h-[400px] w-full max-w-full items-start justify-between gap-2 p-8 text-sm",
+        className
       )}
     >
       <div>
@@ -320,7 +324,7 @@ function PricingCard({
 //   setPricingType: (pricingType: PricingType) => {},
 // });
 
-const PricingTypeValue = ['month', 'year'] as const;
+const PricingTypeValue = ["month", "year"] as const;
 export type PricingType = (typeof PricingTypeValue)[number];
 
 // // an helper function to useContext
@@ -350,7 +354,7 @@ function PricingOption({ className, ...props }: TabsProps) {
 
   return (
     <Tabs
-      className={twMerge('w-fit', className)}
+      className={twMerge("w-fit", className)}
       defaultValue="month"
       aria-label="Pricing Options"
       {...props}
@@ -384,10 +388,10 @@ function PriceTag({
   pricingType,
   ...props
 }: HTMLAttributes<HTMLHeadingElement> & {
-  pricingType?: 'month' | 'year' | string;
+  pricingType?: "month" | "year" | string;
 }) {
   // const { pricingType: currentPricingType } = usePricingContext();
-  let currentPricingType = 'month';
+  const currentPricingType = "month";
 
   if (pricingType != undefined && currentPricingType !== pricingType)
     return <></>;
@@ -399,10 +403,10 @@ function Card({ className, children, ...props }: CardProps) {
   // extract the title and subtitle from the children
   // const cardTitleStyles =
   const title = getChildComponent(children, Title, {
-    className: 'text-2xl md:text-2xl font-normal text-center',
+    className: "text-2xl md:text-2xl font-normal text-center",
   });
   const subTitle = getChildComponent(children, Subtitle, {
-    className: 'text-md text-center',
+    className: "text-md text-center",
   });
   const image = getChildComponent(children, ImageArea);
 
@@ -411,8 +415,8 @@ function Card({ className, children, ...props }: CardProps) {
       // shadow="sm"
       {...props}
       className={twMerge(
-        'flex min-h-[280px] w-full max-w-full items-center justify-center gap-2 p-4 text-sm flex-col',
-        className,
+        "flex min-h-[280px] w-full max-w-full items-center justify-center gap-2 p-4 text-sm flex-col",
+        className
       )}
     >
       {image}
@@ -431,7 +435,7 @@ function ImageArea({
   return (
     <div
       {...props}
-      className={twMerge('aspect-square w-14 bg-foreground-300', className)}
+      className={twMerge("aspect-square w-14 bg-foreground-300", className)}
     >
       {children}
     </div>
@@ -442,11 +446,11 @@ function ImageArea({
 function getChildComponent<T extends (...args: any[]) => React.JSX.Element>(
   children: React.ReactNode | React.ReactNode[],
   type: T,
-  propsOverride?: Partial<Parameters<T>[0]>,
+  propsOverride?: Partial<Parameters<T>[0]>
 ) {
   const childrenArr = React.Children.toArray(children);
   let child = childrenArr.find(
-    (child) => React.isValidElement(child) && child.type === type,
+    (child) => React.isValidElement(child) && child.type === type
   ) as React.ReactElement<
     Parameters<T>[0],
     string | React.JSXElementConstructor<any>
@@ -466,12 +470,12 @@ function getChildComponent<T extends (...args: any[]) => React.JSX.Element>(
 function getChildComponents<T extends (...args: any[]) => React.JSX.Element>(
   children: React.ReactNode | React.ReactNode[],
   type: T,
-  propsOverride?: Partial<Parameters<T>[0]>,
+  propsOverride?: Partial<Parameters<T>[0]>
 ) {
   const childrenArr = React.Children.toArray(children);
-  let child = (
+  const child = (
     childrenArr.filter(
-      (child) => React.isValidElement(child) && child.type === type,
+      (child) => React.isValidElement(child) && child.type === type
     ) as React.ReactElement<
       Parameters<T>[0],
       string | React.JSXElementConstructor<any>
@@ -492,10 +496,10 @@ function getChildComponents<T extends (...args: any[]) => React.JSX.Element>(
 
 function removeFromChildren(
   children: React.ReactNode | React.ReactNode[],
-  types: any[],
+  types: any[]
 ): React.ReactNode[] {
   return React.Children.toArray(children).filter(
-    (child) => React.isValidElement(child) && !types.includes(child.type),
+    (child) => React.isValidElement(child) && !types.includes(child.type)
   );
 }
 
@@ -508,11 +512,11 @@ function FAQItem({
   ...props
 }: {
   children: React.ReactNode | React.ReactNode[];
-  'aria-label': string;
+  "aria-label": string;
   title: string;
 }): JSX.Element {
   return (
-    <AccordionItem value={props['aria-label']}>
+    <AccordionItem value={props["aria-label"]}>
       <AccordionTrigger>{props.title}</AccordionTrigger>
       <AccordionContent>{children}</AccordionContent>
     </AccordionItem>

@@ -33,7 +33,9 @@ export async function RunDisplay({
           </TableCell>
           <TableCell>{run.version?.version}</TableCell>
           <TableCell>
-            <Badge variant="outline">{run.origin}</Badge>
+            <Badge variant="outline" className="truncate">
+              {run.origin}
+            </Badge>
           </TableCell>
           <LiveStatus run={run} />
         </TableRow>

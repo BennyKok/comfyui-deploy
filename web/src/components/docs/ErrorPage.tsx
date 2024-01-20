@@ -10,12 +10,11 @@ export default function ErrorPage({
   error,
   reset,
 }: {
-  error?: Error & { digest?: string };
-  reset?: () => void;
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.log(error?.message);
+    console.log(error.message);
   }, [error]);
 
   return (
@@ -26,9 +25,14 @@ export default function ErrorPage({
             <div className="text-xl">Unexpected error.</div>
           </CardTitle>
           <CardDescription className="flex flex-col gap-4">
-            <div className="text-sm">Error: {error?.message}</div>
+            <div className="text-sm">Error: {error.message}</div>
             <div className="flex w-full justify-end">
-              <Button className="w-fit" onClick={() => reset?.()}>
+              <Button
+                className="w-fit"
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
                 Refresh Page
               </Button>
             </div>
@@ -39,14 +43,20 @@ export default function ErrorPage({
   );
 }
 
-export function ErrorFullPage() {
+export function ErrorFullPage({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <div
       className={cn(
         "w-full py-4 flex justify-center items-center gap-2 text-sm h-full"
       )}
     >
-      <ErrorPage />
+      <ErrorPage error={error} reset={reset} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import { MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -49,7 +50,9 @@ export function ButtonActionMenu(props: {
     action: () => Promise<any>;
   }[];
 }) {
+  const user = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const clerk = useClerk();
 
   return (
     <DropdownMenu>
@@ -64,6 +67,13 @@ export function ButtonActionMenu(props: {
           <DropdownMenuItem
             key={action.title}
             onClick={async () => {
+              if (!user.isSignedIn) {
+                clerk.openSignIn({
+                  redirectUrl: window.location.href,
+                });
+                return;
+              }
+
               setIsLoading(true);
               await callServerPromise(action.action());
               setIsLoading(false);

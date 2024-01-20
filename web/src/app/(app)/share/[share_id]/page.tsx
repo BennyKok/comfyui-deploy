@@ -1,8 +1,6 @@
 import { ButtonActionMenu } from "@/components/ButtonActionLoader";
-import {
-  PublicRunOutputs,
-} from "@/components/VersionSelect";
 import { RunWorkflowInline } from "@/components/RunWorkflowInline";
+import { PublicRunOutputs } from "@/components/VersionSelect";
 import {
   Card,
   CardContent,
@@ -89,6 +87,11 @@ export default async function Page({
         </CardHeader>
 
         <CardContent>
+          <div>
+            {sharedDeployment?.description && (
+              <>{sharedDeployment?.description}</>
+            )}
+          </div>
           <RunWorkflowInline
             inputs={inputs}
             machine_id={sharedDeployment.machine_id}
@@ -102,7 +105,7 @@ export default async function Page({
         </CardHeader>
 
         <CardContent>
-          <PublicRunOutputs />
+          <PublicRunOutputs preview={sharedDeployment.showcase_media} />
         </CardContent>
       </Card>
     </div>

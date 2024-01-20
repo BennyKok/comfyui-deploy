@@ -60,6 +60,7 @@
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.29.1",
     "drizzle-zod": "^0.5.1",
+    "embla-carousel-react": "^8.0.0-rc19",
     "fast-glob": "^3.3.2",
     "flexsearch": "^0.7.31",
     "framer-motion": "^10.16.16",

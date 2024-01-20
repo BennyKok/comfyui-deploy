@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -106,12 +107,14 @@ export function UpdateModal<
   Y extends UnknownKeysParam,
   Z extends ZodObject<K, Y>
 >(props: {
-  open: boolean;
-  setOpen: (open: boolean) => void;
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
   title: string;
   description: string;
   dialogClassName?: string;
-  data: z.infer<Z>;
+  data: z.infer<Z> & {
+    id: string;
+  };
   serverAction: (
     data: z.infer<Z> & {
       id: string;
@@ -119,8 +122,13 @@ export function UpdateModal<
   ) => Promise<unknown>;
   formSchema: Z;
   fieldConfig?: FieldConfig<z.infer<Z>>;
+  trigger?: React.ReactNode;
+  extraButtons?: React.ReactNode;
 }) {
-  // const [open, setOpen] = React.useState(false);
+  const [_open, _setOpen] = React.useState(false);
+  const open = props.open ?? _open;
+  const setOpen = props.setOpen ?? _setOpen;
+
   const [values, setValues] = useState<Partial<z.infer<Z>>>({});
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -129,10 +137,18 @@ export function UpdateModal<
   }, [props.data]);
 
   return (
-    <Dialog open={props.open} onOpenChange={props.setOpen}>
-      {/* <DialogTrigger asChild>
-        <DropdownMenuItem>{props.title}</DropdownMenuItem>
-      </DialogTrigger> */}
+    <Dialog open={open} onOpenChange={setOpen}>
+      {props.trigger ?? (
+        <DialogTrigger
+          className="appearance-none hover:cursor-pointer"
+          asChild
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          {props.trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className={cn("sm:max-w-[425px]", props.dialogClassName)}>
         <DialogHeader>
           <DialogTitle>{props.title}</DialogTitle>
@@ -152,13 +168,14 @@ export function UpdateModal<
               })
             );
             setIsLoading(false);
-            props.setOpen(false);
+            setOpen(false);
           }}
         >
-          <div className="flex justify-end">
+          <div className="flex justify-end flex-wrap gap-2">
+            {props.extraButtons}
             <AutoFormSubmit>
               Save Changes
-              <span className="ml-2">{isLoading && <LoadingIcon />}</span>
+              {isLoading && <LoadingIcon />}
             </AutoFormSubmit>
           </div>
         </AutoForm>

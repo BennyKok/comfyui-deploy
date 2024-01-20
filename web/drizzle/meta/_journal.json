@@ -204,6 +204,20 @@
       "when": 1705642345817,
       "tag": "0028_futuristic_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1705662714161,
+      "tag": "0029_large_frightful_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1705716303820,
+      "tag": "0030_kind_doorman",
+      "breakpoints": true
     }
   ]
 }

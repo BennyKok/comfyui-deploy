@@ -239,6 +239,22 @@ export const insertMachineSchema = createInsertSchema(machinesTable, {
   type: (schema) => schema.type.default("classic"),
 });
 
+export const showcaseMedia = z.array(
+  z.object({
+    url: z.string(),
+    isCover: z.boolean().default(false),
+  })
+);
+
+export const showcaseMediaNullable = z
+  .array(
+    z.object({
+      url: z.string(),
+      isCover: z.boolean().default(false),
+    })
+  )
+  .nullable();
+
 export const deploymentsTable = dbSchema.table("deployments", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   user_id: text("user_id")
@@ -246,6 +262,7 @@ export const deploymentsTable = dbSchema.table("deployments", {
       onDelete: "cascade",
     })
     .notNull(),
+  org_id: text("org_id"),
   workflow_version_id: uuid("workflow_version_id")
     .notNull()
     .references(() => workflowVersionTable.id),
@@ -257,10 +274,26 @@ export const deploymentsTable = dbSchema.table("deployments", {
   machine_id: uuid("machine_id")
     .notNull()
     .references(() => machinesTable.id),
+  description: text("description"),
+  showcase_media:
+    jsonb("showcase_media").$type<z.infer<typeof showcaseMedia>>(),
   environment: deploymentEnvironment("environment").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const publicShareDeployment = z.object({
+  description: z.string().nullable(),
+  showcase_media: showcaseMedia,
+});
+
+// createInsertSchema(deploymentsTable, {
+//   description: (schema) => schema.description.default(""),
+//   showcase_media: () => showcaseMedia.default([]),
+// }).pick({
+//   description: true,
+//   showcase_media: true,
+// });
 
 export const deploymentsRelations = relations(deploymentsTable, ({ one }) => ({
   machine: one(machinesTable, {

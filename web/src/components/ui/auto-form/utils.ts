@@ -1,5 +1,5 @@
-import { DefaultValues } from "react-hook-form";
-import { z } from "zod";
+import type { DefaultValues } from "react-hook-form";
+import type { z } from "zod";
 
 // TODO: This should support recursive ZodEffects but TypeScript doesn't allow circular type definitions.
 export type ZodObjectOrWrapped =
@@ -21,7 +21,7 @@ export function beautifyObjectName(string: string) {
  * This will unpack optionals, refinements, etc.
  */
 export function getBaseSchema<
-  ChildType extends z.ZodAny | z.AnyZodObject = z.ZodAny,
+  ChildType extends z.ZodAny | z.AnyZodObject = z.ZodAny
 >(schema: ChildType | z.ZodEffects<ChildType>): ChildType {
   if ("innerType" in schema._def) {
     return getBaseSchema(schema._def.innerType as ChildType);
@@ -54,12 +54,12 @@ export function getDefaultValueInZodStack(schema: z.ZodAny): any {
 
   if ("innerType" in typedSchema._def) {
     return getDefaultValueInZodStack(
-      typedSchema._def.innerType as unknown as z.ZodAny,
+      typedSchema._def.innerType as unknown as z.ZodAny
     );
   }
   if ("schema" in typedSchema._def) {
     return getDefaultValueInZodStack(
-      (typedSchema._def as any).schema as z.ZodAny,
+      (typedSchema._def as any).schema as z.ZodAny
     );
   }
   return undefined;
@@ -69,7 +69,7 @@ export function getDefaultValueInZodStack(schema: z.ZodAny): any {
  * Get all default values from a Zod schema.
  */
 export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
-  schema: Schema,
+  schema: Schema
 ) {
   const { shape } = schema;
   type DefaultValuesType = DefaultValues<Partial<z.infer<Schema>>>;
@@ -80,7 +80,7 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
 
     if (getBaseType(item) === "ZodObject") {
       const defaultItems = getDefaultValues(
-        getBaseSchema(item) as unknown as z.ZodObject<any, any>,
+        getBaseSchema(item) as unknown as z.ZodObject<any, any>
       );
       for (const defaultItemKey of Object.keys(defaultItems)) {
         const pathKey = `${key}.${defaultItemKey}` as keyof DefaultValuesType;
@@ -98,7 +98,7 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
 }
 
 export function getObjectFormSchema(
-  schema: ZodObjectOrWrapped,
+  schema: ZodObjectOrWrapped
 ): z.ZodObject<any, any> {
   if (schema._def.typeName === "ZodEffects") {
     const typedSchema = schema as z.ZodEffects<z.ZodObject<any, any>>;
@@ -116,7 +116,7 @@ export function zodToHtmlInputProps(
     | z.ZodNumber
     | z.ZodString
     | z.ZodOptional<z.ZodNumber | z.ZodString>
-    | any,
+    | any
 ): React.InputHTMLAttributes<HTMLInputElement> {
   if (["ZodOptional", "ZodNullable"].includes(schema._def.typeName)) {
     const typedSchema = schema as z.ZodOptional<z.ZodNumber | z.ZodString>;
@@ -128,9 +128,10 @@ export function zodToHtmlInputProps(
 
   const typedSchema = schema as z.ZodNumber | z.ZodString;
 
-  if (!("checks" in typedSchema._def)) return {
-    required: true
-  };
+  if (!("checks" in typedSchema._def))
+    return {
+      required: true,
+    };
 
   const { checks } = typedSchema._def;
   const inputProps: React.InputHTMLAttributes<HTMLInputElement> = {
