@@ -1,0 +1,17 @@
+{
+	"name": "Comfy Deploy Dev",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"postCreateCommand": "cd web && bun install && bun run migrate-local",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"biomejs.biome",
+				"formulahendry.auto-rename-tag",
+				"bradlc.vscode-tailwindcss",
+				"stivo.tailwind-fold"
+			]
+		}
+	}
+}

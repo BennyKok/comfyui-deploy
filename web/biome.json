@@ -9,6 +9,11 @@
 			"recommended": true
 		}
 	},
+	"json": {
+		"parser": {
+			"allowComments": true
+		}
+	},
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",

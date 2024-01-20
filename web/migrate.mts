@@ -12,10 +12,11 @@ let sslMode: string | boolean = process.env.SSL || "require";
 
 if (sslMode === "false") sslMode = false;
 
-console.log(migrationsFolderName, sslMode);
+let connectionString = process.env.POSTGRES_URL!;
 
-const connectionString = process.env.POSTGRES_URL!;
-console.log(connectionString);
+const isDevContainer = process.env.VSCODE_DEV_CONTAINER !== undefined;
+if (isDevContainer) connectionString = connectionString.replace("localhost","host.docker.internal")
+
 const sql = postgres(connectionString, { max: 1, ssl: sslMode as any });
 const db = drizzle(sql, {
   logger: true,
