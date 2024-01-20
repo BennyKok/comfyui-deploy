@@ -45,12 +45,12 @@ for package in packages:
     response = requests.request("POST", f"{root_url}/customnode/install", json=package, headers=headers)
     print(response.text)
 
-with open('models.json') as f:
-    models = json.load(f)
-
-for model in models:
-    response = requests.request("POST", f"{root_url}/model/install", json=model, headers=headers)
-    print(response.text)
+# with open('models.json') as f:
+#     models = json.load(f)
+#
+# for model in models:
+#     response = requests.request("POST", f"{root_url}/model/install", json=model, headers=headers)
+#     print(response.text)
 
 # Close the server
 server_process.terminate()
