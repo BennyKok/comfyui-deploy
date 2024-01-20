@@ -41,11 +41,12 @@ export async function RunsTable(props: {
           )}
           <TableHeader className="bg-background top-0 sticky">
             <TableRow>
-              <TableHead className="w-[100px]">Number</TableHead>
-              <TableHead className="">Machine</TableHead>
-              <TableHead className="">Time</TableHead>
-              <TableHead className="w-[100px]">Version</TableHead>
+              <TableHead className="truncate">Number</TableHead>
+              <TableHead className="truncate">Machine</TableHead>
+              <TableHead className="truncate">Time</TableHead>
+              <TableHead className="truncate">Version</TableHead>
               <TableHead className="truncate">Origin</TableHead>
+              <TableHead className="truncate">Duration</TableHead>
               <TableHead className="truncate">Live Status</TableHead>
               <TableHead className="text-right">Status</TableHead>
             </TableRow>

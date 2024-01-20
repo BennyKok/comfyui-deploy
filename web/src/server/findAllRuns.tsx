@@ -23,6 +23,10 @@ export async function findAllRuns({
     extras: {
       number: sql<number>`row_number() over (order by created_at)`.as("number"),
       total: sql<number>`count(*) over ()`.as("total"),
+      duration:
+        sql<number>`(extract(epoch from ended_at) - extract(epoch from created_at))`.as(
+          "duration"
+        ),
     },
     with: {
       machine: {

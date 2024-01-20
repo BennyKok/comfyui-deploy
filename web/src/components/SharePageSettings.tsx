@@ -79,6 +79,11 @@ export function SharePageSettings({
         description="Edit share page details."
         serverAction={updateSharePageInfo}
         formSchema={publicShareDeployment}
+        fieldConfig={{
+          description: {
+            fieldType: "textarea",
+          },
+        }}
       />
     </>
   );

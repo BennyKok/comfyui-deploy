@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { getRelativeTime } from "@/lib/getRelativeTime";
+import { getDuration, getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
 import { Suspense } from "react";
 
@@ -36,6 +36,9 @@ export async function RunDisplay({
             <Badge variant="outline" className="truncate">
               {run.origin}
             </Badge>
+          </TableCell>
+          <TableCell className="truncate">
+            {getDuration(run.duration)}
           </TableCell>
           <LiveStatus run={run} />
         </TableRow>
