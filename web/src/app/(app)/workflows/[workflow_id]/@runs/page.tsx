@@ -17,7 +17,7 @@ export default async function Page({
       <CardHeader className="relative">
         <CardTitle>Run</CardTitle>
         <div className="absolute right-6 top-6">
-          <RouteRefresher interval={5000} />
+          <RouteRefresher interval={5000} autoRefresh={false} />
         </div>
       </CardHeader>
 

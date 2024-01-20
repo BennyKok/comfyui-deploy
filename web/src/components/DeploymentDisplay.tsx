@@ -1,6 +1,5 @@
-import { ButtonAction } from "@/components/ButtonActionLoader";
+import { DeploymentRow } from "./DeploymentRow";
 import { CodeBlock } from "@/components/CodeBlock";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,15 +9,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
-import { getRelativeTime } from "@/lib/getRelativeTime";
-import { removePublicShareDeployment } from "@/server/curdDeploments";
 import type { findAllDeployments } from "@/server/findAllRuns";
-import { ExternalLink } from "lucide-react";
-import { headers } from "next/headers";
-import Link from "next/link";
 
 const curlTemplate = `
 curl --request POST \
@@ -90,33 +83,21 @@ const run = await client.getRun(run_id);
 
 export function DeploymentDisplay({
   deployment,
+  domain,
 }: {
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0];
+  domain: string;
 }) {
-  const headersList = headers();
-  const host = headersList.get("host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "";
-  const domain = `${protocol}://${host}`;
-
   const workflowInput = getInputsFromWorkflow(deployment.version);
+
+  if (deployment.environment == "public-share") {
+    return <DeploymentRow deployment={deployment} />;
+  }
 
   return (
     <Dialog>
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
-        <TableRow>
-          <TableCell className="capitalize truncate">
-            {deployment.environment}
-          </TableCell>
-          <TableCell className="font-medium truncate">
-            {deployment.version?.version}
-          </TableCell>
-          <TableCell className="font-medium truncate">
-            {deployment.machine?.name}
-          </TableCell>
-          <TableCell className="text-right truncate">
-            {getRelativeTime(deployment.updated_at)}
-          </TableCell>
-        </TableRow>
+        <DeploymentRow deployment={deployment} />
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
@@ -126,105 +107,79 @@ export function DeploymentDisplay({
           <DialogDescription>Code for your deployment client</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[600px] pr-4">
-          {deployment.environment !== "public-share" ? (
-            <Tabs defaultValue="client" className="w-full gap-2 text-sm">
-              <TabsList className="grid w-fit grid-cols-3 mb-2">
-                <TabsTrigger value="client">Server Client</TabsTrigger>
-                <TabsTrigger value="js">NodeJS Fetch</TabsTrigger>
-                <TabsTrigger value="curl">CURL</TabsTrigger>
-              </TabsList>
-              <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
-                <div>
-                  Copy and paste the ComfyDeployClient form&nbsp;
-                  <a
-                    href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
-                    className="text-blue-500 hover:underline"
-                    target="_blank"
-                  >
-                    here
-                  </a>
-                </div>
-                <CodeBlock
-                  lang="js"
-                  code={formatCode(
-                    domain == "https://www.comfydeploy.com"
-                      ? jsClientSetupTemplateHostedVersion
-                      : jsClientSetupTemplate,
-                    deployment,
-                    domain,
-                    workflowInput
-                  )}
-                />
-                Create a run via deployment id
-                <CodeBlock
-                  lang="js"
-                  code={formatCode(
-                    workflowInput && workflowInput.length > 0
-                      ? jsClientCreateRunTemplate
-                      : jsClientCreateRunNoInputsTemplate,
-                    deployment,
-                    domain,
-                    workflowInput
-                  )}
-                />
-                Check the status of the run, and retrieve the outputs
-                <CodeBlock
-                  lang="js"
-                  code={formatCode(
-                    clientTemplate_checkStatus,
-                    deployment,
-                    domain
-                  )}
-                />
-              </TabsContent>
-              <TabsContent className="flex flex-col gap-2 !mt-0" value="js">
-                Trigger the workflow
-                <CodeBlock
-                  lang="js"
-                  code={formatCode(
-                    jsTemplate,
-                    deployment,
-                    domain,
-                    workflowInput
-                  )}
-                />
-                Check the status of the run, and retrieve the outputs
-                <CodeBlock
-                  lang="js"
-                  code={formatCode(jsTemplate_checkStatus, deployment, domain)}
-                />
-              </TabsContent>
-              <TabsContent className="flex flex-col gap-2 !mt-2" value="curl">
-                <CodeBlock
-                  lang="bash"
-                  code={formatCode(curlTemplate, deployment, domain)}
-                />
-                <CodeBlock
-                  lang="bash"
-                  code={formatCode(
-                    curlTemplate_checkStatus,
-                    deployment,
-                    domain
-                  )}
-                />
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <div className="w-full justify-end flex gap-2 py-1">
-              <Button asChild className="gap-2" variant="outline" type="submit">
-                <ButtonAction
-                  action={removePublicShareDeployment.bind(null, deployment.id)}
+          <Tabs defaultValue="client" className="w-full gap-2 text-sm">
+            <TabsList className="grid w-fit grid-cols-3 mb-2">
+              <TabsTrigger value="client">Server Client</TabsTrigger>
+              <TabsTrigger value="js">NodeJS Fetch</TabsTrigger>
+              <TabsTrigger value="curl">CURL</TabsTrigger>
+            </TabsList>
+            <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
+              <div>
+                Copy and paste the ComfyDeployClient form&nbsp;
+                <a
+                  href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
+                  className="text-blue-500 hover:underline"
+                  target="_blank"
                 >
-                  Remove
-                </ButtonAction>
-              </Button>
-              <Button asChild className="gap-2">
-                <Link href={`/share/${deployment.id}`} target="_blank">
-                  View Share Page <ExternalLink size={14} />
-                </Link>
-              </Button>
-            </div>
-          )}
+                  here
+                </a>
+              </div>
+              <CodeBlock
+                lang="js"
+                code={formatCode(
+                  domain == "https://www.comfydeploy.com"
+                    ? jsClientSetupTemplateHostedVersion
+                    : jsClientSetupTemplate,
+                  deployment,
+                  domain,
+                  workflowInput
+                )}
+              />
+              Create a run via deployment id
+              <CodeBlock
+                lang="js"
+                code={formatCode(
+                  workflowInput && workflowInput.length > 0
+                    ? jsClientCreateRunTemplate
+                    : jsClientCreateRunNoInputsTemplate,
+                  deployment,
+                  domain,
+                  workflowInput
+                )}
+              />
+              Check the status of the run, and retrieve the outputs
+              <CodeBlock
+                lang="js"
+                code={formatCode(
+                  clientTemplate_checkStatus,
+                  deployment,
+                  domain
+                )}
+              />
+            </TabsContent>
+            <TabsContent className="flex flex-col gap-2 !mt-0" value="js">
+              Trigger the workflow
+              <CodeBlock
+                lang="js"
+                code={formatCode(jsTemplate, deployment, domain, workflowInput)}
+              />
+              Check the status of the run, and retrieve the outputs
+              <CodeBlock
+                lang="js"
+                code={formatCode(jsTemplate_checkStatus, deployment, domain)}
+              />
+            </TabsContent>
+            <TabsContent className="flex flex-col gap-2 !mt-2" value="curl">
+              <CodeBlock
+                lang="bash"
+                code={formatCode(curlTemplate, deployment, domain)}
+              />
+              <CodeBlock
+                lang="bash"
+                code={formatCode(curlTemplate_checkStatus, deployment, domain)}
+              />
+            </TabsContent>
+          </Tabs>
         </ScrollArea>
       </DialogContent>
     </Dialog>
