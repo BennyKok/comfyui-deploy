@@ -122,7 +122,7 @@ export function DeploymentDisplay({
                 <a
                   href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
                   className="text-blue-500 hover:underline"
-                  target="_blank"
+                  target="_blank" rel="noreferrer"
                 >
                   here
                 </a>

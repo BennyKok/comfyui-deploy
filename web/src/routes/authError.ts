@@ -1,4 +1,6 @@
 import type { ResponseConfig } from "@asteasolutions/zod-to-openapi";
+
+
 import { z } from "@hono/zod-openapi";
 
 export const authError = {

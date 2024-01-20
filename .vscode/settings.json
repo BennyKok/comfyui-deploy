@@ -1,8 +1,9 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.formatOnSave": false,
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "quickfix.biome": true,
+    "source.organizeImports.biome": true
   },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "spellright.language": ["en"],

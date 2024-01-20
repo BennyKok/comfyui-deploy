@@ -598,7 +598,7 @@ export function ViewWorkflowDetailsButton({
                         <a
                           href={group.url}
                           target="_blank"
-                          className="hover:underline"
+                          className="hover:underline" rel="noreferrer"
                         >
                           {key}
                           <ExternalLink

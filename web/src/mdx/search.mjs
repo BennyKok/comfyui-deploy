@@ -31,9 +31,9 @@ function extractSections() {
 
     visit(tree, (node) => {
       if (node.type === "heading" || node.type === "paragraph") {
-        let content = toString(excludeObjectExpressions(node));
+        const content = toString(excludeObjectExpressions(node));
         if (node.type === "heading" && node.depth <= 2) {
-          let hash = node.depth === 1 ? null : slugify(content);
+          const hash = node.depth === 1 ? null : slugify(content);
           sections.push([content, hash, []]);
         } else {
           sections.at(-1)?.[2].push(content);
@@ -45,7 +45,7 @@ function extractSections() {
 }
 
 export default function (nextConfig = {}) {
-  let cache = new Map();
+  const cache = new Map();
 
   return Object.assign({}, nextConfig, {
     webpack(config, options) {
@@ -53,20 +53,20 @@ export default function (nextConfig = {}) {
         test: __filename,
         use: [
           createLoader(function () {
-            let appDir = path.resolve("./src/app/(docs)/docs");
+            const appDir = path.resolve("./src/app/(docs)/docs");
             this.addContextDependency(appDir);
 
-            let files = glob.sync("**/*.mdx", { cwd: appDir });
-            let data = files.map((file) => {
+            const files = glob.sync("**/*.mdx", { cwd: appDir });
+            const data = files.map((file) => {
               let url = `/${file.replace(/(^|\/)page\.mdx$/, "")}`;
-              let mdx = fs.readFileSync(path.join(appDir, file), "utf8");
+              const mdx = fs.readFileSync(path.join(appDir, file), "utf8");
 
               let sections = [];
 
               if (cache.get(file)?.[0] === mdx) {
                 sections = cache.get(file)[1];
               } else {
-                let vfile = { value: mdx, sections };
+                const vfile = { value: mdx, sections };
                 processor.runSync(processor.parse(vfile), vfile);
                 cache.set(file, [mdx, sections]);
               }

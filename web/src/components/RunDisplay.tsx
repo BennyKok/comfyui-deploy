@@ -1,4 +1,3 @@
-import { LiveStatus } from "./LiveStatus";
 import { RunInputs } from "@/components/RunInputs";
 import { RunOutputs } from "@/components/RunOutputs";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { getDuration, getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
 import { Suspense } from "react";
+import { LiveStatus } from "./LiveStatus";
 
 export async function RunDisplay({
   run,

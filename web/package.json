@@ -12,7 +12,8 @@
     "migrate-production": "bun run migrate.mts",
     "migrate-local": "SSL=false LOCAL=true bun run migrate.mts",
     "db-up": "docker-compose up",
-    "db-dev": "bun run db-up && bun run migrate-local"
+    "db-dev": "bun run db-up && bun run migrate-local",
+    "lint:fix": "bunx @biomejs/biome lint --apply ./src"
   },
   "dependencies": {
     "@algolia/autocomplete-core": "^1.13.0",
@@ -105,26 +106,17 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@trivago/prettier-plugin-sort-imports": "4.1.1",
+    "@biomejs/biome": "1.5.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@typescript-eslint/eslint-plugin": "^6.13.2",
-    "@typescript-eslint/parser": "^6.13.2",
     "autoprefixer": "^10.0.1",
     "concurrently": "^8.2.2",
     "dotenv": "^16.3.1",
     "drizzle-kit": "^0.20.6",
     "eslint": "8.34.0",
-    "eslint-config-next": "^14.0.4",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-config-turbo": "latest",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-unused-imports": "^3.0.0",
     "postcss": "^8",
     "postgres": "^3.4.3",
-    "prettier": "2.8.6",
-    "prettier-plugin-tailwindcss": "0.2.5",
     "sharp": "^0.33.1",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"

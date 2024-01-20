@@ -223,7 +223,7 @@ export const columns: ColumnDef<Machine>[] = [
                     href={machine.endpoint.replace(
                       "comfyui-api",
                       "comfyui-app"
-                    )}
+                    )} rel="noreferrer"
                   >
                     Open ComfyUI
                   </a>

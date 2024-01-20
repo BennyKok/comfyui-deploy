@@ -1,6 +1,5 @@
 "use client";
 
-import { useServerActionData } from "./useServerActionData";
 import { ButtonAction } from "@/components/ButtonActionLoader";
 import { UpdateModal } from "@/components/InsertModal";
 import { LoadingPageWrapper } from "@/components/LoadingWrapper";
@@ -15,6 +14,7 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useServerActionData } from "./useServerActionData";
 
 export function SharePageSettings({
   deployment_id,
