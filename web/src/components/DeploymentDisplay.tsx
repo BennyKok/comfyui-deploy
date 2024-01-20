@@ -1,4 +1,4 @@
-import { DeploymentRow } from "./DeploymentRow";
+import { DeploymentRow, SharePageDeploymentRow } from "./DeploymentRow";
 import { CodeBlock } from "@/components/CodeBlock";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import type { findAllDeployments } from "@/server/findAllRuns";
@@ -91,13 +92,15 @@ export function DeploymentDisplay({
   const workflowInput = getInputsFromWorkflow(deployment.version);
 
   if (deployment.environment == "public-share") {
-    return <DeploymentRow deployment={deployment} />;
+    return <SharePageDeploymentRow deployment={deployment} />;
   }
 
   return (
     <Dialog>
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
-        <DeploymentRow deployment={deployment} />
+        <TableRow>
+          <DeploymentRow deployment={deployment} />
+        </TableRow>
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>

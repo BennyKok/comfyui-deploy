@@ -5,7 +5,7 @@ import { getRelativeTime } from "@/lib/getRelativeTime";
 import type { findAllDeployments } from "@/server/findAllRuns";
 import { useRouter } from "next/navigation";
 
-export function DeploymentRow({
+export function SharePageDeploymentRow({
   deployment,
 }: {
   deployment: Awaited<ReturnType<typeof findAllDeployments>>[0];
@@ -33,5 +33,28 @@ export function DeploymentRow({
         {getRelativeTime(deployment.updated_at)}
       </TableCell>
     </TableRow>
+  );
+}
+
+export function DeploymentRow({
+  deployment,
+}: {
+  deployment: Awaited<ReturnType<typeof findAllDeployments>>[0];
+}) {
+  return (
+    <>
+      <TableCell className="capitalize truncate">
+        {deployment.environment}
+      </TableCell>
+      <TableCell className="font-medium truncate">
+        {deployment.version?.version}
+      </TableCell>
+      <TableCell className="font-medium truncate">
+        {deployment.machine?.name}
+      </TableCell>
+      <TableCell className="text-right truncate">
+        {getRelativeTime(deployment.updated_at)}
+      </TableCell>
+    </>
   );
 }
