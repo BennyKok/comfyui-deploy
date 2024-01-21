@@ -8,6 +8,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -331,8 +332,22 @@ export const apiKeyTable = dbSchema.table("api_keys", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const userUsageTable = dbSchema.table("user_usage", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  usage_time: real("usage_time").default(0).notNull(),
+
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
+export type UserUsageType = InferSelectModel<typeof userUsageTable>;

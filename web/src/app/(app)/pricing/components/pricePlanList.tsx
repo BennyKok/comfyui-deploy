@@ -1,6 +1,11 @@
-import { checkMarkIcon } from "../const/Icon";
+import { checkMarkIcon, crossMarkIcon } from "../const/Icon";
 import { cn } from "@/lib/utils";
-import { getPricing } from "@/server/linkToPricing";
+import {
+  getPricing,
+  getSubscriptionItem,
+  getUsage,
+  setUsage,
+} from "@/server/linkToPricing";
 import { useEffect, useState } from "react";
 
 type Tier = {
@@ -11,10 +16,18 @@ type Tier = {
   description: string;
   features: string[];
   featured: boolean;
+  priority?: TierPriority;
 };
+
+enum TierPriority {
+  Free = "free",
+  Pro = "pro",
+  Enterprise = "enterprise",
+}
 
 export default function PricingList() {
   const [productTiers, setProductTiers] = useState<Tier[]>();
+  const [userUsageId, setUserUsageId] = useState<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -40,19 +53,59 @@ export default function PricingList() {
           name: item.attributes.name,
           id: item.id,
           href: item.attributes.buy_now_url,
-          priceMonthly: item.attributes.price_formatted.split("/")[0],
+          priceMonthly:
+            item.attributes.price_formatted.split("/")[0] == "Usage-based"
+              ? "$20.00"
+              : item.attributes.price_formatted.split("/")[0],
           description: description,
           features: features,
 
           // if name contains pro, it's featured
           featured: item.attributes.name.toLowerCase().includes("pro"),
+
+          // give priority if name contain in enum
+          priority: Object.values(TierPriority).find((priority) =>
+            item.attributes.name.toLowerCase().includes(priority)
+          ),
         };
       });
 
-      console.log(newProductTiers);
+      // sort newProductTiers by priority
+      newProductTiers.sort((a, b) => {
+        if (!a.priority) return 1;
+        if (!b.priority) return -1;
+        return (
+          Object.values(TierPriority).indexOf(a.priority) -
+          Object.values(TierPriority).indexOf(b.priority)
+        );
+      });
+
       setProductTiers(newProductTiers);
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      // const currentUser = await getUserData();
+
+      const userUsage = await getUsage();
+      const userSubscription = await getSubscriptionItem();
+
+      // const setUserUsage = await setUsage(236561, 10);
+
+      // console.log(currentUser);
+      console.log(userSubscription);
+    })();
+  }, []);
+
+  const setUserUsage = async (id: number, quantity: number) => {
+    try {
+      const response = await setUsage(id, quantity);
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="relative isolate px-6 py-24 lg:px-8">
@@ -60,6 +113,21 @@ export default function PricingList() {
         <h2 className="text-base font-semibold leading-7 text-indigo-600">
           Pricing
         </h2>
+
+        <div className="flex flex-col">
+          <button
+            className="mt-2 text-base font-semibold leading-7 text-indigo-600 bg-black"
+            onClick={() => {
+              setUserUsage(192385, 10);
+            }}
+          >
+            Set
+          </button>
+          <button className="mt-2 text-base font-semibold leading-7 text-indigo-600 bg-slate-400">
+            Get
+          </button>
+        </div>
+
         <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           The right price for you, whoever you are
         </p>
@@ -68,7 +136,7 @@ export default function PricingList() {
         Qui iusto aut est earum eos quae. Eligendi est at nam aliquid ad quo
         reprehenderit in aliquid fugiat dolorum voluptatibus.
       </p>
-      <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-center gap-y-6 sm:mt-20 sm:gap-y-0 lg:max-w-4xl lg:grid-cols-2">
+      <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-center gap-y-6 sm:mt-20 sm:gap-y-0 lg:max-w-4xl lg:grid-cols-2 xl:max-w-6xl xl:grid-cols-3">
         {productTiers &&
           productTiers.map((tier, tierIdx) => (
             <div
@@ -107,9 +175,9 @@ export default function PricingList() {
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex gap-x-3">
                     <div className="flex justify-center items-center">
-                      {checkMarkIcon}
+                      {feature.includes("[x]") ? crossMarkIcon : checkMarkIcon}
                     </div>
-                    {feature}
+                    {feature.replace("[x]", "")}
                   </li>
                 ))}
               </ul>

@@ -90,6 +90,13 @@ export function Navbar() {
           variant="link"
           className="rounded-full aspect-square p-2 mr-4"
         >
+          <a href="/pricing">Pricing</a>
+        </Button>
+        <Button
+          asChild
+          variant="link"
+          className="rounded-full aspect-square p-2 mr-4"
+        >
           <a href="/docs">Docs</a>
         </Button>
         <UserButton />
