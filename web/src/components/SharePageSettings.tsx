@@ -58,13 +58,14 @@ export function SharePageSettings({
               type="button"
             >
               <ButtonAction
+                routerAction="back"
                 action={removePublicShareDeployment.bind(null, deployment.id)}
               >
                 Remove
               </ButtonAction>
             </Button>
             <Button asChild className="gap-2 truncate" type="button">
-              <Link href={`/share/${deployment.id}`} target="_blank">
+              <Link href={`/share/${deployment.share_slug ?? deployment.id}`} target="_blank">
                 View Share Page <ExternalLink size={14} />
               </Link>
             </Button>

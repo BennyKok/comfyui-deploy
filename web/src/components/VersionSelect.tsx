@@ -1,8 +1,5 @@
 "use client";
 
-import { workflowVersionInputsToZod } from "../lib/workflowVersionInputsToZod";
-import { callServerPromise } from "./callServerPromise";
-import fetcher from "./fetcher";
 import { LoadingIcon } from "@/components/LoadingIcon";
 import AutoForm, { AutoFormSubmit } from "@/components/ui/auto-form";
 import { Badge } from "@/components/ui/badge";
@@ -44,20 +41,16 @@ import { checkStatus, createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
 import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import {
-  Copy,
-  ExternalLink,
-  Info,
-  MoreVertical,
-  Play,
-  Share,
-} from "lucide-react";
+import { Copy, ExternalLink, Info, MoreVertical, Play } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import type { z } from "zod";
 import { create } from "zustand";
+import { workflowVersionInputsToZod } from "../lib/workflowVersionInputsToZod";
+import { callServerPromise } from "./callServerPromise";
+import fetcher from "./fetcher";
 
 export function VersionSelect({
   workflow,
@@ -122,12 +115,14 @@ export function MachineSelect({
   );
 }
 
-function useSelectedMachine(machines: Awaited<ReturnType<typeof getMachines>>) {
-  const a = useQueryState("machine", {
-    defaultValue: machines?.[0]?.id ?? "",
-  });
+export function useSelectedMachine(
+	machines: Awaited<ReturnType<typeof getMachines>>,
+) {
+	const a = useQueryState("machine", {
+		defaultValue: machines?.[0]?.id ?? "",
+	});
 
-  return a;
+	return a;
 }
 
 type PublicRunStore = {
@@ -367,55 +362,6 @@ export function CreateDeploymentButton({
           }}
         >
           Staging
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export function CreateShareButton({
-  workflow,
-  machines,
-}: {
-  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
-  machines: Awaited<ReturnType<typeof getMachines>>;
-}) {
-  const [version] = useQueryState("version", {
-    defaultValue: workflow?.versions[0].version ?? 1,
-    ...parseAsInteger,
-  });
-  const [machine] = useSelectedMachine(machines);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const workflow_version_id = workflow?.versions.find(
-    (x) => x.version === version
-  )?.id;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button className="gap-2" disabled={isLoading} variant="outline">
-          Share {isLoading ? <LoadingIcon /> : <Share size={14} />}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
-        <DropdownMenuItem
-          onClick={async () => {
-            if (!workflow_version_id) return;
-
-            setIsLoading(true);
-            await callServerPromise(
-              createDeployments(
-                workflow.id,
-                workflow_version_id,
-                machine,
-                "public-share"
-              )
-            );
-            setIsLoading(false);
-          }}
-        >
-          Public
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
