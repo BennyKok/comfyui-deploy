@@ -1,13 +1,7 @@
 {
   "recommendations": [
-    "DavidAnson.vscode-markdownlint", // markdown linting
-    "esbenp.prettier-vscode", // prettier plugin
-    "dbaeumer.vscode-eslint", // eslint plugin
     "bradlc.vscode-tailwindcss", // hinting / autocompletion for tailwind
     "ban.spellright", // Spell check for docs
-    "stripe.vscode-stripe", // stripe VSCode extension
-    "rebornix.project-snippets", // Share useful snippets between collaborators
-    "inlang.vs-code-extension",
     "biomejs.biome" // improved i18n DX
   ]
 }
