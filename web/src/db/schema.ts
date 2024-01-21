@@ -329,6 +329,119 @@ export const apiKeyTable = dbSchema.table("api_keys", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+const civitaiModelVersion = z.object({
+  id: z.number(),
+  modelId: z.number(),
+  name: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  status: z.string(),
+  publishedAt: z.string(),
+  trainedWords: z.array(z.string()).optional(),
+  trainingStatus: z.string().optional(),
+  trainingDetails: z.string().optional(),
+  baseModel: z.string(),
+  baseModelType: z.string(),
+  earlyAccessTimeFrame: z.number(),
+  description: z.string().optional(),
+  vaeId: z.string().optional(),
+  stats: z.object({
+    downloadCount: z.number(),
+    ratingCount: z.number(),
+    rating: z.number()
+  }),
+  files: z.array(z.object({
+    id: z.number(),
+    sizeKB: z.number(),
+    name: z.string(),
+    type: z.string(),
+    metadata: z.object({
+      fp: z.string(),
+      size: z.string(),
+      format: z.string()
+    }),
+    pickleScanResult: z.string(),
+    pickleScanMessage: z.string().optional(),
+    virusScanResult: z.string(),
+    virusScanMessage: z.string().optional(),
+    scannedAt: z.string(),
+    hashes: z.object({
+      AutoV1: z.string(),
+      AutoV2: z.string(),
+      SHA256: z.string(),
+      CRC32: z.string(),
+      BLAKE3: z.string(),
+      AutoV3: z.string()
+    }),
+    downloadUrl: z.string(),
+    primary: z.boolean()
+  })),
+  images: z.array(z.object({
+    url: z.string(),
+    nsfw: z.string(),
+    width: z.number(),
+    height: z.number(),
+    hash: z.string(),
+    type: z.string(),
+    metadata: z.object({
+      hash: z.string(),
+      size: z.number(),
+      width: z.number(),
+      height: z.number()
+    }),
+    meta: z.any()
+  })),
+  downloadUrl: z.string()
+});
+
+const civitaiModelResponseType = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  type: z.string(),
+  poi: z.boolean(),
+  nsfw: z.boolean(),
+  allowNoCredit: z.boolean(),
+  allowCommercialUse: z.string(),
+  allowDerivatives: z.boolean(),
+  allowDifferentLicense: z.boolean(),
+  stats: z.object({
+    downloadCount: z.number(),
+    favoriteCount: z.number(),
+    commentCount: z.number(),
+    ratingCount: z.number(),
+    rating: z.number(),
+    tippedAmountCount: z.number()
+  }),
+  creator: z.object({
+    username: z.string(),
+    image: z.string()
+  }),
+  tags: z.array(z.string()),
+  modelVersions: z.array(civitaiModelVersion)
+});
+
+
+export const checkpoints = dbSchema.table("checkpoints", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      // onDelete: "cascade",
+    }), // if null it's global?
+  org_id: text("org_id"),
+  description: text("description"),
+
+  civitai_id : text('civitai_id'),
+  civitai_url : text('civitai_url'),
+  civitai_details: jsonb("civitai_model_response").$type<z.infer<typeof civitaiModelResponseType >>(),
+
+  hf_url: text('hf_url'),
+  s3_url: text('s3_url'),
+
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
