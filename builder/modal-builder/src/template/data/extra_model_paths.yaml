@@ -1,11 +1,30 @@
 comfyui:
-    base_path: /runpod-volume/ComfyUI/
-    checkpoints: models/checkpoints/
-    clip: models/clip/
-    clip_vision: models/clip_vision/
-    configs: models/configs/
-    controlnet: models/controlnet/
-    embeddings: models/embeddings/
-    loras: models/loras/
-    upscale_models: models/upscale_models/
-    vae: models/vae/
+  base_path: /extra_models/
+  checkpoints: |
+    checkpoints
+    private_checkpoints
+  clip: |
+    clip
+    private_clip
+  clip_vision: |
+    clip_vision
+    private_clip_vision
+  configs: |
+    configs
+    private_configs
+  controlnet: |
+    controlnet
+    private_controlnet
+  embeddings: |
+    embeddings
+    private_embeddings
+  loras: |
+    loras
+    private_loras
+  upscale_models: |
+    upscale_models
+    private_upscale_models
+  vae: |
+    vae
+    private_vae
+

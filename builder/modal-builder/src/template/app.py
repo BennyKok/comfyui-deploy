@@ -7,6 +7,7 @@ import urllib.parse
 from pydantic import BaseModel
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from volume import volumes
 
 # deploy_test = False
 
@@ -28,9 +29,6 @@ web_app = FastAPI()
 print(config)
 print("deploy_test ", deploy_test)
 stub = Stub(name=config["name"])
-volume = modal.Volume.persisted("model-store")
-MODEL_DIR = "/comfyui/models/checkpoints/"
-# print(stub.app_id)
 
 if not deploy_test:
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
@@ -58,7 +56,7 @@ if not deploy_test:
         #     # Install comfy deploy
         #     "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
         # )
-        # .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
+        .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
 
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
         .run_commands("chmod +x /start.sh")
@@ -74,7 +72,6 @@ if not deploy_test:
         .copy_local_file(f"{current_directory}/data/deps.json", "/")
 
         .run_commands("python install_deps.py")
-        .run_commands(f"rm -rf {MODEL_DIR}") # clear model dir so volume can mount, NOTE: could instead use the extra_model_paths
     )
 
 # Time to wait between API check attempts in milliseconds
@@ -156,10 +153,9 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-
 @stub.function(image=target_image, gpu=config["gpu"]
-               , volumes={MODEL_DIR: volume}
-               )
+   ,volumes=volumes 
+)
 def run(input: Input):
     import subprocess
     import time
@@ -168,6 +164,7 @@ def run(input: Input):
 
     command = ["python", "main.py",
                "--disable-auto-launch", "--disable-metadata"]
+
     server_process = subprocess.Popen(command, cwd="/comfyui")
 
     check_server(
@@ -241,8 +238,8 @@ async def bar(request_input: RequestInput):
 
 
 @stub.function(image=image
-    , volumes={MODEL_DIR: volume}
-           )
+   ,volumes=volumes
+)
 @asgi_app()
 def comfyui_api():
     return web_app
@@ -292,7 +289,7 @@ def spawn_comfyui_in_background():
     # to be on a single container.
     concurrency_limit=1,
     timeout=10 * 60,
-    volumes={MODEL_DIR: volume}
+    volumes=volumes,
 )
 @asgi_app()
 def comfyui_app():

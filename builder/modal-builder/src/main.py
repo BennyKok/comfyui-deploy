@@ -312,7 +312,9 @@ async def build_logic(item: Item):
     config = {
         "name": item.name,
         "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
-        "gpu": item.gpu
+        "gpu": item.gpu,
+        "public_checkpoint_volume": "model-store",
+        "private_checkpoint_volume": "private-model-store"
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))
