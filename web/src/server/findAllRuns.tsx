@@ -16,32 +16,42 @@ export async function findAllRuns({
   offset = 0,
 }: RunsSearchTypes) {
   return await db.query.workflowRunsTable.findMany({
-    where: eq(workflowRunsTable.workflow_id, workflow_id),
-    orderBy: desc(workflowRunsTable.created_at),
-    offset: offset,
-    limit: limit,
-    extras: {
-      number: sql<number>`row_number() over (order by created_at)`.as("number"),
-      total: sql<number>`count(*) over ()`.as("total"),
-      duration:
-        sql<number>`(extract(epoch from ended_at) - extract(epoch from created_at))`.as(
-          "duration"
-        ),
-    },
-    with: {
-      machine: {
-        columns: {
-          name: true,
-          endpoint: true,
-        },
-      },
-      version: {
-        columns: {
-          version: true,
-        },
-      },
-    },
-  });
+			where: eq(workflowRunsTable.workflow_id, workflow_id),
+			orderBy: desc(workflowRunsTable.created_at),
+			offset: offset,
+			limit: limit,
+			extras: {
+				number: sql<number>`row_number() over (order by created_at)`.as(
+					"number",
+				),
+				total: sql<number>`count(*) over ()`.as("total"),
+				duration:
+					sql<number>`(extract(epoch from ended_at) - extract(epoch from created_at))`.as(
+						"duration",
+					),
+				cold_start_duration:
+					sql<number>`(extract(epoch from started_at) - extract(epoch from created_at))`.as(
+						"cold_start_duration",
+					),
+				run_duration:
+					sql<number>`(extract(epoch from ended_at) - extract(epoch from started_at))`.as(
+						"run_duration",
+					),
+			},
+			with: {
+				machine: {
+					columns: {
+						name: true,
+						endpoint: true,
+					},
+				},
+				version: {
+					columns: {
+						version: true,
+					},
+				},
+			},
+		});
 }
 
 export async function findAllRunsWithCounts(props: RunsSearchTypes) {

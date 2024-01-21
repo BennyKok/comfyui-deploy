@@ -1,11 +1,4 @@
 import {
-  findAllDeployments,
-  findAllRunsWithCounts,
-} from "../server/findAllRuns";
-import { DeploymentDisplay } from "./DeploymentDisplay";
-import { PaginationControl } from "./PaginationControl";
-import { RunDisplay } from "./RunDisplay";
-import {
   Table,
   TableBody,
   TableCaption,
@@ -15,6 +8,13 @@ import {
 } from "@/components/ui/table";
 import { parseAsInteger } from "next-usequerystate";
 import { headers } from "next/headers";
+import {
+	findAllDeployments,
+	findAllRunsWithCounts,
+} from "../server/findAllRuns";
+import { DeploymentDisplay } from "./DeploymentDisplay";
+import { PaginationControl } from "./PaginationControl";
+import { RunDisplay } from "./RunDisplay";
 
 const itemPerPage = 6;
 const pageParser = parseAsInteger.withDefault(1);
@@ -33,40 +33,40 @@ export async function RunsTable(props: {
     offset: (page - 1) * itemPerPage,
   });
   return (
-    <div>
-      <div className="overflow-auto h-fit w-full">
-        <Table className="">
-          {allRuns.length == 0 && (
-            <TableCaption>A list of your recent runs.</TableCaption>
-          )}
-          <TableHeader className="bg-background top-0 sticky">
-            <TableRow>
-              <TableHead className="truncate">Number</TableHead>
-              <TableHead className="truncate">Machine</TableHead>
-              <TableHead className="truncate">Time</TableHead>
-              <TableHead className="truncate">Version</TableHead>
-              <TableHead className="truncate">Origin</TableHead>
-              <TableHead className="truncate">Duration</TableHead>
-              <TableHead className="truncate">Live Status</TableHead>
-              <TableHead className="text-right">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {allRuns.map((run) => (
-              <RunDisplay run={run} key={run.id} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+			<div>
+				<div className="overflow-auto h-fit w-full">
+					<Table className="">
+						{allRuns.length === 0 && (
+							<TableCaption>A list of your recent runs.</TableCaption>
+						)}
+						<TableHeader className="bg-background top-0 sticky">
+							<TableRow>
+								<TableHead className="truncate">Number</TableHead>
+								<TableHead className="truncate">Machine</TableHead>
+								<TableHead className="truncate">Time</TableHead>
+								<TableHead className="truncate">Version</TableHead>
+								<TableHead className="truncate">Origin</TableHead>
+								<TableHead className="truncate">Duration</TableHead>
+								<TableHead className="truncate">Live Status</TableHead>
+								<TableHead className="text-right">Status</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{allRuns.map((run) => (
+								<RunDisplay run={run} key={run.id} />
+							))}
+						</TableBody>
+					</Table>
+				</div>
 
-      {Math.ceil(total / itemPerPage) > 0 && (
-        <PaginationControl
-          totalPage={Math.ceil(total / itemPerPage)}
-          currentPage={page}
-        />
-      )}
-    </div>
-  );
+				{Math.ceil(total / itemPerPage) > 0 && (
+					<PaginationControl
+						totalPage={Math.ceil(total / itemPerPage)}
+						currentPage={page}
+					/>
+				)}
+			</div>
+		);
 }
 
 export async function DeploymentsTable(props: { workflow_id: string }) {

@@ -1,13 +1,13 @@
-import { relations, type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, relations } from "drizzle-orm";
 import {
-  text,
-  pgSchema,
-  uuid,
-  integer,
-  timestamp,
-  jsonb,
-  pgEnum,
-  boolean,
+	boolean,
+	integer,
+	jsonb,
+	pgEnum,
+	pgSchema,
+	text,
+	timestamp,
+	uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -130,29 +130,30 @@ export const machinesStatus = pgEnum("machine_status", [
 
 // We still want to keep the workflow run record.
 export const workflowRunsTable = dbSchema.table("workflow_runs", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  // when workflow version deleted, still want to keep this record
-  workflow_version_id: uuid("workflow_version_id").references(
-    () => workflowVersionTable.id,
-    {
-      onDelete: "set null",
-    }
-  ),
-  workflow_inputs:
-    jsonb("workflow_inputs").$type<Record<string, string | number>>(),
-  workflow_id: uuid("workflow_id")
-    .notNull()
-    .references(() => workflowTable.id, {
-      onDelete: "cascade",
-    }),
-  // when machine deleted, still want to keep this record
-  machine_id: uuid("machine_id").references(() => machinesTable.id, {
-    onDelete: "set null",
-  }),
-  origin: workflowRunOrigin("origin").notNull().default("api"),
-  status: workflowRunStatus("status").notNull().default("not-started"),
-  ended_at: timestamp("ended_at"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
+	id: uuid("id").primaryKey().defaultRandom().notNull(),
+	// when workflow version deleted, still want to keep this record
+	workflow_version_id: uuid("workflow_version_id").references(
+		() => workflowVersionTable.id,
+		{
+			onDelete: "set null",
+		},
+	),
+	workflow_inputs:
+		jsonb("workflow_inputs").$type<Record<string, string | number>>(),
+	workflow_id: uuid("workflow_id")
+		.notNull()
+		.references(() => workflowTable.id, {
+			onDelete: "cascade",
+		}),
+	// when machine deleted, still want to keep this record
+	machine_id: uuid("machine_id").references(() => machinesTable.id, {
+		onDelete: "set null",
+	}),
+	origin: workflowRunOrigin("origin").notNull().default("api"),
+	status: workflowRunStatus("status").notNull().default("not-started"),
+	ended_at: timestamp("ended_at"),
+	created_at: timestamp("created_at").defaultNow().notNull(),
+	started_at: timestamp("started_at"),
 });
 
 export const workflowRunRelations = relations(
