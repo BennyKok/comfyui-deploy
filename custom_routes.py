@@ -203,7 +203,10 @@ async def send_json_override(self, event, data, sid=None):
     prompt_id = data.get('prompt_id')
 
     # now we send everything
-    await asyncio.wait([send(event, data), self.send_json_original(event, data, sid)])
+    await asyncio.wait([
+        asyncio.create_task(send(event, data)),
+        asyncio.create_task(self.send_json_original(event, data, sid))
+    ])
 
     if event == 'execution_start':
         update_run(prompt_id, Status.RUNNING)
