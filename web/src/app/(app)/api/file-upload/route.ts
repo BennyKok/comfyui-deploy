@@ -1,11 +1,12 @@
-import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { handleResourceUpload } from "@/server/resource";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { parseDataSafe } from "../../../../lib/parseDataSafe";
 
 const Request = z.object({
   file_name: z.string(),
   run_id: z.string(),
+
   type: z.string(),
 });
 
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
       {
         url: uploadUrl,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: unknown) {
     const errorMessage =
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
       {
         error: errorMessage,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

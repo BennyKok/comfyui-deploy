@@ -120,7 +120,7 @@ function addButton() {
     const graph = app.graph;
 
     const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
-    console.log(snapshot);
+    // console.log(snapshot);
 
     if (!snapshot) {
       showError(
@@ -154,7 +154,7 @@ function addButton() {
 
     const deployMetaNode = deployMeta[0];
 
-    console.log(deployMetaNode);
+    // console.log(deployMetaNode);
 
     const workflow_name = deployMetaNode.widgets[0].value;
     const workflow_id = deployMetaNode.widgets[1].value;
@@ -168,20 +168,23 @@ function addButton() {
     // const endpoint = localStorage.getItem("endpoint") ?? "";
     // const apiKey = localStorage.getItem("apiKey");
 
-    const { endpoint, apiKey } = getData();
+    const { endpoint, apiKey, displayName } = getData();
 
     if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
       configDialog.show();
       return;
     }
 
-    const ok = await confirmDialog.confirm("Confirm deployment", "A new version will be deployed, are you conform?")
+    const ok = await confirmDialog.confirm(
+      "Confirm deployment -> " + displayName,
+      "A new version will be deployed, are you conform?",
+    );
     if (!ok) return;
 
     title.innerText = "Deploying...";
     title.style.color = "orange";
 
-    console.log(prompt);
+    // console.log(prompt);
 
     // TODO trim the ending / from endpoint is there is
     if (endpoint.endsWith("/")) {
@@ -191,15 +194,17 @@ function addButton() {
     const apiRoute = endpoint + "/api/upload";
     // const userId = apiKey
     try {
+      const body = {
+        workflow_name,
+        workflow_id,
+        workflow: prompt.workflow,
+        workflow_api: prompt.output,
+        snapshot: snapshot,
+      };
+      console.log(body);
       let data = await fetch(apiRoute, {
         method: "POST",
-        body: JSON.stringify({
-          workflow_name,
-          workflow_id,
-          workflow: prompt.workflow,
-          workflow_api: prompt.output,
-          snapshot: snapshot,
-        }),
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + apiKey,
@@ -301,6 +306,17 @@ export class InfoDialog extends ComfyDialog {
     this.element.style.display = "flex";
     this.element.style.zIndex = 1001;
   }
+
+  showMessage(title, message) {
+    this.show(`
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
+        <h3 style="margin: 0px;">${title}</h3>
+        <label>
+          ${message}
+        </label>
+        </div>
+      `);
+  }
 }
 
 export class InputDialog extends InfoDialog {
@@ -366,7 +382,6 @@ export class InputDialog extends InfoDialog {
     });
   }
 }
-
 
 export class ConfirmDialog extends InfoDialog {
   callback = undefined;
@@ -456,6 +471,8 @@ function getData(environment) {
 
 export class ConfigDialog extends ComfyDialog {
   container = null;
+  poll = null;
+  timeout = null;
 
   constructor() {
     super();
@@ -498,17 +515,22 @@ export class ConfigDialog extends ComfyDialog {
 
   close() {
     this.element.style.display = "none";
+    clearInterval(this.poll);
+    clearTimeout(this.timeout);
   }
 
-  save() {
+  save(api_key, displayName) {
+    if (!displayName) displayName = getData().displayName;
+
     const deployOption = this.container.querySelector("#deployOption").value;
     localStorage.setItem("comfy_deploy_env", deployOption);
 
     const endpoint = this.container.querySelector("#endpoint").value;
-    const apiKey = this.container.querySelector("#apiKey").value;
+    const apiKey = api_key ?? this.container.querySelector("#apiKey").value;
     const data = {
       endpoint,
       apiKey,
+      displayName,
     };
     localStorage.setItem(
       "comfy_deploy_env_data_" + deployOption,
@@ -527,12 +549,8 @@ export class ConfigDialog extends ComfyDialog {
     <h3 style="margin: 0px;">Comfy Deploy Config</h3>
     <label style="color: white; width: 100%;">
       <select id="deployOption" style="margin: 8px 0px; width: 100%; height:30px; box-sizing: border-box;" >
-        <option value="cloud" ${
-          data.environment === "cloud" ? "selected" : ""
-        }>Cloud</option>
-        <option value="local" ${
-          data.environment === "local" ? "selected" : ""
-        }>Local</option>
+        <option value="cloud" ${data.environment === "cloud" ? "selected" : ""}>Cloud</option>
+        <option value="local" ${data.environment === "local" ? "selected" : ""}>Local</option>
       </select>
     </label>
       <label style="color: white; width: 100%;">
@@ -542,16 +560,61 @@ export class ConfigDialog extends ComfyDialog {
         }">
       </label>
       <label style="color: white;">
-        API Key:
+        API Key: ${data.displayName ?? ""}
         <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
           data.apiKey
         }">
+        <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
+          ${
+            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
+          }
+        </button>
       </label>
       </div>
     `;
 
+    const button = this.container.querySelector("#loginButton");
+    button.onclick = () => {
+      const uuid =
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+      window.open(data.endpoint + "/auth-request/" + uuid, "_blank");
+
+      this.timeout = setTimeout(() => {
+        clearInterval(poll);
+        infoDialog.showMessage(
+          "Timeout",
+          "Wait too long for the response, please try re-login",
+        );
+      }, 30000); // Stop polling after 30 seconds
+
+      this.poll = setInterval(() => {
+        fetch(data.endpoint + "/api/auth-response/" + uuid)
+          .then((response) => response.json())
+          .then((json) => {
+            if (json.api_key) {
+              this.save(json.api_key, json.name);
+              this.container.querySelector("#apiKey").value = json.api_key;
+              infoDialog.show();
+              clearInterval(this.poll);
+              clearTimeout(this.timeout);
+              infoDialog.showMessage(
+                "Authenticated",
+                "You will be able to upload workflow to " + json.name,
+              );
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            clearInterval(this.poll);
+            clearTimeout(this.timeout);
+            infoDialog.showMessage("Error", error);
+          });
+      }, 2000);
+    };
+
     const apiKeyInput = this.container.querySelector("#apiKey");
-    apiKeyInput.addEventListener("paste", function (e) {
+    apiKeyInput.addEventListener("paste", (e) => {
       e.stopPropagation();
     });
 

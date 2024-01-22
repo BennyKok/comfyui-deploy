@@ -1,10 +1,10 @@
-import { createRun } from "../server/createRun";
 import { db } from "@/db/db";
 import { deploymentsTable } from "@/db/schema";
 import type { App } from "@/routes/app";
 import { authError } from "@/routes/authError";
-import { z, createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
+import { createRun } from "../server/createRun";
 
 const createRunRoute = createRoute({
   method: "post",
@@ -99,7 +99,7 @@ export const registerCreateRunRoute = (app: App) => {
         },
         {
           status: 500,
-        }
+        },
       );
     }
   });

@@ -14,8 +14,12 @@ if (sslMode === "false") sslMode = false;
 
 let connectionString = process.env.POSTGRES_URL!;
 
-const isDevContainer = process.env.VSCODE_DEV_CONTAINER !== undefined;
-if (isDevContainer) connectionString = connectionString.replace("localhost","host.docker.internal")
+const isDevContainer = process.env.REMOTE_CONTAINERS !== undefined;
+if (isDevContainer)
+  connectionString = connectionString.replace(
+    "localhost",
+    "host.docker.internal",
+  );
 
 const sql = postgres(connectionString, { max: 1, ssl: sslMode as any });
 const db = drizzle(sql, {
@@ -23,16 +27,16 @@ const db = drizzle(sql, {
 });
 
 let retries = 5;
-while(retries) {
+while (retries) {
   try {
     await sql`SELECT NOW()`;
-    console.log('Database is live');
+    console.log("Database is live");
     break;
   } catch (error) {
-    console.error('Database is not live yet', error);
+    console.error("Database is not live yet", error);
     retries -= 1;
     console.log(`Retries left: ${retries}`);
-    await new Promise(res => setTimeout(res, 1000));
+    await new Promise((res) => setTimeout(res, 1000));
   }
 }
 

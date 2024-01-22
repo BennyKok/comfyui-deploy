@@ -3,20 +3,7 @@ import { authError } from "@/routes/authError";
 import { getFileDownloadUrl } from "@/server/getFileDownloadUrl";
 import { handleResourceUpload } from "@/server/resource";
 import { z, createRoute } from "@hono/zod-openapi";
-import { customAlphabet } from "nanoid";
-
-export const nanoid = customAlphabet(
-  "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-);
-
-const prefixes = {
-  img: "img",
-  vid: "vid",
-} as const;
-
-export function newId(prefix: keyof typeof prefixes): string {
-  return [prefixes[prefix], nanoid(16)].join("_");
-}
+import { newId } from "./newId";
 
 const uploadUrlRoute = createRoute({
   method: "get",
@@ -96,7 +83,7 @@ export const registerUploadRoute = (app: App) => {
           file_id: id,
           download_url: await getFileDownloadUrl(filePath),
         },
-        200
+        200,
       );
     } catch (error: unknown) {
       const errorMessage =
@@ -107,7 +94,7 @@ export const registerUploadRoute = (app: App) => {
         },
         {
           status: 500,
-        }
+        },
       );
     }
   });

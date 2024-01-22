@@ -1,17 +1,14 @@
-import { createNewWorkflow } from "../../../../server/createNewWorkflow";
-import { parseJWT } from "../../../../server/parseJWT";
-import { db } from "@/db/db";
-import {
-  snapshotType,
-  workflowAPIType,
-  workflowTable,
-  workflowType,
-  workflowVersionTable,
-} from "@/db/schema";
+import { snapshotType, workflowAPIType, workflowType } from "@/db/schema";
 import { parseDataSafe } from "@/lib/parseDataSafe";
-import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  createNewWorkflow,
+  createNewWorkflowVersion,
+} from "../../../../server/createNewWorkflow";
+import { parseJWT } from "../../../../server/parseJWT";
+
+// This is will be deprecated
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +52,7 @@ export async function POST(request: Request) {
   const [data, error] = await parseDataSafe(
     UploadRequest,
     request,
-    corsHeaders
+    corsHeaders,
   );
 
   if (!data || error) return error;
@@ -75,7 +72,7 @@ export async function POST(request: Request) {
 
   // Case 1 new workflow
   try {
-    if ((!workflow_id || workflow_id.length == 0) && workflow_name) {
+    if ((!workflow_id || workflow_id.length === 0) && workflow_name) {
       // Create a new parent workflow
       const { workflow_id: _workflow_id, version: _version } =
         await createNewWorkflow({
@@ -91,56 +88,17 @@ export async function POST(request: Request) {
 
       workflow_id = _workflow_id;
       version = _version;
-
-      // const workflow_parent = await db
-      //   .insert(workflowTable)
-      //   .values({
-      //     user_id,
-      //     name: workflow_name,
-      //     org_id: org_id,
-      //   })
-      //   .returning();
-
-      // workflow_id = workflow_parent[0].id;
-
-      // // Create a new version
-      // const data = await db
-      //   .insert(workflowVersionTable)
-      //   .values({
-      //     workflow_id: workflow_id,
-      //     workflow,
-      //     workflow_api,
-      //     version: 1,
-      //     snapshot: snapshot,
-      //   })
-      //   .returning();
-      // version = data[0].version;
     } else if (workflow_id) {
       // Case 2 update workflow
-      const data = await db
-        .insert(workflowVersionTable)
-        .values({
-          workflow_id,
-          workflow: workflow,
+      const { version: _version } = await createNewWorkflowVersion({
+        workflow_id: workflow_id,
+        workflowData: {
+          workflow,
           workflow_api,
-          // version: sql`${workflowVersionTable.version} + 1`,
-          snapshot: snapshot,
-          version: sql`(
-        SELECT COALESCE(MAX(version), 0) + 1
-        FROM ${workflowVersionTable}
-        WHERE workflow_id = ${workflow_id}
-      )`,
-        })
-        .returning();
-      version = data[0].version;
-
-      await db
-        .update(workflowTable)
-        .set({
-          updated_at: new Date(),
-        })
-        .where(eq(workflowTable.id, workflow_id))
-        .returning();
+          snapshot,
+        },
+      });
+      version = _version;
     } else {
       return NextResponse.json(
         {
@@ -150,7 +108,7 @@ export async function POST(request: Request) {
           status: 500,
           statusText: "Invalid request",
           headers: corsHeaders,
-        }
+        },
       );
     }
   } catch (error: any) {
@@ -162,7 +120,7 @@ export async function POST(request: Request) {
         status: 500,
         statusText: "Invalid request",
         headers: corsHeaders,
-      }
+      },
     );
   }
 
@@ -174,6 +132,6 @@ export async function POST(request: Request) {
     {
       status: 200,
       headers: corsHeaders,
-    }
+    },
   );
 }

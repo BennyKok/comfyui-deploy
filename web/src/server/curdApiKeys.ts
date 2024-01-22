@@ -1,23 +1,28 @@
 "use server";
 
 import { db } from "@/db/db";
-import { apiKeyTable } from "@/db/schema";
+import { apiKeyTable, authRequestsTable } from "@/db/schema";
+import { withServerPromise } from "@/server/withServerPromise";
 import { auth } from "@clerk/nextjs";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { revalidatePath } from "next/cache";
 
-// export const nanoid = customAlphabet(
-//   "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-// );
+export const createAuthRequest = withServerPromise(
+  async (request_id: string) => {
+    const { userId, orgId } = auth();
 
-// const prefixes = {
-//   cd: "cd",
-// } as const;
+    const result = await db.insert(authRequestsTable).values({
+      request_id: request_id,
+      user_id: userId,
+      org_id: orgId,
+    });
 
-// function newId(prefix: keyof typeof prefixes): string {
-//   return [prefixes[prefix], nanoid(16)].join("_");
-// }
+    return {
+      message: "Auth request created, you may now return to your application.",
+    };
+  },
+);
 
 export async function addNewAPIKey(name: string) {
   const { userId, orgId } = auth();
@@ -29,7 +34,7 @@ export async function addNewAPIKey(name: string) {
   if (orgId) {
     token = jwt.sign(
       { user_id: userId, org_id: orgId },
-      process.env.JWT_SECRET!
+      process.env.JWT_SECRET!,
     );
   } else {
     token = jwt.sign({ user_id: userId }, process.env.JWT_SECRET!);
@@ -93,7 +98,7 @@ export async function getAPIKeys() {
       where: and(
         eq(apiKeyTable.user_id, userId),
         isNull(apiKeyTable.org_id),
-        eq(apiKeyTable.revoked, false)
+        eq(apiKeyTable.revoked, false),
       ),
       orderBy: desc(apiKeyTable.created_at),
     });

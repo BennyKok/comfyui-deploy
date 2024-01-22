@@ -1,4 +1,3 @@
-import { app } from "../../../../routes/app";
 import { registerCreateRunRoute } from "@/routes/registerCreateRunRoute";
 import { registerGetOutputRoute } from "@/routes/registerGetOutputRoute";
 import { registerUploadRoute } from "@/routes/registerUploadRoute";
@@ -6,6 +5,9 @@ import { isKeyRevoked } from "@/server/curdApiKeys";
 import { parseJWT } from "@/server/parseJWT";
 import type { Context, Next } from "hono";
 import { handle } from "hono/vercel";
+import { app } from "../../../../routes/app";
+import { registerWorkflowUploadRoute } from "@/routes/registerWorkflowUploadRoute";
+import { registerGetAuthResponse } from "@/routes/registerGetAuthResponse";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes
@@ -21,7 +23,10 @@ async function checkAuth(c: Context, next: Next) {
   const userData = token ? parseJWT(token) : undefined;
   if (!userData || token === undefined) {
     return c.text("Invalid or expired token", 401);
-  } else {
+  }
+
+  // If the key has expiration, this is a temporary key and not in our db, so we can skip checking
+  if (userData.exp === undefined) {
     const revokedKey = await isKeyRevoked(token);
     if (revokedKey) return c.text("Revoked token", 401);
   }
@@ -31,17 +36,19 @@ async function checkAuth(c: Context, next: Next) {
   await next();
 }
 
-app.use("/run", async (c, next) => {
-  return checkAuth(c, next);
-});
+app.use("/run", checkAuth);
+app.use("/upload-url", checkAuth);
+app.use("/upload-workflow", checkAuth);
 
-app.use("/upload-url", async (c, next) => {
-  return checkAuth(c, next);
-});
-
+// create run endpoint
 registerCreateRunRoute(app);
 registerGetOutputRoute(app);
+
+// file upload endpoint
 registerUploadRoute(app);
+
+registerWorkflowUploadRoute(app);
+registerGetAuthResponse(app);
 
 // The OpenAPI documentation will be available at /doc
 app.doc("/doc", {
