@@ -2,6 +2,7 @@ import { checkMarkIcon, crossMarkIcon } from "../const/Icon";
 import { cn } from "@/lib/utils";
 import {
   getPricing,
+  getSubscription,
   getSubscriptionItem,
   getUsage,
   setUsage,
@@ -89,12 +90,14 @@ export default function PricingList() {
       // const currentUser = await getUserData();
 
       const userUsage = await getUsage();
-      const userSubscription = await getSubscriptionItem();
+      const userSubscription = await getSubscription();
 
       // const setUserUsage = await setUsage(236561, 10);
 
       // console.log(currentUser);
-      console.log(userSubscription);
+      console.log(
+        userSubscription.data[0].attributes.first_subscription_item.id
+      );
     })();
   }, []);
 

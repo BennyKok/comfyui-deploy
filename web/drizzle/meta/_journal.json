@@ -232,6 +232,20 @@
       "when": 1705806921697,
       "tag": "0032_shallow_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1705824362978,
+      "tag": "0033_fantastic_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1705840184127,
+      "tag": "0034_previous_viper",
+      "breakpoints": true
     }
   ]
 }
