@@ -1,12 +1,6 @@
 import { checkMarkIcon, crossMarkIcon } from "../const/Icon";
 import { cn } from "@/lib/utils";
-import {
-  getPricing,
-  getSubscription,
-  getSubscriptionItem,
-  getUsage,
-  setUsage,
-} from "@/server/linkToPricing";
+import { getPricing } from "@/server/linkToPricing";
 import { useEffect, useState } from "react";
 
 type Tier = {
@@ -28,7 +22,6 @@ enum TierPriority {
 
 export default function PricingList() {
   const [productTiers, setProductTiers] = useState<Tier[]>();
-  const [userUsageId, setUserUsageId] = useState<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -85,52 +78,12 @@ export default function PricingList() {
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      // const currentUser = await getUserData();
-
-      const userUsage = await getUsage();
-      const userSubscription = await getSubscription();
-
-      // const setUserUsage = await setUsage(236561, 10);
-
-      // console.log(currentUser);
-      console.log(
-        userSubscription.data[0].attributes.first_subscription_item.id
-      );
-    })();
-  }, []);
-
-  const setUserUsage = async (id: number, quantity: number) => {
-    try {
-      const response = await setUsage(id, quantity);
-      console.log(response);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   return (
     <div className="relative isolate px-6 py-24 lg:px-8">
       <div className="mx-auto max-w-2xl text-center lg:max-w-4xl">
         <h2 className="text-base font-semibold leading-7 text-indigo-600">
           Pricing
         </h2>
-
-        <div className="flex flex-col">
-          <button
-            className="mt-2 text-base font-semibold leading-7 text-indigo-600 bg-black"
-            onClick={() => {
-              setUserUsage(192385, 10);
-            }}
-          >
-            Set
-          </button>
-          <button className="mt-2 text-base font-semibold leading-7 text-indigo-600 bg-slate-400">
-            Get
-          </button>
-        </div>
-
         <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           The right price for you, whoever you are
         </p>
