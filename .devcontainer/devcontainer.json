@@ -10,7 +10,8 @@
         "biomejs.biome",
         "formulahendry.auto-rename-tag",
         "bradlc.vscode-tailwindcss",
-        "stivo.tailwind-fold"
+        "stivo.tailwind-fold",
+        "streetsidesoftware.code-spell-checker"
       ]
     }
   }
