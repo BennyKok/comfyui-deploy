@@ -31,7 +31,9 @@ const ext = {
           endpoint: origin,
           apiKey: auth_token,
           displayName: org_display,
+          environment: "cloud",
         });
+        localStorage.setItem("comfy_deploy_env", "cloud");
       }
 
       loadingDialog.showLoading(
