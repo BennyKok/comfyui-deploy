@@ -41,7 +41,14 @@ import { checkStatus, createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
 import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import { Copy, ExternalLink, Info, MoreVertical, Play } from "lucide-react";
+import {
+  Copy,
+  Edit,
+  ExternalLink,
+  Info,
+  MoreVertical,
+  Play,
+} from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -51,6 +58,8 @@ import { create } from "zustand";
 import { workflowVersionInputsToZod } from "../lib/workflowVersionInputsToZod";
 import { callServerPromise } from "./callServerPromise";
 import fetcher from "./fetcher";
+import { ButtonAction } from "@/components/ButtonActionLoader";
+import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
 
 export function VersionSelect({
   workflow,
@@ -116,13 +125,13 @@ export function MachineSelect({
 }
 
 export function useSelectedMachine(
-	machines: Awaited<ReturnType<typeof getMachines>>,
+  machines: Awaited<ReturnType<typeof getMachines>>,
 ) {
-	const a = useQueryState("machine", {
-		defaultValue: machines?.[0]?.id ?? "",
-	});
+  const a = useQueryState("machine", {
+    defaultValue: machines?.[0]?.id ?? "",
+  });
 
-	return a;
+  return a;
 }
 
 type PublicRunStore = {
@@ -219,7 +228,7 @@ export function RunWorkflowButton({
   const schema = useMemo(() => {
     const workflow_version = getWorkflowVersionFromVersionIndex(
       workflow,
-      version
+      version,
     );
 
     if (!workflow_version) return null;
@@ -233,7 +242,7 @@ export function RunWorkflowButton({
     const val = Object.keys(values).length > 0 ? values : undefined;
 
     const workflow_version_id = workflow?.versions.find(
-      (x) => x.version === version
+      (x) => x.version === version,
     )?.id;
     console.log(workflow_version_id);
     if (!workflow_version_id) return;
@@ -248,7 +257,7 @@ export function RunWorkflowButton({
           machine_id: machine,
           inputs: val,
           runOrigin: "manual",
-        })
+        }),
       );
       // console.log(res.json());
       setIsLoading(false);
@@ -317,7 +326,7 @@ export function CreateDeploymentButton({
 
   const [isLoading, setIsLoading] = useState(false);
   const workflow_version_id = workflow?.versions.find(
-    (x) => x.version === version
+    (x) => x.version === version,
   )?.id;
   return (
     <DropdownMenu>
@@ -337,8 +346,8 @@ export function CreateDeploymentButton({
                 workflow.id,
                 workflow_version_id,
                 machine,
-                "production"
-              )
+                "production",
+              ),
             );
             setIsLoading(false);
           }}
@@ -355,8 +364,8 @@ export function CreateDeploymentButton({
                 workflow.id,
                 workflow_version_id,
                 machine,
-                "staging"
-              )
+                "staging",
+              ),
             );
             setIsLoading(false);
           }}
@@ -365,6 +374,49 @@ export function CreateDeploymentButton({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function OpenEditButton({
+  workflow,
+  machines,
+}: {
+  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
+  machines: Awaited<ReturnType<typeof getMachines>>;
+}) {
+  const [version] = useQueryState("version", {
+    defaultValue: workflow?.versions[0].version ?? 1,
+    ...parseAsInteger,
+  });
+  const [machine] = useSelectedMachine(machines);
+  const workflow_version_id = workflow?.versions.find(
+    (x) => x.version == version,
+  )?.id;
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    workflow_version_id &&
+    machine && (
+      <Button
+        className="gap-2"
+        onClick={async () => {
+          setIsLoading(true);
+          const url = await callServerPromise(
+            editWorkflowOnMachine(workflow_version_id, machine),
+          );
+          if (url && typeof url !== "object") {
+            window.open(url, "_blank");
+          } else if (url && typeof url === "object" && url.error) {
+            console.error(url.error);
+          }
+          setIsLoading(false);
+        }}
+        // asChild
+        variant="outline"
+      >
+        Edit {isLoading ? <LoadingIcon /> : <Edit size={14} />}
+      </Button>
+    )
   );
 }
 
@@ -378,7 +430,7 @@ export function CopyWorkflowVersion({
     ...parseAsInteger,
   });
   const workflow_version = workflow?.versions.find(
-    (x) => x.version === version
+    (x) => x.version === version,
   );
   return (
     <DropdownMenu>
@@ -402,7 +454,7 @@ export function CopyWorkflowVersion({
             });
 
             navigator.clipboard.writeText(
-              JSON.stringify(workflow_version?.workflow)
+              JSON.stringify(workflow_version?.workflow),
             );
             toast("Copied to clipboard");
           }}
@@ -412,7 +464,7 @@ export function CopyWorkflowVersion({
         <DropdownMenuItem
           onClick={async () => {
             navigator.clipboard.writeText(
-              JSON.stringify(workflow_version?.workflow_api)
+              JSON.stringify(workflow_version?.workflow_api),
             );
             toast("Copied to clipboard");
           }}
@@ -426,7 +478,7 @@ export function CopyWorkflowVersion({
 
 export function getWorkflowVersionFromVersionIndex(
   workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>,
-  version: number
+  version: number,
 ) {
   const workflow_version = workflow?.versions.find((x) => x.version == version);
 
@@ -452,7 +504,7 @@ export function ViewWorkflowDetailsButton({
     isLoading: isNodesIndexLoading,
   } = useSWR(
     "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/extension-node-map.json",
-    fetcher
+    fetcher,
   );
 
   const groupedByAuxName = useMemo(() => {
@@ -462,7 +514,7 @@ export function ViewWorkflowDetailsButton({
 
     const workflow_version = getWorkflowVersionFromVersionIndex(
       workflow,
-      version
+      version,
     );
 
     const api = workflow_version?.workflow_api;
@@ -473,7 +525,7 @@ export function ViewWorkflowDetailsButton({
       .map(([_, value]) => {
         const classType = value.class_type;
         const classTypeData = Object.entries(data).find(([_, nodeArray]) =>
-          nodeArray[0].includes(classType)
+          nodeArray[0].includes(classType),
         );
         return classTypeData ? { node: value, classTypeData } : null;
       })
@@ -503,7 +555,7 @@ export function ViewWorkflowDetailsButton({
           node: z.infer<typeof workflowAPINodeType>[];
           url: string;
         }
-      >
+      >,
     );
 
     // console.log(groupedByAuxName);
@@ -544,7 +596,8 @@ export function ViewWorkflowDetailsButton({
                         <a
                           href={group.url}
                           target="_blank"
-                          className="hover:underline" rel="noreferrer"
+                          className="hover:underline"
+                          rel="noreferrer"
                         >
                           {key}
                           <ExternalLink

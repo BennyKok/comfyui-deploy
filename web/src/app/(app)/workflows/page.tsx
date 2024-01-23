@@ -1,5 +1,5 @@
 import { setInitialUserData } from "../../../lib/setInitialUserData";
-import { getAllUserWorkflow } from "../../../server/getAllUserWorkflow";
+import { getAllUserWorkflow } from "../../../server/crudWorkflow";
 import { WorkflowList } from "@/components/WorkflowList";
 import { db } from "@/db/db";
 import { usersTable } from "@/db/schema";

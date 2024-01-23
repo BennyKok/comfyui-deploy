@@ -2,12 +2,13 @@ import { CreateShareButton } from "@/components/CreateShareButton";
 import { MachinesWSMain } from "@/components/MachinesWS";
 import { VersionDetails } from "@/components/VersionDetails";
 import {
-	CopyWorkflowVersion,
-	CreateDeploymentButton,
-	MachineSelect,
-	RunWorkflowButton,
-	VersionSelect,
-	ViewWorkflowDetailsButton,
+  CopyWorkflowVersion,
+  CreateDeploymentButton,
+  MachineSelect,
+  OpenEditButton,
+  RunWorkflowButton,
+  VersionSelect,
+  ViewWorkflowDetailsButton,
 } from "@/components/VersionSelect";
 import {
   Card,
@@ -48,6 +49,7 @@ export default async function Page({
           <CreateShareButton workflow={workflow} machines={machines} />
           <CopyWorkflowVersion workflow={workflow} />
           <ViewWorkflowDetailsButton workflow={workflow} />
+          <OpenEditButton workflow={workflow} machines={machines} />
         </div>
 
         <VersionDetails workflow={workflow} />

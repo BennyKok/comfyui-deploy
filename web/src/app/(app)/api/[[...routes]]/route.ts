@@ -8,7 +8,8 @@ import { handle } from "hono/vercel";
 import { app } from "../../../../routes/app";
 import { registerWorkflowUploadRoute } from "@/routes/registerWorkflowUploadRoute";
 import { registerGetAuthResponse } from "@/routes/registerGetAuthResponse";
-
+import { registerGetWorkflowRoute } from "@/routes/registerGetWorkflow";
+import { cors } from "hono/cors";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes
 
@@ -18,17 +19,24 @@ declare module "hono" {
   }
 }
 
-async function checkAuth(c: Context, next: Next) {
+async function checkAuth(c: Context, next: Next, headers?: HeadersInit) {
   const token = c.req.raw.headers.get("Authorization")?.split(" ")?.[1]; // Assuming token is sent as "Bearer your_token"
   const userData = token ? parseJWT(token) : undefined;
   if (!userData || token === undefined) {
-    return c.text("Invalid or expired token", 401);
+    return c.text("Invalid or expired token", {
+      status: 401,
+      headers: headers,
+    });
   }
 
   // If the key has expiration, this is a temporary key and not in our db, so we can skip checking
   if (userData.exp === undefined) {
     const revokedKey = await isKeyRevoked(token);
-    if (revokedKey) return c.text("Revoked token", 401);
+    if (revokedKey)
+      return c.text("Revoked token", {
+        status: 401,
+        headers: headers,
+      });
   }
 
   c.set("apiKeyTokenData", userData);
@@ -36,9 +44,29 @@ async function checkAuth(c: Context, next: Next) {
   await next();
 }
 
+async function checkAuthCORS(c: Context, next: Next) {
+  return checkAuth(c, next, {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  });
+}
+
 app.use("/run", checkAuth);
 app.use("/upload-url", checkAuth);
-app.use("/upload-workflow", checkAuth);
+
+const corsHandler = cors({
+  origin: "*",
+  allowHeaders: ["Authorization", "Content-Type"],
+  allowMethods: ["POST", "GET", "OPTIONS"],
+  exposeHeaders: ["Content-Length"],
+  maxAge: 600,
+  credentials: true,
+});
+
+// CORS Check
+app.use("/workflow", corsHandler, checkAuth);
+app.use("/workflow-version/*", corsHandler, checkAuth);
 
 // create run endpoint
 registerCreateRunRoute(app);
@@ -47,8 +75,11 @@ registerGetOutputRoute(app);
 // file upload endpoint
 registerUploadRoute(app);
 
-registerWorkflowUploadRoute(app);
+// Anon
 registerGetAuthResponse(app);
+
+registerWorkflowUploadRoute(app);
+registerGetWorkflowRoute(app);
 
 // The OpenAPI documentation will be available at /doc
 app.doc("/doc", {
@@ -76,3 +107,4 @@ const handler = handle(app);
 
 export const GET = handler;
 export const POST = handler;
+export const OPTIONS = handler;

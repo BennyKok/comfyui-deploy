@@ -9,7 +9,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const dbSchema = pgSchema("comfyui_deploy");
@@ -34,6 +34,8 @@ export const workflowTable = dbSchema.table("workflows", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const workflowSchema = createSelectSchema(workflowTable);
 
 export const workflowRelations = relations(workflowTable, ({ many, one }) => ({
   user: one(usersTable, {
@@ -79,6 +81,7 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+export const workflowVersionSchema = createSelectSchema(workflowVersionTable);
 
 export const workflowVersionRelations = relations(
   workflowVersionTable,

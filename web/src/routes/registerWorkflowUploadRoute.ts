@@ -1,4 +1,10 @@
-import { snapshotType, workflowAPIType, workflowType } from "@/db/schema";
+import { db } from "@/db/db";
+import {
+  snapshotType,
+  workflowAPIType,
+  workflowTable,
+  workflowType,
+} from "@/db/schema";
 import type { App } from "@/routes/app";
 import { authError } from "@/routes/authError";
 import {
@@ -6,10 +12,11 @@ import {
   createNewWorkflowVersion,
 } from "@/server/createNewWorkflow";
 import { z, createRoute } from "@hono/zod-openapi";
+import { and, eq } from "drizzle-orm";
 
 const route = createRoute({
   method: "post",
-  path: "/upload-workflow",
+  path: "/workflow",
   tags: ["comfyui"],
   summary: "Upload workflow from ComfyUI",
   description:
@@ -106,6 +113,30 @@ export const registerWorkflowUploadRoute = (app: App) => {
         workflow_id = _workflow_id;
         version = _version;
       } else if (workflow_id) {
+        const workflow = await db
+          .select()
+          .from(workflowTable)
+          .where(
+            and(
+              eq(workflowTable.id, workflow_id),
+              eq(workflowTable.user_id, user_id),
+              eq(workflowTable.org_id, org_id),
+            ),
+          );
+
+        if (workflow.length === 0) {
+          return c.json(
+            {
+              error: "Invalid workflow_id",
+            },
+            {
+              status: 500,
+              statusText: "Invalid workflow_id",
+              headers: corsHeaders,
+            },
+          );
+        }
+
         // Case 2 update workflow
         const { version: _version } = await createNewWorkflowVersion({
           workflow_id: workflow_id,

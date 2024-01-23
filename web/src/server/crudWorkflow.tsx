@@ -4,8 +4,10 @@ import {
   workflowTable,
   workflowVersionTable,
 } from "@/db/schema";
+import { APIKeyUserType } from "@/server/APIKeyBodyRequest";
 import { auth } from "@clerk/nextjs";
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 export async function getAllUserWorkflow() {
   const { userId, orgId } = await auth();
@@ -50,4 +52,30 @@ export async function getAllUserWorkflow() {
   });
 
   return workflow;
+}
+
+export async function getWorkflowVersion(
+  apiUser: APIKeyUserType,
+  version_id: string,
+) {
+  const { org_id, user_id } = apiUser;
+
+  if (!user_id) {
+    throw new Error("No user id");
+  }
+
+  const parentWorkflow = await db.query.workflowTable.findFirst({
+    where:
+      org_id != undefined
+        ? eq(workflowTable.org_id, org_id)
+        : and(eq(workflowTable.user_id, user_id), isNull(workflowTable.org_id)),
+  });
+
+  if (!parentWorkflow) {
+    throw new Error("No workflow found");
+  }
+
+  return db.query.workflowVersionTable.findFirst({
+    where: eq(workflowVersionTable.id, version_id),
+  });
 }

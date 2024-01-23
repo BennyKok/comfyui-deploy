@@ -9,6 +9,62 @@ const ext = {
 
   init(app) {
     addButton();
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const workflow_version_id = queryParams.get("workflow_version_id");
+    const auth_token = queryParams.get("auth_token");
+    const org_display = queryParams.get("org_display");
+    const origin = queryParams.get("origin");
+    if (!workflow_version_id) {
+      console.error("No workflow_version_id provided in query parameters.");
+    } else {
+      const data = getData();
+      let endpoint = data.endpoint;
+      let apiKey = data.apiKey;
+
+      // If there is auth token override it
+      if (auth_token) {
+        apiKey = auth_token;
+        endpoint = origin;
+        saveData({
+          displayName: org_display,
+          endpoint: origin,
+          apiKey: auth_token,
+          displayName: org_display,
+        });
+      }
+
+      loadingDialog.showLoading(
+        "Loading workflow from " + org_display,
+        "Please wait...",
+      );
+      fetch(endpoint + "/api/workflow-version/" + workflow_version_id, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + apiKey,
+        },
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          const { workflow, error } = data;
+          if (error) {
+            infoDialog.showMessage("Unable to load this workflow", error);
+            return;
+          }
+          /** @type {LGraph} */
+          app.loadGraphData(workflow);
+        })
+        .catch((e) => infoDialog.showMessage("Error", e.message))
+        .finally(() => {
+          loadingDialog.close();
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
+        });
+    }
   },
 
   registerCustomNodes() {
@@ -191,7 +247,7 @@ function addButton() {
       endpoint = endpoint.slice(0, -1);
     }
 
-    const apiRoute = endpoint + "/api/upload";
+    const apiRoute = endpoint + "/api/workflow";
     // const userId = apiKey
     try {
       const body = {
@@ -280,14 +336,16 @@ export class InfoDialog extends ComfyDialog {
     this.element.classList.add("comfy-normal-modal");
     this.element.style.paddingBottom = "20px";
   }
+
+  button = undefined;
+
   createButtons() {
-    return [
-      $el("button", {
-        type: "button",
-        textContent: "Close",
-        onclick: () => this.close(),
-      }),
-    ];
+    this.button = $el("button", {
+      type: "button",
+      textContent: "Close",
+      onclick: () => this.close(),
+    });
+    return [this.button];
   }
 
   close() {
@@ -314,6 +372,58 @@ export class InfoDialog extends ComfyDialog {
         <label>
           ${message}
         </label>
+        </div>
+      `);
+  }
+
+  loadingIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="#888888" stroke-linecap="round" stroke-width="2"><path stroke-dasharray="60" stroke-dashoffset="60" stroke-opacity=".3" d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="1.3s" values="60;0"/></path><path stroke-dasharray="15" stroke-dashoffset="15" d="M12 3C16.9706 3 21 7.02944 21 12"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0"/><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></path></g></svg>`;
+
+  showLoading(title, message) {
+    this.show(`
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center;">${title} ${this.loadingIcon}</h3>
+        <label>
+          ${message}
+        </label>
+        </div>
+      `);
+  }
+}
+
+export class LoadingDialog extends ComfyDialog {
+  constructor() {
+    super();
+    this.element.classList.add("comfy-normal-modal");
+    // this.element.style.paddingBottom = "20px";
+  }
+
+  createButtons() {
+    return [];
+  }
+
+  close() {
+    this.element.style.display = "none";
+  }
+
+  show(html) {
+    this.textElement.style["white-space"] = "normal";
+    this.textElement.style.color = "white";
+    this.textElement.style.marginTop = "0px";
+    if (typeof html === "string") {
+      this.textElement.innerHTML = html;
+    } else {
+      this.textElement.replaceChildren(html);
+    }
+    this.element.style.display = "flex";
+    this.element.style.zIndex = 1001;
+  }
+
+  loadingIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="#888888" stroke-linecap="round" stroke-width="2"><path stroke-dasharray="60" stroke-dashoffset="60" stroke-opacity=".3" d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="1.3s" values="60;0"/></path><path stroke-dasharray="15" stroke-dashoffset="15" d="M12 3C16.9706 3 21 7.02944 21 12"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0"/><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></path></g></svg>`;
+
+  showLoading(title, message) {
+    this.show(`
+      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 4px;">${title} ${this.loadingIcon}</h3>
         </div>
       `);
   }
@@ -444,9 +554,15 @@ export class ConfirmDialog extends InfoDialog {
 }
 
 export const inputDialog = new InputDialog();
+export const loadingDialog = new LoadingDialog();
 export const infoDialog = new InfoDialog();
 export const confirmDialog = new ConfirmDialog();
 
+/**
+ * Retrieves deployment data from local storage or defaults.
+ * @param {string} [environment] - The environment to get the data for.
+ * @returns {{endpoint: string, apiKey: string, displayName: string, environment?: string}} The deployment data.
+ */
 function getData(environment) {
   const deployOption =
     environment || localStorage.getItem("comfy_deploy_env") || "cloud";
@@ -467,6 +583,17 @@ function getData(environment) {
     ...JSON.parse(data),
     environment: deployOption,
   };
+}
+
+/**
+ * Retrieves deployment data from local storage or defaults.
+ * @param {{endpoint: string, apiKey: string, displayName: string, environment?: string}} [data] - The environment to get the data for.
+ */
+function saveData(data) {
+  localStorage.setItem(
+    "comfy_deploy_env_data_" + data.environment,
+    JSON.stringify(data),
+  );
 }
 
 export class ConfigDialog extends ComfyDialog {
@@ -527,15 +654,12 @@ export class ConfigDialog extends ComfyDialog {
 
     const endpoint = this.container.querySelector("#endpoint").value;
     const apiKey = api_key ?? this.container.querySelector("#apiKey").value;
-    const data = {
+    saveData({
       endpoint,
       apiKey,
       displayName,
-    };
-    localStorage.setItem(
-      "comfy_deploy_env_data_" + deployOption,
-      JSON.stringify(data),
-    );
+      environment: deployOption,
+    });
     this.close();
   }
 
