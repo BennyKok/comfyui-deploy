@@ -224,6 +224,20 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
 #     return {"Hello": "World"}
 
 
+class UploadBody(BaseModel):
+    download_url: str
+    volume_name: str
+    # callback_url: str
+
+@app.post("/upload_volume")
+async def upload_checkpoint(body: UploadBody):
+    download_url = body.download_url
+    volume_name = body.download_url
+    # callback_url = body.callback_url
+    # check that thi
+    return
+
+
 @app.post("/create")
 async def create_machine(item: Item):
     global last_activity_time

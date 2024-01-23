@@ -42,105 +42,105 @@ const Model = z.object({
   url: z.string(),
 });
 
-export const CivitalModelSchema = z.object({
-  items: z.array(
+export const CivitaiModel = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string(),
+  type: z.string(),
+  // poi: z.boolean(),
+  // nsfw: z.boolean(),
+  // allowNoCredit: z.boolean(),
+  // allowCommercialUse: z.string(),
+  // allowDerivatives: z.boolean(),
+  // allowDifferentLicense: z.boolean(),
+  // stats: z.object({
+  //   downloadCount: z.number(),
+  //   favoriteCount: z.number(),
+  //   commentCount: z.number(),
+  //   ratingCount: z.number(),
+  //   rating: z.number(),
+  //   tippedAmountCount: z.number(),
+  // }),
+  creator: z
+    .object({
+      username: z.string().nullable(),
+      image: z.string().nullable().default(null),
+    })
+    .nullable(),
+  tags: z.array(z.string()),
+  modelVersions: z.array(
     z.object({
       id: z.number(),
+      modelId: z.number(),
       name: z.string(),
-      description: z.string(),
-      type: z.string(),
-      // poi: z.boolean(),
-      // nsfw: z.boolean(),
-      // allowNoCredit: z.boolean(),
-      // allowCommercialUse: z.string(),
-      // allowDerivatives: z.boolean(),
-      // allowDifferentLicense: z.boolean(),
-      // stats: z.object({
-      //   downloadCount: z.number(),
-      //   favoriteCount: z.number(),
-      //   commentCount: z.number(),
-      //   ratingCount: z.number(),
-      //   rating: z.number(),
-      //   tippedAmountCount: z.number(),
-      // }),
-      creator: z
-        .object({
-          username: z.string().nullable(),
-          image: z.string().nullable().default(null),
-        })
-        .nullable(),
-      tags: z.array(z.string()),
-      modelVersions: z.array(
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      status: z.string(),
+      publishedAt: z.string(),
+      trainedWords: z.array(z.unknown()),
+      trainingStatus: z.string().nullable(),
+      trainingDetails: z.string().nullable(),
+      baseModel: z.string(),
+      baseModelType: z.string().nullable(),
+      earlyAccessTimeFrame: z.number(),
+      description: z.string().nullable(),
+      vaeId: z.number().nullable(),
+      stats: z.object({
+        downloadCount: z.number(),
+        ratingCount: z.number(),
+        rating: z.number(),
+      }),
+      files: z.array(
         z.object({
           id: z.number(),
-          modelId: z.number(),
+          sizeKB: z.number(),
           name: z.string(),
-          createdAt: z.string(),
-          updatedAt: z.string(),
-          status: z.string(),
-          publishedAt: z.string(),
-          trainedWords: z.array(z.unknown()),
-          trainingStatus: z.string().nullable(),
-          trainingDetails: z.string().nullable(),
-          baseModel: z.string(),
-          baseModelType: z.string().nullable(),
-          earlyAccessTimeFrame: z.number(),
-          description: z.string().nullable(),
-          vaeId: z.number().nullable(),
-          stats: z.object({
-            downloadCount: z.number(),
-            ratingCount: z.number(),
-            rating: z.number(),
-          }),
-          files: z.array(
-            z.object({
-              id: z.number(),
-              sizeKB: z.number(),
-              name: z.string(),
-              type: z.string(),
-              // metadata: z.object({
-              //   fp: z.string().nullable().optional(),
-              //   size: z.string().nullable().optional(),
-              //   format: z.string().nullable().optional(),
-              // }),
-              // pickleScanResult: z.string(),
-              // pickleScanMessage: z.string(),
-              // virusScanResult: z.string(),
-              // virusScanMessage: z.string().nullable(),
-              // scannedAt: z.string(),
-              // hashes: z.object({
-              //   AutoV1: z.string().nullable().optional(),
-              //   AutoV2: z.string().nullable().optional(),
-              //   SHA256: z.string().nullable().optional(),
-              //   CRC32: z.string().nullable().optional(),
-              //   BLAKE3: z.string().nullable().optional(),
-              // }),
-              downloadUrl: z.string(),
-              // primary: z.boolean().default(false),
-            })
-          ),
-          images: z.array(
-            z.object({
-              id: z.number(),
-              url: z.string(),
-              nsfw: z.string(),
-              width: z.number(),
-              height: z.number(),
-              hash: z.string(),
-              type: z.string(),
-              metadata: z.object({
-                hash: z.string(),
-                width: z.number(),
-                height: z.number(),
-              }),
-              meta: z.any(),
-            })
-          ),
+          type: z.string(),
+          // metadata: z.object({
+          //   fp: z.string().nullable().optional(),
+          //   size: z.string().nullable().optional(),
+          //   format: z.string().nullable().optional(),
+          // }),
+          // pickleScanResult: z.string(),
+          // pickleScanMessage: z.string(),
+          // virusScanResult: z.string(),
+          // virusScanMessage: z.string().nullable(),
+          // scannedAt: z.string(),
+          // hashes: z.object({
+          //   AutoV1: z.string().nullable().optional(),
+          //   AutoV2: z.string().nullable().optional(),
+          //   SHA256: z.string().nullable().optional(),
+          //   CRC32: z.string().nullable().optional(),
+          //   BLAKE3: z.string().nullable().optional(),
+          // }),
           downloadUrl: z.string(),
-        })
+          // primary: z.boolean().default(false),
+        }),
       ),
-    })
+      images: z.array(
+        z.object({
+          id: z.number(),
+          url: z.string(),
+          nsfw: z.string(),
+          width: z.number(),
+          height: z.number(),
+          hash: z.string(),
+          type: z.string(),
+          metadata: z.object({
+            hash: z.string(),
+            width: z.number(),
+            height: z.number(),
+          }),
+          meta: z.any(),
+        }),
+      ),
+      downloadUrl: z.string(),
+    }),
   ),
+});
+
+export const CivitalModelSchema = z.object({
+  items: z.array(CivitaiModel),
   metadata: z.object({
     totalItems: z.number(),
     currentPage: z.number(),
@@ -197,7 +197,7 @@ function mapType(type: string) {
 }
 
 function mapModelsList(
-  models: z.infer<typeof CivitalModelSchema>
+  models: z.infer<typeof CivitalModelSchema>,
 ): z.infer<typeof ModelListWrapper> {
   return {
     models: models.items.flatMap((item) => {
@@ -241,8 +241,9 @@ function getUrl(search?: string) {
 export function CivitaiModelRegistry({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
-  const [modelList, setModelList] =
-    React.useState<z.infer<typeof ModelListWrapper>>();
+  const [modelList, setModelList] = React.useState<
+    z.infer<typeof ModelListWrapper>
+  >();
 
   const [loading, setLoading] = React.useState(false);
 
@@ -301,8 +302,9 @@ export function CivitaiModelRegistry({
 export function ComfyUIManagerModelRegistry({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
-  const [modelList, setModelList] =
-    React.useState<z.infer<typeof ModelListWrapper>>();
+  const [modelList, setModelList] = React.useState<
+    z.infer<typeof ModelListWrapper>
+  >();
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -310,7 +312,7 @@ export function ComfyUIManagerModelRegistry({
       "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/model-list.json",
       {
         signal: controller.signal,
-      }
+      },
     )
       .then((x) => x.json())
       .then((a) => {
@@ -353,14 +355,14 @@ export function ModelSelector({
     if (
       prevSelectedModels.some(
         (selectedModel) =>
-          selectedModel.url + selectedModel.name === model.url + model.name
+          selectedModel.url + selectedModel.name === model.url + model.name,
       )
     ) {
       field.onChange(
         prevSelectedModels.filter(
           (selectedModel) =>
-            selectedModel.url + selectedModel.name !== model.url + model.name
-        )
+            selectedModel.url + selectedModel.name !== model.url + model.name,
+        ),
       );
     } else {
       field.onChange([...prevSelectedModels, model]);
@@ -408,10 +410,10 @@ export function ModelSelector({
                       className={cn(
                         "ml-auto h-4 w-4",
                         value.some(
-                          (selectedModel) => selectedModel.url === model.url
-                        )
+                            (selectedModel) => selectedModel.url === model.url,
+                          )
                           ? "opacity-100"
-                          : "opacity-0"
+                          : "opacity-0",
                       )}
                     />
                   </CommandItem>

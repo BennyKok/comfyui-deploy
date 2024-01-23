@@ -1,13 +1,13 @@
-import { relations, type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, relations } from "drizzle-orm";
 import {
-  text,
-  pgSchema,
-  uuid,
+  boolean,
   integer,
-  timestamp,
   jsonb,
   pgEnum,
-  boolean,
+  pgSchema,
+  text,
+  timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -87,7 +87,7 @@ export const workflowVersionRelations = relations(
       fields: [workflowVersionTable.workflow_id],
       references: [workflowTable.id],
     }),
-  })
+  }),
 );
 
 export const workflowRunStatus = pgEnum("workflow_run_status", [
@@ -136,10 +136,11 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
     () => workflowVersionTable.id,
     {
       onDelete: "set null",
-    }
+    },
   ),
-  workflow_inputs:
-    jsonb("workflow_inputs").$type<Record<string, string | number>>(),
+  workflow_inputs: jsonb("workflow_inputs").$type<
+    Record<string, string | number>
+  >(),
   workflow_id: uuid("workflow_id")
     .notNull()
     .references(() => workflowTable.id, {
@@ -171,7 +172,7 @@ export const workflowRunRelations = relations(
       fields: [workflowRunsTable.workflow_id],
       references: [workflowTable.id],
     }),
-  })
+  }),
 );
 
 // We still want to keep the workflow run record.
@@ -195,7 +196,7 @@ export const workflowOutputRelations = relations(
       fields: [workflowRunOutputs.run_id],
       references: [workflowRunsTable.id],
     }),
-  })
+  }),
 );
 
 // when user delete, also delete all the workflow versions
@@ -228,7 +229,7 @@ export const snapshotType = z.object({
     z.object({
       hash: z.string(),
       disabled: z.boolean(),
-    })
+    }),
   ),
   file_custom_nodes: z.array(z.any()),
 });
@@ -243,7 +244,7 @@ export const showcaseMedia = z.array(
   z.object({
     url: z.string(),
     isCover: z.boolean().default(false),
-  })
+  }),
 );
 
 export const showcaseMediaNullable = z
@@ -251,7 +252,7 @@ export const showcaseMediaNullable = z
     z.object({
       url: z.string(),
       isCover: z.boolean().default(false),
-    })
+    }),
   )
   .nullable();
 
@@ -275,8 +276,9 @@ export const deploymentsTable = dbSchema.table("deployments", {
     .notNull()
     .references(() => machinesTable.id),
   description: text("description"),
-  showcase_media:
-    jsonb("showcase_media").$type<z.infer<typeof showcaseMedia>>(),
+  showcase_media: jsonb("showcase_media").$type<
+    z.infer<typeof showcaseMedia>
+  >(),
   environment: deploymentEnvironment("environment").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -329,121 +331,291 @@ export const apiKeyTable = dbSchema.table("api_keys", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-const civitaiModelVersion = z.object({
-  id: z.number(),
-  modelId: z.number(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  status: z.string(),
-  publishedAt: z.string(),
-  trainedWords: z.array(z.string()).optional(),
-  trainingStatus: z.string().optional(),
-  trainingDetails: z.string().optional(),
-  baseModel: z.string(),
-  baseModelType: z.string(),
-  earlyAccessTimeFrame: z.number(),
-  description: z.string().optional(),
-  vaeId: z.string().optional(),
-  stats: z.object({
-    downloadCount: z.number(),
-    ratingCount: z.number(),
-    rating: z.number()
-  }),
-  files: z.array(z.object({
-    id: z.number(),
-    sizeKB: z.number(),
-    name: z.string(),
-    type: z.string(),
-    metadata: z.object({
-      fp: z.string(),
-      size: z.string(),
-      format: z.string()
-    }),
-    pickleScanResult: z.string(),
-    pickleScanMessage: z.string().optional(),
-    virusScanResult: z.string(),
-    virusScanMessage: z.string().optional(),
-    scannedAt: z.string(),
-    hashes: z.object({
-      AutoV1: z.string(),
-      AutoV2: z.string(),
-      SHA256: z.string(),
-      CRC32: z.string(),
-      BLAKE3: z.string(),
-      AutoV3: z.string()
-    }),
-    downloadUrl: z.string(),
-    primary: z.boolean()
-  })),
-  images: z.array(z.object({
-    url: z.string(),
-    nsfw: z.string(),
-    width: z.number(),
-    height: z.number(),
-    hash: z.string(),
-    type: z.string(),
-    metadata: z.object({
-      hash: z.string(),
-      size: z.number(),
-      width: z.number(),
-      height: z.number()
-    }),
-    meta: z.any()
-  })),
-  downloadUrl: z.string()
-});
+// const civitaiModelVersion = z.object({
+//   id: z.number(),
+//   modelId: z.number(),
+//   name: z.string(),
+//   createdAt: z.string(),
+//   updatedAt: z.string(),
+//   status: z.string(),
+//   publishedAt: z.string(),
+//   trainedWords: z.array(z.string()).optional(),
+//   trainingStatus: z.string().optional(),
+//   trainingDetails: z.string().optional(),
+//   baseModel: z.string(),
+//   baseModelType: z.string(),
+//   earlyAccessTimeFrame: z.number(),
+//   description: z.string().optional(),
+//   vaeId: z.string().optional(),
+//   stats: z.object({
+//     downloadCount: z.number(),
+//     ratingCount: z.number(),
+//     rating: z.number(),
+//   }),
+//   files: z.array(z.object({
+//     id: z.number(),
+//     sizeKB: z.number(),
+//     name: z.string(),
+//     type: z.string(),
+//     metadata: z.object({
+//       fp: z.string(),
+//       size: z.string(),
+//       format: z.string(),
+//     }),
+//     pickleScanResult: z.string(),
+//     pickleScanMessage: z.string().optional(),
+//     virusScanResult: z.string(),
+//     virusScanMessage: z.string().optional(),
+//     scannedAt: z.string(),
+//     hashes: z.object({
+//       AutoV1: z.string(),
+//       AutoV2: z.string(),
+//       SHA256: z.string(),
+//       CRC32: z.string(),
+//       BLAKE3: z.string(),
+//       AutoV3: z.string(),
+//     }),
+//     downloadUrl: z.string(),
+//     primary: z.boolean(),
+//   })),
+//   images: z.array(z.object({
+//     url: z.string(),
+//     nsfw: z.string(),
+//     width: z.number(),
+//     height: z.number(),
+//     hash: z.string(),
+//     type: z.string(),
+//     metadata: z.object({
+//       hash: z.string(),
+//       size: z.number(),
+//       width: z.number(),
+//       height: z.number(),
+//     }),
+//     meta: z.any(),
+//   })),
+//   downloadUrl: z.string(),
+// });
+//
+// const civitaiModelResponseType = z.object({
+//   id: z.number(),
+//   name: z.string(),
+//   description: z.string().optional(),
+//   type: z.string(),
+//   poi: z.boolean(),
+//   nsfw: z.boolean(),
+//   allowNoCredit: z.boolean(),
+//   allowCommercialUse: z.string(),
+//   allowDerivatives: z.boolean(),
+//   allowDifferentLicense: z.boolean(),
+//   stats: z.object({
+//     downloadCount: z.number(),
+//     favoriteCount: z.number(),
+//     commentCount: z.number(),
+//     ratingCount: z.number(),
+//     rating: z.number(),
+//     tippedAmountCount: z.number(),
+//   }),
+//   creator: z.object({
+//     username: z.string(),
+//     image: z.string(),
+//   }),
+//   tags: z.array(z.string()),
+//   modelVersions: z.array(civitaiModelVersion),
+// });
 
-const civitaiModelResponseType = z.object({
+export const CivitaiModel = z.object({
   id: z.number(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string(),
   type: z.string(),
-  poi: z.boolean(),
-  nsfw: z.boolean(),
-  allowNoCredit: z.boolean(),
-  allowCommercialUse: z.string(),
-  allowDerivatives: z.boolean(),
-  allowDifferentLicense: z.boolean(),
-  stats: z.object({
-    downloadCount: z.number(),
-    favoriteCount: z.number(),
-    commentCount: z.number(),
-    ratingCount: z.number(),
-    rating: z.number(),
-    tippedAmountCount: z.number()
-  }),
-  creator: z.object({
-    username: z.string(),
-    image: z.string()
-  }),
+  // poi: z.boolean(),
+  // nsfw: z.boolean(),
+  // allowNoCredit: z.boolean(),
+  // allowCommercialUse: z.string(),
+  // allowDerivatives: z.boolean(),
+  // allowDifferentLicense: z.boolean(),
+  // stats: z.object({
+  //   downloadCount: z.number(),
+  //   favoriteCount: z.number(),
+  //   commentCount: z.number(),
+  //   ratingCount: z.number(),
+  //   rating: z.number(),
+  //   tippedAmountCount: z.number(),
+  // }),
+  creator: z
+    .object({
+      username: z.string().nullable(),
+      image: z.string().nullable().default(null),
+    })
+    .nullable(),
   tags: z.array(z.string()),
-  modelVersions: z.array(civitaiModelVersion)
+  modelVersions: z.array(
+    z.object({
+      id: z.number(),
+      modelId: z.number(),
+      name: z.string(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      status: z.string(),
+      publishedAt: z.string(),
+      trainedWords: z.array(z.unknown()),
+      trainingStatus: z.string().nullable(),
+      trainingDetails: z.string().nullable(),
+      baseModel: z.string(),
+      baseModelType: z.string().nullable(),
+      earlyAccessTimeFrame: z.number(),
+      description: z.string().nullable(),
+      vaeId: z.number().nullable(),
+      stats: z.object({
+        downloadCount: z.number(),
+        ratingCount: z.number(),
+        rating: z.number(),
+      }),
+      files: z.array(
+        z.object({
+          id: z.number(),
+          sizeKB: z.number(),
+          name: z.string(),
+          type: z.string(),
+          // metadata: z.object({
+          //   fp: z.string().nullable().optional(),
+          //   size: z.string().nullable().optional(),
+          //   format: z.string().nullable().optional(),
+          // }),
+          // pickleScanResult: z.string(),
+          // pickleScanMessage: z.string(),
+          // virusScanResult: z.string(),
+          // virusScanMessage: z.string().nullable(),
+          // scannedAt: z.string(),
+          // hashes: z.object({
+          //   AutoV1: z.string().nullable().optional(),
+          //   AutoV2: z.string().nullable().optional(),
+          //   SHA256: z.string().nullable().optional(),
+          //   CRC32: z.string().nullable().optional(),
+          //   BLAKE3: z.string().nullable().optional(),
+          // }),
+          downloadUrl: z.string(),
+          // primary: z.boolean().default(false),
+        }),
+      ),
+      images: z.array(
+        z.object({
+          id: z.number(),
+          url: z.string(),
+          nsfw: z.string(),
+          width: z.number(),
+          height: z.number(),
+          hash: z.string(),
+          type: z.string(),
+          metadata: z.object({
+            hash: z.string(),
+            width: z.number(),
+            height: z.number(),
+          }),
+          meta: z.any(),
+        }),
+      ),
+      downloadUrl: z.string(),
+    }),
+  ),
 });
 
+export const resourceUpload = pgEnum("resource_upload", [
+  "started",
+  "failed",
+  "succeded",
+]);
 
-export const checkpoints = dbSchema.table("checkpoints", {
+export const modelUploadType = pgEnum("model_upload_type", [
+  "civitai",
+  "huggingface",
+  "other",
+]);
+
+export const checkpointTable = dbSchema.table("checkpoints", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   user_id: text("user_id")
-    .references(() => usersTable.id, {
-      // onDelete: "cascade",
-    }), // if null it's global?
+    .references(() => usersTable.id, {}), // perhaps a "special" user_id for global checkpoints
   org_id: text("org_id"),
   description: text("description"),
 
-  civitai_id : text('civitai_id'),
-  civitai_url : text('civitai_url'),
-  civitai_details: jsonb("civitai_model_response").$type<z.infer<typeof civitaiModelResponseType >>(),
+  checkpoint_volume_id: uuid("checkpoint_volume_id")
+    .notNull()
+    .references(() => workflowRunsTable.id, {
+      onDelete: "cascade",
+    }).notNull(),
 
-  hf_url: text('hf_url'),
-  s3_url: text('s3_url'),
+  model_name: text("model_name"),
+
+  civitai_id: text("civitai_id"),
+  civitai_version_id: text("civitai_version_id"),
+  civitai_url: text("civitai_url"),
+  civitai_download_url: text("civitai_download_url"),
+  civitai_model_response: jsonb("civitai_model_response").$type<
+    z.infer<typeof CivitaiModel>
+  >(),
+
+  hf_url: text("hf_url"),
+  s3_url: text("s3_url"),
+  user_url: text("client_url"),
+
+  is_public: boolean("is_public").notNull().default(false),
+  status: resourceUpload("status").notNull().default("started"),
+  upload_machine_id: text("upload_machine_id"),
+  upload_type: modelUploadType("upload_type").notNull(),
 
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const insertCivitaiCheckpointSchema = createInsertSchema(
+  checkpointTable,
+  {
+    civitai_url: (schema) =>
+      schema.civitai_url.trim().url({ message: "URL required" }).includes(
+        "civitai.com/models",
+        { message: "civitai.com/models link required" },
+      ),
+  },
+);
+
+export const checkpointVolumeTable = dbSchema.table("checkpointVolumeTable", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      // onDelete: "cascade",
+    }),
+  org_id: text("org_id"),
+  volume_name: text("volume_name").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  disabled: boolean("disabled").default(false).notNull(),
+});
+
+export const checkpointRelations = relations(checkpointTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [checkpointTable.user_id],
+    references: [usersTable.id],
+  }),
+  volume: one(checkpointVolumeTable, {
+    fields: [checkpointTable.checkpoint_volume_id],
+    references: [checkpointVolumeTable.id],
+  }),
+}));
+
+export const checkpointVolumeRelations = relations(
+  checkpointVolumeTable,
+  ({ many }) => ({
+    checkpoint: many(checkpointTable),
+  }),
+);
 
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
+export type CheckpointType = InferSelectModel<typeof checkpointTable>;
+export type CheckpointVolumeType = InferSelectModel<
+  typeof checkpointVolumeTable
+>;
