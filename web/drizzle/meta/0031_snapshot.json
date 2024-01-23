@@ -1,5 +1,5 @@
 {
-  "id": "66dbc84a-6cd8-4692-9d24-fdcac227b23c",
+  "id": "4d5b29d0-848f-4c2e-a2cd-2932f1fa38c6",
   "prevId": "db06ea66-92c2-4ebe-93c1-6cb8a90ccd8b",
   "version": "5",
   "dialect": "pg",
@@ -250,8 +250,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "checkpointVolumeTable": {
-      "name": "checkpointVolumeTable",
+    "checkpoint_volume": {
+      "name": "checkpoint_volume",
       "schema": "comfyui_deploy",
       "columns": {
         "id": {
@@ -303,9 +303,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "checkpointVolumeTable_user_id_users_id_fk": {
-          "name": "checkpointVolumeTable_user_id_users_id_fk",
-          "tableFrom": "checkpointVolumeTable",
+        "checkpoint_volume_user_id_users_id_fk": {
+          "name": "checkpoint_volume_user_id_users_id_fk",
+          "tableFrom": "checkpoint_volume",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"

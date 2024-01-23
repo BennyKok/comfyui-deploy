@@ -8,6 +8,7 @@ from enum import Enum
 import json
 import subprocess
 import time
+from uuid import uuid4
 from contextlib import asynccontextmanager
 import asyncio
 import threading
@@ -18,6 +19,7 @@ import requests
 from urllib.parse import parse_qs
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Scope, Receive, Send
+
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -227,15 +229,47 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
 class UploadBody(BaseModel):
     download_url: str
     volume_name: str
+    volume_id: str
     # callback_url: str
 
 @app.post("/upload_volume")
 async def upload_checkpoint(body: UploadBody):
+    global last_activity_time
+    last_activity_time = time.time()
+    logger.info(f"Extended inactivity time to {global_timeout}")
+
     download_url = body.download_url
-    volume_name = body.download_url
+    volume_name = body.volume_name
     # callback_url = body.callback_url
+    
+    folder_path = f"/app/builds/{body.volume_id}"
+
+    cp_process = await asyncio.subprocess.create_subprocess_exec("cp", "-r", "/app/src/volume-builder", folder_path)
+    await cp_process.wait()
+
+    # Write the config file
+    config = {
+        "volume_names": {
+            volume_name: download_url
+        }, 
+        "paths": {
+            volume_name: f'/volumes/{uuid4()}'
+        }, 
+    }
+
+    await asyncio.subprocess.create_subprocess_shell(
+        f"modal run app.py",
+        # stdout=asyncio.subprocess.PIPE,
+        # stderr=asyncio.subprocess.PIPE,
+        cwd=folder_path,
+        env={**os.environ, "COLUMNS": "10000"}
+    )
+
+    with open(f"{folder_path}/config.py", "w") as f:
+        f.write("config = " + json.dumps(config))
+
     # check that thi
-    return
+    return JSONResponse(status_code=200, content={"message": "Volume uploading", "build_machine_instance_id": fly_instance_id})
 
 
 @app.post("/create")

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS "comfyui_deploy"."checkpoints" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "comfyui_deploy"."checkpointVolumeTable" (
+CREATE TABLE IF NOT EXISTS "comfyui_deploy"."checkpoint_volume" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text,
 	"org_id" text,
@@ -56,7 +56,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "comfyui_deploy"."checkpointVolumeTable" ADD CONSTRAINT "checkpointVolumeTable_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "comfyui_deploy"."users"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "comfyui_deploy"."checkpoint_volume" ADD CONSTRAINT "checkpoint_volume_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "comfyui_deploy"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

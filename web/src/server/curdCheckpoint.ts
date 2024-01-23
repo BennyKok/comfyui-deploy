@@ -4,9 +4,8 @@ import { auth } from "@clerk/nextjs";
 import {
   checkpointTable,
   CheckpointType,
-  checkpointVolumeTable,
+  volumeTable,
   CheckpointVolumeType,
-  CivitaiModel,
 } from "@/db/schema";
 import { withServerPromise } from "./withServerPromise";
 import { redirect } from "next/navigation";
@@ -15,6 +14,7 @@ import type { z } from "zod";
 import { headers } from "next/headers";
 import { addCivitaiCheckpointSchema } from "./addCheckpointSchema";
 import { and, eq, isNull } from "drizzle-orm";
+import { CivitaiModelResponse } from "@/types/civitai";
 
 export async function getCheckpoints() {
   const { userId, orgId } = auth();
@@ -57,17 +57,17 @@ export async function getCheckpointVolumes() {
   if (!userId) throw new Error("No user id");
   const checkpointVolume = await db
     .select()
-    .from(checkpointVolumeTable)
+    .from(volumeTable)
     .where(
       and(
         orgId
-          ? eq(checkpointVolumeTable.org_id, orgId)
+          ? eq(volumeTable.org_id, orgId)
           // make sure org_id is null
           : and(
-            eq(checkpointVolumeTable.user_id, userId),
-            isNull(checkpointVolumeTable.org_id),
+            eq(volumeTable.user_id, userId),
+            isNull(volumeTable.org_id),
           ),
-        eq(checkpointVolumeTable.disabled, false),
+        eq(volumeTable.disabled, false),
       ),
     );
   return checkpointVolume;
@@ -79,7 +79,7 @@ export async function addCheckpointVolume() {
 
   // Insert the new volume into the checkpointVolumeTable
   const insertedVolume = await db
-    .insert(checkpointVolumeTable)
+    .insert(volumeTable)
     .values({
       user_id: userId,
       org_id: orgId,
@@ -115,11 +115,10 @@ export const addCivitaiCheckpoint = withServerPromise(
     const civitaiModelRes = await fetch(url)
       .then((x) => x.json())
       .then((a) => {
-        console.log(a)
-        return CivitaiModel.parse(a);
+        return CivitaiModelResponse.parse(a);
       });
 
-    if (civitaiModelRes.modelVersions?.length === 0) {
+    if (civitaiModelRes?.modelVersions?.length === 0) {
       return; // no versions to download
     }
 
@@ -155,6 +154,8 @@ export const addCivitaiCheckpoint = withServerPromise(
         upload_type: "civitai",
         civitai_id: civitaiModelRes.id.toString(),
         civitai_version_id: selectedModelVersionId,
+        civitai_url: data.civitai_url,
+        civitai_download_url: selectedModelVersion.downloadUrl,
         civitai_model_response: civitaiModelRes,
         checkpoint_volume_id: cVolume.id,
       })
@@ -192,22 +193,23 @@ async function uploadCheckpoint(
       body: JSON.stringify({
         download_url: data.civitai_url,
         volume_name: v.volume_name,
+        volume_id: v.id,
         callback_url: `${protocol}://${domain}/api/volume-updated`,
       }),
     },
   );
 
   if (!result.ok) {
-    // const error_log = await result.text();
-    // await db
-    //   .update(checkpointTable)
-    //   .set({
-    //     ...data,
-    //     status: "error",
-    //     build_log: error_log,
-    //   })
-    //   .where(eq(machinesTable.id, b.id));
-    // throw new Error(`Error: ${result.statusText} ${error_log}`);
+    const error_log = await result.text();
+    await db
+      .update(checkpointTable)
+      .set({
+        ...data,
+        status: "error",
+        build_log: error_log,
+      })
+      .where(eq(checkpointTable.id, b.id));
+    throw new Error(`Error: ${result.statusText} ${error_log}`);
   } else {
     // setting the build machine id
     const json = await result.json();
@@ -215,8 +217,8 @@ async function uploadCheckpoint(
       .update(checkpointTable)
       .set({
         ...data,
-        // build_machine_instance_id: json.build_machine_instance_id,
+        upload_machine_id: json.build_machine_instance_id,
       })
-      .where(eq(machinesTable.id, b.id));
+      .where(eq(checkpointTable.id, b.id));
   }
 }
