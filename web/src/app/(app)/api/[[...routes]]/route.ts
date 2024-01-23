@@ -44,14 +44,6 @@ async function checkAuth(c: Context, next: Next, headers?: HeadersInit) {
   await next();
 }
 
-async function checkAuthCORS(c: Context, next: Next) {
-  return checkAuth(c, next, {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  });
-}
-
 app.use("/run", checkAuth);
 app.use("/upload-url", checkAuth);
 

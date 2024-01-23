@@ -12,7 +12,7 @@ import {
   createNewWorkflowVersion,
 } from "@/server/createNewWorkflow";
 import { z, createRoute } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 const route = createRoute({
   method: "post",
@@ -120,7 +120,9 @@ export const registerWorkflowUploadRoute = (app: App) => {
             and(
               eq(workflowTable.id, workflow_id),
               eq(workflowTable.user_id, user_id),
-              eq(workflowTable.org_id, org_id),
+              org_id
+                ? eq(workflowTable.org_id, org_id)
+                : isNull(workflowTable.org_id),
             ),
           );
 
