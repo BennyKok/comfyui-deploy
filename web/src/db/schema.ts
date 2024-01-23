@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   uuid,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -334,6 +335,19 @@ export const apiKeyTable = dbSchema.table("api_keys", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const userUsageTable = dbSchema.table("user_usage", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  org_id: text("org_id"),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  usage_time: real("usage_time").default(0).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  ended_at: timestamp("ended_at").defaultNow().notNull(),
+});
+
 export const authRequestsTable = dbSchema.table("auth_requests", {
   request_id: text("request_id").primaryKey().notNull(),
   user_id: text("user_id"),
@@ -349,3 +363,4 @@ export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
+export type UserUsageType = InferSelectModel<typeof userUsageTable>;
