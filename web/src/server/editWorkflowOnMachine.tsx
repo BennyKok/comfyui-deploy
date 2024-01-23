@@ -34,9 +34,13 @@ export const editWorkflowOnMachine = withServerPromise(
 
     const userName = await getOrgOrUserDisplayName(orgId, userId);
 
-    return `${
-      machine.endpoint
-    }?workflow_version_id=${workflow_version_id}&auth_token=${token}&org_display=${encodeURIComponent(
+    let endpoint = machine.endpoint;
+
+    if (machine.type === "comfy-deploy-serverless") {
+      endpoint = machine.endpoint.replace("comfyui-api", "comfyui-app");
+    }
+
+    return `${endpoint}?workflow_version_id=${workflow_version_id}&auth_token=${token}&org_display=${encodeURIComponent(
       userName,
     )}&origin=${encodeURIComponent(domain)}`;
   },
