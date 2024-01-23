@@ -21,8 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getAllUserWorkflow } from "@/server/crudWorkflow";
 import { deleteWorkflow } from "@/server/deleteWorkflow";
-import type { getAllUserWorkflow } from "@/server/getAllUserWorkflow";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -169,7 +169,7 @@ export const columns: ColumnDef<WorkflowItemList>[] = [
 export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -218,7 +218,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -237,7 +237,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
