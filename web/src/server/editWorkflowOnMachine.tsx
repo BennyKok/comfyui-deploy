@@ -40,7 +40,9 @@ export const editWorkflowOnMachine = withServerPromise(
       endpoint = machine.endpoint.replace("comfyui-api", "comfyui-app");
     }
 
-    return `${endpoint}?workflow_version_id=${workflow_version_id}&auth_token=${token}&org_display=${encodeURIComponent(
+    return `${endpoint}?workflow_version_id=${encodeURIComponent(
+      workflow_version_id,
+    )}&auth_token=${encodeURIComponent(token)}&org_display=${encodeURIComponent(
       userName,
     )}&origin=${encodeURIComponent(domain)}`;
   },
