@@ -11,7 +11,8 @@
         "formulahendry.auto-rename-tag",
         "bradlc.vscode-tailwindcss",
         "stivo.tailwind-fold",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "GitHub.copilot",
       ]
     }
   }
