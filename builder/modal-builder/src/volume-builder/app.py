@@ -2,6 +2,7 @@ import modal
 from config import config
 import os
 import subprocess
+from pprint import pprint
 
 stub = modal.Stub()
 
@@ -51,6 +52,8 @@ def download_model(volume_name, download_config):
 
     status =  {"status": "success"}
     requests.post(callback_url, json={**status, **callback_body})
+    print(f"finished! sending to {callback_url}")
+    pprint({**status, **callback_body})
 
 
 @stub.local_entrypoint()
@@ -63,7 +66,11 @@ def simple_download():
     except modal.exception.FunctionTimeoutError as e:
         status =  {"status": "failed", "error_logs": f"{str(e)}", "timeout": timeout}
         requests.post(callback_url, json={**status, **callback_body})
+        print(f"finished! sending to {callback_url}")
+        pprint({**status, **callback_body})
     except Exception as e:
         status =  {"status": "failed", "error_logs": str(e)}
         requests.post(callback_url, json={**status, **callback_body})
+        print(f"finished! sending to {callback_url}")
+        pprint({**status, **callback_body})
         

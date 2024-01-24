@@ -115,6 +115,7 @@ function getUrl(civitai_url: string) {
 export const addCivitaiCheckpoint = withServerPromise(
   async (data: z.infer<typeof addCivitaiCheckpointSchema>) => {
     const { userId, orgId } = auth();
+    console.log("START")
     console.log("1");
 
     if (!data.civitai_url) return { error: "no civitai_url" };
@@ -221,7 +222,7 @@ async function uploadCheckpoint(
         volume_name: v.volume_name,
         volume_id: v.id,
         checkpoint_id: c.id,
-        callback_url: `${protocol}://${domain}/api/volume-updated`,
+        callback_url: `${protocol}://${domain}/api/volume-upload`,
         upload_type: "checkpoint"
       }),
     },

@@ -89,7 +89,7 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
           </span>
 
           {checkpoint.is_public ? (
-            <Badge variant="orange">Public</Badge>
+            <Badge variant="green">Public</Badge>
           ) : (
             <Badge variant="orange">Private</Badge>
           )}
@@ -112,7 +112,7 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
     },
     cell: ({ row }) => {
       return (
-        <Badge variant={row.original.status === "failed" ? "red" : "green"}>
+        <Badge variant={row.original.status === "failed" ? "red" : (row.original.status === "started" ? "yellow" : "green")}>
           {row.original.status}
         </Badge>
       );

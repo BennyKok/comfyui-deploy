@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   if (!data || error) return error;
 
   const { checkpoint_id, error_log, status, folder_path } = data;
+  console.log( checkpoint_id, error_log, status, folder_path )
 
   if (status === "success") {
     await db
