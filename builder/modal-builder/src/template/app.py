@@ -36,6 +36,7 @@ if not deploy_test:
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
 
+    print("about to build image")
     dockerfile_image = (
         modal.Image.debian_slim()
         .apt_install("git", "wget")
@@ -75,6 +76,8 @@ if not deploy_test:
 
         .run_commands("python install_deps.py")
     )
+
+print("built image")
 
 # Time to wait between API check attempts in milliseconds
 COMFY_API_AVAILABLE_INTERVAL_MS = 50
