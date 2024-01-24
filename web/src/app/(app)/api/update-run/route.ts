@@ -6,8 +6,8 @@ import {
   workflowRunsTable,
   workflowTable,
 } from "@/db/schema";
-import { getDuration } from "@/lib/getRelativeTime";
-import { getSubscription, setUsage } from "@/server/linkToPricing";
+import { getCurrentPlan } from "@/server/getCurrentPlan";
+import { stripe } from "@/server/stripe";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -34,21 +34,51 @@ export async function POST(request: Request) {
       data: output_data,
     });
   } else if (status) {
-    const workflow_run = await db
+    const [workflow_run] = await db
       .update(workflowRunsTable)
       .set({
         status: status,
         ended_at:
           status === "success" || status === "failed" ? new Date() : null,
       })
-      .where(eq(workflowRunsTable.id, run_id));
+      .where(eq(workflowRunsTable.id, run_id))
+      .returning();
 
-    // get data from workflowRunsTable
-    const userUsageTime = await importUserUsageData(run_id);
+    // Need to filter out only comfy deploy serverless
+    // Also multiply with the gpu selection
+    if (workflow_run.machine_type == "comfy-deploy-serverless") {
+      if (
+        (status === "success" || status === "failed") &&
+        workflow_run.user_id
+      ) {
+        const sub = await getCurrentPlan({
+          user_id: workflow_run.user_id,
+          org_id: workflow_run.org_id,
+        });
 
-    if (userUsageTime) {
-      // get the usage_time from userUsage
-      await addSubscriptionUnit(userUsageTime);
+        if (sub && sub.subscription_item_api_id && workflow_run.ended_at) {
+          let durationInSec = Math.abs(
+            (workflow_run.ended_at.getTime() -
+              workflow_run.created_at.getTime()) /
+              1000,
+          );
+          durationInSec = Math.ceil(durationInSec);
+          switch (workflow_run.gpu) {
+            case "A100":
+              durationInSec *= 7;
+              break;
+            case "A10G":
+              durationInSec *= 4;
+              break;
+          }
+          await stripe.subscriptionItems.createUsageRecord(
+            sub.subscription_item_api_id,
+            {
+              quantity: durationInSec,
+            },
+          );
+        }
+      }
     }
   }
 
@@ -64,50 +94,6 @@ export async function POST(request: Request) {
     },
     {
       status: 200,
-    }
+    },
   );
-}
-
-async function addSubscriptionUnit(userUsageTime: number) {
-  const subscription = await getSubscription();
-
-  // round up userUsageTime to the nearest integer
-  const roundedUsageTime = Math.ceil(userUsageTime);
-
-  if (subscription) {
-    const usage = await setUsage(
-      subscription.data[0].attributes.first_subscription_item.id,
-      roundedUsageTime
-    );
-  }
-}
-
-async function importUserUsageData(run_id: string) {
-  const workflowRuns = await db.query.workflowRunsTable.findFirst({
-    where: eq(workflowRunsTable.id, run_id),
-  });
-
-  if (!workflowRuns?.workflow_id) return;
-
-  // find if workflowTable id column contains workflowRunsTable workflow_id
-  const workflow = await db.query.workflowTable.findFirst({
-    where: eq(workflowTable.id, workflowRuns.workflow_id),
-  });
-
-  if (workflowRuns?.ended_at === null || workflow == null) return;
-
-  const usageTime = parseFloat(
-    getDuration((workflowRuns?.ended_at - workflowRuns?.started_at) / 1000)
-  );
-
-  // add data to userUsageTable
-  const user_usage = await db.insert(userUsageTable).values({
-    user_id: workflow.user_id,
-    created_at: workflowRuns.ended_at,
-    org_id: workflow.org_id,
-    ended_at: workflowRuns.ended_at,
-    usage_time: usageTime,
-  });
-
-  return usageTime;
 }

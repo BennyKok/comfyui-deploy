@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_deploy"."workflow_runs" ADD COLUMN "machine_type" "machine_type";

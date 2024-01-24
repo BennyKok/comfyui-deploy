@@ -82,6 +82,7 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
 export const workflowVersionSchema = createSelectSchema(workflowVersionTable);
 
 export const workflowVersionRelations = relations(
@@ -158,6 +159,10 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   ended_at: timestamp("ended_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   started_at: timestamp("started_at"),
+  gpu: machineGPUOptions("gpu"),
+  machine_type: machinesType("machine_type"),
+  user_id: text("user_id"),
+  org_id: text("org_id"),
 });
 
 export const workflowRunRelations = relations(
@@ -355,6 +360,32 @@ export const authRequestsTable = dbSchema.table("auth_requests", {
   api_hash: text("api_hash"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   expired_date: timestamp("expired_date"),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const subscriptionPlan = pgEnum("subscription_plan", [
+  "basic",
+  "pro",
+  "enterprise",
+]);
+
+export const subscriptionPlanStatus = pgEnum("subscription_plan_status", [
+  "active",
+  "deleted",
+  "paused",
+]);
+
+export const subscriptionStatusTable = dbSchema.table("subscription_status", {
+  stripe_customer_id: text("stripe_customer_id").primaryKey().notNull(),
+  user_id: text("user_id"),
+  org_id: text("org_id"),
+  plan: subscriptionPlan("plan").notNull(),
+  status: subscriptionPlanStatus("status").notNull(),
+  subscription_id: text("subscription_id"),
+  subscription_item_plan_id: text("subscription_item_plan_id"),
+  subscription_item_api_id: text("subscription_item_api_id"),
+  cancel_at_period_end: boolean("cancel_at_period_end").default(false),
+  created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 

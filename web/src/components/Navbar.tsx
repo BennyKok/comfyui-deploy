@@ -91,13 +91,22 @@ export function Navbar() {
       <div className="flex flex-row items-center gap-2">
         {isDesktop && <NavbarMenu />}
         {pricingPlanFlagEnable && (
-          <Button
-            asChild
-            variant="link"
-            className="rounded-full aspect-square p-2 mr-4"
-          >
-            <a href="/pricing">Pricing</a>
-          </Button>
+          <>
+            <Button
+              asChild
+              variant="link"
+              className="rounded-full aspect-square p-2 mr-4"
+            >
+              <a href="/pricing">Pricing</a>
+            </Button>
+            <Button
+              asChild
+              variant="link"
+              className="rounded-full aspect-square p-2 mr-4"
+            >
+              <a href="/usage">Usage</a>
+            </Button>
+          </>
         )}
         <Button
           asChild

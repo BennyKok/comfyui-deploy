@@ -3,7 +3,7 @@ import { z } from "zod";
 export const APIKeyBodyRequest = z.object({
   user_id: z.string().optional().nullable(),
   org_id: z.string().optional().nullable(),
-  iat: z.number(),
+  iat: z.number().optional(),
   exp: z.number().optional(),
 });
 
