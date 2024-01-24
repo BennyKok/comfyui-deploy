@@ -34,6 +34,10 @@ export function NavbarMenu({ className }: { className?: string }) {
       name: "API Keys",
       path: "/api-keys",
     },
+    {
+      name: "Storage",
+      path: "/storage",
+    },
   ];
 
   return (
@@ -42,9 +46,9 @@ export function NavbarMenu({ className }: { className?: string }) {
       {isDesktop && (
         <Tabs
           defaultValue={pathname}
-          className="w-[300px] flex pointer-events-auto"
+          className="w-[400px] flex pointer-events-auto"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             {pages.map((page) => (
               <TabsTrigger
                 key={page.name}

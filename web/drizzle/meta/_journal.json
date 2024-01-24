@@ -246,6 +246,13 @@
       "when": 1705902960991,
       "tag": "0034_even_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1706085876992,
+      "tag": "0035_known_skin",
+      "breakpoints": true
     }
   ]
 }

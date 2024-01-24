@@ -7,6 +7,7 @@ import urllib.parse
 from pydantic import BaseModel
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from volume_setup import volumes
 
 # deploy_test = False
 
@@ -27,6 +28,7 @@ deploy_test = config["deploy_test"] == "True"
 web_app = FastAPI()
 print(config)
 print("deploy_test ", deploy_test)
+print('volumes', volumes)
 stub = Stub(name=config["name"])
 # print(stub.app_id)
 
@@ -56,7 +58,7 @@ if not deploy_test:
         #     # Install comfy deploy
         #     "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
         # )
-        # .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
+        .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
 
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
         .run_commands("chmod +x /start.sh")
@@ -154,7 +156,7 @@ image = Image.debian_slim()
 target_image = image if deploy_test else dockerfile_image
 
 
-@stub.function(image=target_image, gpu=config["gpu"])
+@stub.function(image=target_image, gpu=config["gpu"], volumes=volumes)
 def run(input: Input):
     import subprocess
     import time
@@ -235,7 +237,7 @@ async def bar(request_input: RequestInput):
     # pass
 
 
-@stub.function(image=image)
+@stub.function(image=image, volumes=volumes)
 @asgi_app()
 def comfyui_api():
     return web_app
@@ -284,6 +286,7 @@ def spawn_comfyui_in_background():
     # Restrict to 1 container because we want to our ComfyUI session state
     # to be on a single container.
     concurrency_limit=1,
+    volumes=volumes,
     timeout=10 * 60,
 )
 @asgi_app()
