@@ -31,7 +31,7 @@ export function CreateShareButton({
 
 	const [isLoading, setIsLoading] = useState(false);
 	const workflow_version_id = workflow?.versions.find(
-		(x) => x.version === version,
+		(x) => x.version == version,
 	)?.id;
 
 	return (
