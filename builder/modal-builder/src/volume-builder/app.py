@@ -43,7 +43,7 @@ def download_model(volume_name, download_config):
     volume_base_path = vol_name_to_path[volume_name]
     model_store_path = os.path.join(volume_base_path, folder_path)
     modified_download_url = download_url + ("&" if "?" in download_url else "?") + "token=" + civitai_key
-    print('downlodaing', modified_download_url)
+    print('downloading', modified_download_url)
 
     subprocess.run(["wget", modified_download_url , "--content-disposition", "-P", model_store_path])
     subprocess.run(["ls", "-la", volume_base_path])
@@ -59,8 +59,6 @@ def download_model(volume_name, download_config):
 @stub.local_entrypoint()
 def simple_download():
     import requests
-    print(vol_name_to_links)
-    print([(vol_name, link) for vol_name,link in vol_name_to_links.items()])
     try:
         list(download_model.starmap([(vol_name, link) for vol_name,link in vol_name_to_links.items()]))
     except modal.exception.FunctionTimeoutError as e:
