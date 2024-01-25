@@ -25,15 +25,12 @@ vol_name_to_links = config["volume_names"]
 vol_name_to_path = config["volume_paths"]
 callback_url = config["callback_url"]
 callback_body = config["callback_body"]
+civitai_key = config["civitai_api_key"]
 
 volumes = create_volumes(vol_name_to_links, vol_name_to_path)
 image = ( 
    modal.Image.debian_slim().apt_install("wget").pip_install("requests")
 )
-
-print(vol_name_to_links)
-print(vol_name_to_path)
-print(volumes)
 
 # download config { "download_url": "", "folder_path": ""}
 timeout=5000
@@ -42,19 +39,22 @@ def download_model(volume_name, download_config):
     import requests
     download_url = download_config["download_url"]
     folder_path = download_config["folder_path"]
+
     volume_base_path = vol_name_to_path[volume_name]
     model_store_path = os.path.join(volume_base_path, folder_path)
+    modified_download_url = download_url + ("&" if "?" in download_url else "?") + "token=" + civitai_key
+    print('downlodaing', modified_download_url)
 
-    subprocess.run(["wget", download_url, "--content-disposition", "-P", model_store_path])
+    subprocess.run(["wget", modified_download_url , "--content-disposition", "-P", model_store_path])
     subprocess.run(["ls", "-la", volume_base_path])
     subprocess.run(["ls", "-la", model_store_path])
     volumes[volume_base_path].commit()
+
 
     status =  {"status": "success"}
     requests.post(callback_url, json={**status, **callback_body})
     print(f"finished! sending to {callback_url}")
     pprint({**status, **callback_body})
-
 
 @stub.local_entrypoint()
 def simple_download():

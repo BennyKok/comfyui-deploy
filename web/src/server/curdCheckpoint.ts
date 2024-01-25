@@ -15,6 +15,7 @@ import { headers } from "next/headers";
 import { addCivitaiCheckpointSchema } from "./addCheckpointSchema";
 import { and, eq, isNull } from "drizzle-orm";
 import { CivitaiModelResponse } from "@/types/civitai";
+import { CheckpointItemList } from "@/components/CheckpointList";
 
 export async function getCheckpoints() {
   const { userId, orgId } = auth();
@@ -74,12 +75,12 @@ export async function getCheckpointVolumes() {
 }
 
 export async function retrieveCheckpointVolumes() {
-  let volumes = await getCheckpointVolumes()
+  let volumes = await getCheckpointVolumes();
   if (volumes.length === 0) {
     // create volume if not already created
-    volumes = await addCheckpointVolume()
-  } 
-  return volumes
+    volumes = await addCheckpointVolume();
+  }
+  return volumes;
 }
 
 export async function addCheckpointVolume() {
@@ -97,7 +98,7 @@ export async function addCheckpointVolume() {
       disabled: false, // Default value
     })
     .returning(); // Returns the inserted row
-return insertedVolume;
+  return insertedVolume;
 }
 
 function getUrl(civitai_url: string) {
@@ -115,30 +116,24 @@ function getUrl(civitai_url: string) {
 export const addCivitaiCheckpoint = withServerPromise(
   async (data: z.infer<typeof addCivitaiCheckpointSchema>) => {
     const { userId, orgId } = auth();
-    console.log("START")
-    console.log("1");
 
     if (!data.civitai_url) return { error: "no civitai_url" };
-    console.log("2");
     if (!userId) return { error: "No user id" };
-    console.log("3");
 
     const { url, modelVersionId } = getUrl(data?.civitai_url);
     console.log("4", url, modelVersionId);
     const civitaiModelRes = await fetch(url)
       .then((x) => x.json())
       .then((a) => {
-        console.log(a)
+        console.log(a);
         return CivitaiModelResponse.parse(a);
       });
     console.log("5");
 
     if (civitaiModelRes?.modelVersions?.length === 0) {
-      console.log("6");
       return; // no versions to download
     }
 
-    console.log("7");
     let selectedModelVersion;
     let selectedModelVersionId: string | null = modelVersionId;
     if (!selectedModelVersionId) {
@@ -153,22 +148,15 @@ export const addCivitaiCheckpoint = withServerPromise(
       }
       selectedModelVersionId = selectedModelVersion?.id.toString();
     }
-    console.log("8");
 
     const checkpointVolumes = await getCheckpointVolumes();
-    console.log("9");
     let cVolume;
     if (checkpointVolumes.length === 0) {
-      console.log("10");
       const volume = await addCheckpointVolume();
-      console.log("11");
       cVolume = volume[0];
     } else {
-      console.log("12");
       cVolume = checkpointVolumes[0];
     }
-
-    console.log("13");
 
     const a = await db
       .insert(checkpointTable)
@@ -183,17 +171,51 @@ export const addCivitaiCheckpoint = withServerPromise(
         civitai_download_url: selectedModelVersion.files[0].downloadUrl,
         civitai_model_response: civitaiModelRes,
         checkpoint_volume_id: cVolume.id,
+        updated_at: new Date(),
       })
       .returning();
-    console.log("14");
 
     const b = a[0];
 
     await uploadCheckpoint(data, b, cVolume);
-    console.log("15");
     // redirect(`/checkpoints/${b.id}`);
   },
 );
+
+// export const redownloadCheckpoint = withServerPromise(
+//   async (data: CheckpointItemList) => {
+//     const { userId } = auth();
+//     if (!userId) return { error: "No user id" };
+//
+//     const checkpointVolumes = await getCheckpointVolumes();
+//     let cVolume;
+//     if (checkpointVolumes.length === 0) {
+//       const volume = await addCheckpointVolume();
+//       cVolume = volume[0];
+//     } else {
+//       cVolume = checkpointVolumes[0];
+//     }
+//
+//     console.log("data");
+//     console.log(data);
+//
+//     const a = await db
+//       .update(checkpointTable)
+//       .set({
+//         // status: "started",
+//         // updated_at: new Date(),
+//       })
+//       .returning();
+//
+//     const b = a[0];
+//
+//     console.log("b");
+//     console.log(b);
+//
+//     await uploadCheckpoint(data, b, cVolume);
+//     // redirect(`/checkpoints/${b.id}`);
+//   },
+// );
 
 async function uploadCheckpoint(
   data: z.infer<typeof addCivitaiCheckpointSchema>,

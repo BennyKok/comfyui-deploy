@@ -47,6 +47,7 @@ machine_id_websocket_dict = {}
 machine_id_status = {}
 
 fly_instance_id = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
+civitai_api_key = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
 
 
 class FlyReplayMiddleware(BaseHTTPMiddleware):
@@ -272,7 +273,8 @@ async def upload_logic(body: UploadBody):
             "checkpoint_id": body.checkpoint_id,
             "volume_id": body.volume_id,
             "folder_path": upload_path,
-        }
+        },
+        "civitai_api_key": os.environ.get('CIVITAI_API_KEY')
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))

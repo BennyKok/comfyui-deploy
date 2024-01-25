@@ -26,7 +26,8 @@ export async function POST(request: Request) {
       .update(checkpointTable)
       .set({
         status: "success",
-        folder_path 
+        folder_path,
+        updated_at: new Date(),
         // build_log: build_log,
       })
       .where(eq(checkpointTable.id, checkpoint_id));
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       .set({
         status: "failed",
         error_log, 
+        updated_at: new Date(),
         // status: "error",
         // build_log: build_log,
       })

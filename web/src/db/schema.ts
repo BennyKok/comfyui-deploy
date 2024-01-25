@@ -406,12 +406,46 @@ export const checkpointTable = dbSchema.table("checkpoints", {
 
   is_public: boolean("is_public").notNull().default(false),
   status: resourceUpload("status").notNull().default("started"),
-  upload_machine_id: text("upload_machine_id"),
+  upload_machine_id: text("upload_machine_id"), // TODO: review if actually needed
   upload_type: modelUploadType("upload_type").notNull(),
   error_log: text("error_log"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const checkpointVolumeTable = dbSchema.table("checkpoint_volume", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id").references(() => usersTable.id, {
+    // onDelete: "cascade",
+  }),
+  org_id: text("org_id"),
+  volume_name: text("volume_name").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  disabled: boolean("disabled").default(false).notNull(),
+});
+
+export const checkpointRelations = relations(checkpointTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [checkpointTable.user_id],
+    references: [usersTable.id],
+  }),
+  volume: one(checkpointVolumeTable, {
+    fields: [checkpointTable.checkpoint_volume_id],
+    references: [checkpointVolumeTable.id],
+  }),
+}));
+
+export const checkpointVolumeRelations = relations(
+  checkpointVolumeTable,
+  ({ many, one }) => ({
+    checkpoint: many(checkpointTable),
+    user: one(usersTable, {
+      fields: [checkpointVolumeTable.user_id],
+      references: [usersTable.id],
+    }),
+  })
+);
 
 export const subscriptionPlan = pgEnum("subscription_plan", [
   "basic",
@@ -450,40 +484,6 @@ export const insertCivitaiCheckpointSchema = createInsertSchema(
           message: "civitai.com/models link required",
         }),
   }
-);
-
-export const checkpointVolumeTable = dbSchema.table("checkpoint_volume", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  user_id: text("user_id").references(() => usersTable.id, {
-    // onDelete: "cascade",
-  }),
-  org_id: text("org_id"),
-  volume_name: text("volume_name").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-  disabled: boolean("disabled").default(false).notNull(),
-});
-
-export const checkpointRelations = relations(checkpointTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [checkpointTable.user_id],
-    references: [usersTable.id],
-  }),
-  volume: one(checkpointVolumeTable, {
-    fields: [checkpointTable.checkpoint_volume_id],
-    references: [checkpointVolumeTable.id],
-  }),
-}));
-
-export const checkpointVolumeRelations = relations(
-  checkpointVolumeTable,
-  ({ many, one }) => ({
-    checkpoint: many(checkpointTable),
-    user: one(usersTable, {
-      fields: [checkpointVolumeTable.user_id],
-      references: [usersTable.id],
-    }),
-  })
 );
 
 export type UserType = InferSelectModel<typeof usersTable>;

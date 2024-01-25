@@ -116,6 +116,38 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
           {row.original.status}
         </Badge>
       );
+      // const oneHourAgo = new Date(new Date().getTime() - (60 * 60 * 1000));
+      // const lastUpdated = new Date(row.original.updated_at);
+      // const canRefresh = row.original.status === "failed" && lastUpdated < oneHourAgo;
+      // const canRefresh = row.original.status === "failed" && lastUpdated < oneHourAgo;
+      // cell: ({ row }) => {
+      //   // const oneHourAgo = new Date(new Date().getTime() - (60 * 60 * 1000));
+      //   // const lastUpdated = new Date(row.original.updated_at);
+      //   // const canRefresh = row.original.status === "failed" && lastUpdated < oneHourAgo;
+      //   const canReDownload = true;
+      //
+      //   return (
+      //     <div className="flex items-center space-x-2">
+      //       <Badge
+      //         variant={row.original.status === "failed"
+      //           ? "red"
+      //           : row.original.status === "started"
+      //           ? "yellow"
+      //           : "green"}
+      //       >
+      //         {row.original.status}
+      //       </Badge>
+      //       {canReDownload && (
+      //         <RefreshCcw
+      //           onClick={() => {
+      //             redownloadCheckpoint(row.original);
+      //           }}
+      //           className="h-4 w-4 cursor-pointer" // Adjust the size with h-x and w-x classes
+      //         />
+      //       )}
+      //     </div>
+      //   );
+      // },
     },
   },
   {

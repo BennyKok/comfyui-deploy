@@ -13,5 +13,6 @@ config = {
         "checkpoint_id": "",
         "volume_id": "",
         "folder_path": "images",
-    }
+    }, 
+    "civitai_api_key": "",
 }
