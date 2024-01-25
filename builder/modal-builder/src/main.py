@@ -8,6 +8,7 @@ from enum import Enum
 import json
 import subprocess
 import time
+from uuid import uuid4
 from contextlib import asynccontextmanager
 import asyncio
 import threading
@@ -18,6 +19,7 @@ import requests
 from urllib.parse import parse_qs
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Scope, Receive, Send
+
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -45,6 +47,7 @@ machine_id_websocket_dict = {}
 machine_id_status = {}
 
 fly_instance_id = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
+civitai_api_key = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
 
 
 class FlyReplayMiddleware(BaseHTTPMiddleware):
@@ -174,6 +177,7 @@ class Item(BaseModel):
     snapshot: Snapshot
     models: List[Model]
     callback_url: str
+    checkpoint_volume_name: str
     gpu: GPUType = Field(default=GPUType.T4)
 
     @field_validator('gpu')
@@ -223,6 +227,103 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
 
 #     return {"Hello": "World"}
 
+class UploadType(str, Enum):
+    checkpoint = "checkpoint"
+
+class UploadBody(BaseModel):
+    download_url: str
+    volume_name: str
+    volume_id: str
+    checkpoint_id: str
+    upload_type: UploadType
+    callback_url: str
+
+
+UPLOAD_TYPE_DIR_MAP = {
+    UploadType.checkpoint: "checkpoints"
+}
+
+@app.post("/upload-volume")
+async def upload_checkpoint(body: UploadBody):
+    global last_activity_time
+    last_activity_time = time.time()
+    logger.info(f"Extended inactivity time to {global_timeout}")
+
+    asyncio.create_task(upload_logic(body))
+
+    # check that this
+    return JSONResponse(status_code=200, content={"message": "Volume uploading", "build_machine_instance_id": fly_instance_id})
+
+async def upload_logic(body: UploadBody):
+    folder_path = f"/app/builds/{body.volume_id}"
+
+    cp_process = await asyncio.subprocess.create_subprocess_exec("cp", "-r", "/app/src/volume-builder", folder_path)
+    await cp_process.wait()
+
+    upload_path = UPLOAD_TYPE_DIR_MAP[body.upload_type]
+    config = {
+        "volume_names": {
+            body.volume_name: {"download_url": body.download_url, "folder_path": upload_path}
+        }, 
+        "volume_paths": {
+            body.volume_name: f'/volumes/{uuid4()}'
+        }, 
+        "callback_url": body.callback_url,
+        "callback_body": {
+            "checkpoint_id": body.checkpoint_id,
+            "volume_id": body.volume_id,
+            "folder_path": upload_path,
+        },
+        "civitai_api_key": os.environ.get('CIVITAI_API_KEY')
+    }
+    with open(f"{folder_path}/config.py", "w") as f:
+        f.write("config = " + json.dumps(config))
+
+    process = await asyncio.subprocess.create_subprocess_shell(
+        f"modal run app.py",
+        # stdout=asyncio.subprocess.PIPE,
+        # stderr=asyncio.subprocess.PIPE,
+        cwd=folder_path,
+        env={**os.environ, "COLUMNS": "10000"}
+    )
+    
+    # error_logs = []
+    # async def read_stream(stream):
+    #     while True:
+    #         line = await stream.readline()
+    #         if line:
+    #             l = line.decode('utf-8').strip()
+    #             error_logs.append(l)
+    #             logger.error(l)
+    #             error_logs.append({
+    #                 "logs": l,
+    #                 "timestamp": time.time()
+    #             })
+    #         else:
+    #             break
+
+    # stderr_read_task = asyncio.create_task(read_stream(process.stderr))
+    #
+    # await asyncio.wait([stderr_read_task])
+    # await process.wait()
+
+    # if process.returncode != 0:
+    #     error_logs.append({"logs": "Unable to upload volume.", "timestamp": time.time()})
+    #     # Error handling: send POST request to callback URL with error details
+    #     requests.post(body.callback_url, json={
+    #         "volume_id": body.volume_id, 
+    #         "checkpoint_id": body.checkpoint_id,
+    #         "folder_path": upload_path,
+    #         "error_logs": json.dumps(error_logs),
+    #         "status": "failed"
+    #     })
+    #
+    # requests.post(body.callback_url, json={
+    #     "checkpoint_id": body.checkpoint_id,
+    #     "volume_id": body.volume_id,
+    #     "folder_path": upload_path,
+    #     "status": "success"
+    # })
 
 @app.post("/create")
 async def create_machine(item: Item):
@@ -312,7 +413,9 @@ async def build_logic(item: Item):
     config = {
         "name": item.name,
         "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
-        "gpu": item.gpu
+        "gpu": item.gpu,
+        "public_checkpoint_volume": "model-store",
+        "private_checkpoint_volume": item.checkpoint_volume_name
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))

@@ -1,3 +1,4 @@
+import { CivitaiModelResponse } from "@/types/civitai";
 import { type InferSelectModel, relations } from "drizzle-orm";
 import {
   boolean,
@@ -92,7 +93,7 @@ export const workflowVersionRelations = relations(
       fields: [workflowVersionTable.workflow_id],
       references: [workflowTable.id],
     }),
-  }),
+  })
 );
 
 export const workflowRunStatus = pgEnum("workflow_run_status", [
@@ -141,7 +142,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
     () => workflowVersionTable.id,
     {
       onDelete: "set null",
-    },
+    }
   ),
   workflow_inputs:
     jsonb("workflow_inputs").$type<Record<string, string | number>>(),
@@ -181,7 +182,7 @@ export const workflowRunRelations = relations(
       fields: [workflowRunsTable.workflow_id],
       references: [workflowTable.id],
     }),
-  }),
+  })
 );
 
 // We still want to keep the workflow run record.
@@ -205,7 +206,7 @@ export const workflowOutputRelations = relations(
       fields: [workflowRunOutputs.run_id],
       references: [workflowRunsTable.id],
     }),
-  }),
+  })
 );
 
 // when user delete, also delete all the workflow versions
@@ -238,7 +239,7 @@ export const snapshotType = z.object({
     z.object({
       hash: z.string(),
       disabled: z.boolean(),
-    }),
+    })
   ),
   file_custom_nodes: z.array(z.any()),
 });
@@ -253,7 +254,7 @@ export const showcaseMedia = z.array(
   z.object({
     url: z.string(),
     isCover: z.boolean().default(false),
-  }),
+  })
 );
 
 export const showcaseMediaNullable = z
@@ -261,7 +262,7 @@ export const showcaseMediaNullable = z
     z.object({
       url: z.string(),
       isCover: z.boolean().default(false),
-    }),
+    })
   )
   .nullable();
 
@@ -363,6 +364,89 @@ export const authRequestsTable = dbSchema.table("auth_requests", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const resourceUpload = pgEnum("resource_upload", [
+  "started",
+  "success",
+  "failed",
+]);
+
+export const modelUploadType = pgEnum("model_upload_type", [
+  "civitai",
+  "huggingface",
+  "other",
+]);
+
+export const checkpointTable = dbSchema.table("checkpoints", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id").references(() => usersTable.id, {}), // perhaps a "special" user_id for global checkpoints
+  org_id: text("org_id"),
+  description: text("description"),
+
+  checkpoint_volume_id: uuid("checkpoint_volume_id")
+    .notNull()
+    .references(() => checkpointVolumeTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+
+  model_name: text("model_name"),
+  folder_path: text("folder_path"), // in volume
+
+  civitai_id: text("civitai_id"),
+  civitai_version_id: text("civitai_version_id"),
+  civitai_url: text("civitai_url"),
+  civitai_download_url: text("civitai_download_url"),
+  civitai_model_response: jsonb("civitai_model_response").$type<
+    z.infer<typeof CivitaiModelResponse>
+  >(),
+
+  hf_url: text("hf_url"),
+  s3_url: text("s3_url"),
+  user_url: text("client_url"),
+
+  is_public: boolean("is_public").notNull().default(false),
+  status: resourceUpload("status").notNull().default("started"),
+  upload_machine_id: text("upload_machine_id"), // TODO: review if actually needed
+  upload_type: modelUploadType("upload_type").notNull(),
+  error_log: text("error_log"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const checkpointVolumeTable = dbSchema.table("checkpoint_volume", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  user_id: text("user_id").references(() => usersTable.id, {
+    // onDelete: "cascade",
+  }),
+  org_id: text("org_id"),
+  volume_name: text("volume_name").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  disabled: boolean("disabled").default(false).notNull(),
+});
+
+export const checkpointRelations = relations(checkpointTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [checkpointTable.user_id],
+    references: [usersTable.id],
+  }),
+  volume: one(checkpointVolumeTable, {
+    fields: [checkpointTable.checkpoint_volume_id],
+    references: [checkpointVolumeTable.id],
+  }),
+}));
+
+export const checkpointVolumeRelations = relations(
+  checkpointVolumeTable,
+  ({ many, one }) => ({
+    checkpoint: many(checkpointTable),
+    user: one(usersTable, {
+      fields: [checkpointVolumeTable.user_id],
+      references: [usersTable.id],
+    }),
+  })
+);
+
 export const subscriptionPlan = pgEnum("subscription_plan", [
   "basic",
   "pro",
@@ -389,9 +473,26 @@ export const subscriptionStatusTable = dbSchema.table("subscription_status", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const insertCivitaiCheckpointSchema = createInsertSchema(
+  checkpointTable,
+  {
+    civitai_url: (schema) =>
+      schema.civitai_url
+        .trim()
+        .url({ message: "URL required" })
+        .includes("civitai.com/models", {
+          message: "civitai.com/models link required",
+        }),
+  }
+);
+
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
+export type CheckpointType = InferSelectModel<typeof checkpointTable>;
+export type CheckpointVolumeType = InferSelectModel<
+  typeof checkpointVolumeTable
+>;
 export type UserUsageType = InferSelectModel<typeof userUsageTable>;

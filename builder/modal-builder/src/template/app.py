@@ -1,12 +1,13 @@
 from config import config
 import modal
-from modal import Image, Mount, web_endpoint, Stub, asgi_app
+from modal import Image, Mount, web_endpoint, Stub, asgi_app 
 import json
 import urllib.request
 import urllib.parse
 from pydantic import BaseModel
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from volume_setup import volumes
 
 # deploy_test = False
 
@@ -27,8 +28,8 @@ deploy_test = config["deploy_test"] == "True"
 web_app = FastAPI()
 print(config)
 print("deploy_test ", deploy_test)
+print('volumes', volumes)
 stub = Stub(name=config["name"])
-# print(stub.app_id)
 
 if not deploy_test:
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
@@ -52,11 +53,13 @@ if not deploy_test:
             "cd /comfyui/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt",
             "cd /comfyui/custom_nodes/ComfyUI-Manager && mkdir startup-scripts",
         )
+        .run_commands(f"cat /comfyui/server.py")
+        .run_commands(f"ls /comfyui/app")
         # .run_commands(
         #     # Install comfy deploy
         #     "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
         # )
-        # .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
+        .copy_local_file(f"{current_directory}/data/extra_model_paths.yaml", "/comfyui")
 
         .copy_local_file(f"{current_directory}/data/start.sh", "/start.sh")
         .run_commands("chmod +x /start.sh")
@@ -153,8 +156,9 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-
-@stub.function(image=target_image, gpu=config["gpu"])
+@stub.function(image=target_image, gpu=config["gpu"]
+   ,volumes=volumes 
+)
 def run(input: Input):
     import subprocess
     import time
@@ -163,6 +167,7 @@ def run(input: Input):
 
     command = ["python", "main.py",
                "--disable-auto-launch", "--disable-metadata"]
+
     server_process = subprocess.Popen(command, cwd="/comfyui")
 
     check_server(
@@ -235,7 +240,9 @@ async def bar(request_input: RequestInput):
     # pass
 
 
-@stub.function(image=image)
+@stub.function(image=image
+   ,volumes=volumes
+)
 @asgi_app()
 def comfyui_api():
     return web_app
@@ -285,6 +292,7 @@ def spawn_comfyui_in_background():
     # to be on a single container.
     concurrency_limit=1,
     timeout=10 * 60,
+    volumes=volumes,
 )
 @asgi_app()
 def comfyui_app():
