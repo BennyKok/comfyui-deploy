@@ -62,7 +62,7 @@ export const imageMetaSchema = z.object({
   DenoisingStrength: z.number().nullish(),
 });
 
-// all over the place
+// NOTE: this definition is all over the place
 // export const imageSchema = z.object({
 //   url: z.string().url().nullish(),
 //   nsfw: z.enum(["None", "Soft", "Mature"]).nullish(),

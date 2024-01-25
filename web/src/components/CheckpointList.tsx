@@ -78,7 +78,6 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
     },
     cell: ({ row }) => {
       const checkpoint = row.original;
-      console.log(checkpoint);
       return (
         <a
           className="hover:underline flex gap-2"
@@ -116,6 +115,7 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
           {row.original.status}
         </Badge>
       );
+      // NOTE: retry downloads on failures
       // const oneHourAgo = new Date(new Date().getTime() - (60 * 60 * 1000));
       // const lastUpdated = new Date(row.original.updated_at);
       // const canRefresh = row.original.status === "failed" && lastUpdated < oneHourAgo;
@@ -189,6 +189,7 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
       </div>
     ),
   },
+  // TODO: deletion and editing for future sprint
   // {
   //   id: "actions",
   //   enableHiding: false,
@@ -274,7 +275,6 @@ export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
             fieldConfig={{
               civitai_url: {
                 fieldType: "fallback",
-                // fieldType: "fallback",
                 inputProps: { required: true },
                 description: (
                   <>

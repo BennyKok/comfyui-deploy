@@ -8,14 +8,12 @@ import {
   CheckpointVolumeType,
 } from "@/db/schema";
 import { withServerPromise } from "./withServerPromise";
-import { redirect } from "next/navigation";
 import { db } from "@/db/db";
 import type { z } from "zod";
 import { headers } from "next/headers";
 import { addCivitaiCheckpointSchema } from "./addCheckpointSchema";
 import { and, eq, isNull } from "drizzle-orm";
 import { CivitaiModelResponse } from "@/types/civitai";
-import { CheckpointItemList } from "@/components/CheckpointList";
 
 export async function getCheckpoints() {
   const { userId, orgId } = auth();
@@ -121,14 +119,12 @@ export const addCivitaiCheckpoint = withServerPromise(
     if (!userId) return { error: "No user id" };
 
     const { url, modelVersionId } = getUrl(data?.civitai_url);
-    console.log("4", url, modelVersionId);
     const civitaiModelRes = await fetch(url)
       .then((x) => x.json())
       .then((a) => {
         console.log(a);
         return CivitaiModelResponse.parse(a);
       });
-    console.log("5");
 
     if (civitaiModelRes?.modelVersions?.length === 0) {
       return; // no versions to download
