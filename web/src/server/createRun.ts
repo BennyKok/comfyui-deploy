@@ -66,7 +66,12 @@ export const createRun = withServerPromise(
       throw new Error("Workflow version not found");
     }
 
-    if (apiUser)
+    let { userId, orgId } = auth();
+
+    // If is API user, check if they have access to the workflow
+    if (apiUser) {
+      userId = apiUser.user_id ?? null;
+      orgId = apiUser.org_id;
       if (apiUser.org_id) {
         // is org api call, check org only
         if (apiUser.org_id != workflow_version_data.workflow.org_id) {
@@ -81,6 +86,7 @@ export const createRun = withServerPromise(
           throw new Error("Workflow not found");
         }
       }
+    }
 
     const workflow_api = workflow_version_data.workflow_api;
 
@@ -114,6 +120,10 @@ export const createRun = withServerPromise(
         workflow_inputs: inputs,
         machine_id: machine.id,
         origin: runOrigin,
+        org_id: orgId,
+        user_id: userId,
+        gpu: machine.gpu,
+        machine_type: machine.type,
       })
       .returning();
 

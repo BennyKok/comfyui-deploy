@@ -22,6 +22,7 @@ import {
 } from "@clerk/nextjs";
 import { Github, Menu } from "lucide-react";
 import meta from "next-gen/config";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -29,9 +30,13 @@ export function Navbar() {
   const { organization } = useOrganization();
   const _isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDesktop, setIsDesktop] = useState(true);
+
+  const pricingPlanFlagEnable = useFeatureFlagEnabled("pricing-plan");
+
   useEffect(() => {
     setIsDesktop(_isDesktop);
   }, [_isDesktop]);
+
   return (
     <>
       <div className="flex flex-row items-center gap-4">
@@ -85,6 +90,24 @@ export function Navbar() {
       </div>
       <div className="flex flex-row items-center gap-2">
         {isDesktop && <NavbarMenu />}
+        {pricingPlanFlagEnable && (
+          <>
+            <Button
+              asChild
+              variant="link"
+              className="rounded-full aspect-square p-2 mr-4"
+            >
+              <a href="/pricing">Pricing</a>
+            </Button>
+            <Button
+              asChild
+              variant="link"
+              className="rounded-full aspect-square p-2 mr-4"
+            >
+              <a href="/usage">Usage</a>
+            </Button>
+          </>
+        )}
         <Button
           asChild
           variant="link"
@@ -98,7 +121,11 @@ export function Navbar() {
           variant="outline"
           className="rounded-full aspect-square p-2"
         >
-          <a target="_blank" href="https://github.com/BennyKok/comfyui-deploy" rel="noreferrer">
+          <a
+            target="_blank"
+            href="https://github.com/BennyKok/comfyui-deploy"
+            rel="noreferrer"
+          >
             <Github />
           </a>
         </Button>

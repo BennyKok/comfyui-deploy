@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_deploy"."subscription_status" ADD COLUMN "cancel_at_period_end" boolean DEFAULT false;

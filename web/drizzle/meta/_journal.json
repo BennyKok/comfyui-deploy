@@ -250,8 +250,50 @@
     {
       "idx": 35,
       "version": "5",
-      "when": 1706085876992,
-      "tag": "0035_known_skin",
+      "when": 1705981452482,
+      "tag": "0035_fearless_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1706081335387,
+      "tag": "0036_flippant_meltdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1706086271525,
+      "tag": "0037_eager_cyclops",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1706095853896,
+      "tag": "0038_yummy_darkhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1706109812261,
+      "tag": "0039_nostalgic_lyja",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1706110859352,
+      "tag": "0040_salty_archangel",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1706111421524,
+      "tag": "0041_thick_norrin_radd",
       "breakpoints": true
     }
   ]

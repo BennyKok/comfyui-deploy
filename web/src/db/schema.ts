@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
   uuid,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -82,6 +83,7 @@ export const workflowVersionTable = dbSchema.table("workflow_versions", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
 export const workflowVersionSchema = createSelectSchema(workflowVersionTable);
 
 export const workflowVersionRelations = relations(
@@ -158,6 +160,10 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   ended_at: timestamp("ended_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   started_at: timestamp("started_at"),
+  gpu: machineGPUOptions("gpu"),
+  machine_type: machinesType("machine_type"),
+  user_id: text("user_id"),
+  org_id: text("org_id"),
 });
 
 export const workflowRunRelations = relations(
@@ -335,6 +341,19 @@ export const apiKeyTable = dbSchema.table("api_keys", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const userUsageTable = dbSchema.table("user_usage", {
+  id: uuid("id").primaryKey().defaultRandom().notNull(),
+  org_id: text("org_id"),
+  user_id: text("user_id")
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  usage_time: real("usage_time").default(0).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  ended_at: timestamp("ended_at").defaultNow().notNull(),
+});
+
 export const authRequestsTable = dbSchema.table("auth_requests", {
   request_id: text("request_id").primaryKey().notNull(),
   user_id: text("user_id"),
@@ -390,7 +409,32 @@ export const checkpointTable = dbSchema.table("checkpoints", {
   upload_machine_id: text("upload_machine_id"),
   upload_type: modelUploadType("upload_type").notNull(),
   error_log: text("error_log"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
 
+export const subscriptionPlan = pgEnum("subscription_plan", [
+  "basic",
+  "pro",
+  "enterprise",
+]);
+
+export const subscriptionPlanStatus = pgEnum("subscription_plan_status", [
+  "active",
+  "deleted",
+  "paused",
+]);
+
+export const subscriptionStatusTable = dbSchema.table("subscription_status", {
+  stripe_customer_id: text("stripe_customer_id").primaryKey().notNull(),
+  user_id: text("user_id"),
+  org_id: text("org_id"),
+  plan: subscriptionPlan("plan").notNull(),
+  status: subscriptionPlanStatus("status").notNull(),
+  subscription_id: text("subscription_id"),
+  subscription_item_plan_id: text("subscription_item_plan_id"),
+  subscription_item_api_id: text("subscription_item_api_id"),
+  cancel_at_period_end: boolean("cancel_at_period_end").default(false),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -451,3 +495,4 @@ export type CheckpointType = InferSelectModel<typeof checkpointTable>;
 export type CheckpointVolumeType = InferSelectModel<
   typeof checkpointVolumeTable
 >;
+export type UserUsageType = InferSelectModel<typeof userUsageTable>;

@@ -6,16 +6,13 @@ import jwt from "jsonwebtoken";
 import { getOrgOrUserDisplayName } from "@/server/getOrgOrUserDisplayName";
 import { withServerPromise } from "@/server/withServerPromise";
 import "server-only";
-import { headers } from "next/headers";
+import { getUrlServerSide } from "./getUrlServerSide";
 
 export const editWorkflowOnMachine = withServerPromise(
   async (workflow_version_id: string, machine_id: string) => {
     const { userId, orgId } = auth();
 
-    const headersList = headers();
-    const host = headersList.get("host") || "";
-    const protocol = headersList.get("x-forwarded-proto") || "";
-    const domain = `${protocol}://${host}`;
+    const domain = getUrlServerSide();
 
     if (!userId) {
       throw new Error("No user id");

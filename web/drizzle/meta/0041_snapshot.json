@@ -1,6 +1,6 @@
 {
-  "id": "2b2a5d0a-2494-45ea-9d4a-58a70df97829",
-  "prevId": "8d654f92-7f7e-420f-bbd3-73b6b27adf35",
+  "id": "ca1ab9de-49df-4d4a-81ae-d3db96bf55ad",
+  "prevId": "f9f2dcab-1196-42db-bd79-872d2784c8b9",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -414,6 +414,85 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "subscription_status": {
+      "name": "subscription_status",
+      "schema": "comfyui_deploy",
+      "columns": {
+        "stripe_customer_id": {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plan": {
+          "name": "plan",
+          "type": "subscription_plan",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "subscription_plan_status",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subscription_item_plan_id": {
+          "name": "subscription_item_plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subscription_item_api_id": {
+          "name": "subscription_item_api_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_at_period_end": {
+          "name": "cancel_at_period_end",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "user_usage": {
       "name": "user_usage",
       "schema": "comfyui_deploy",
@@ -644,6 +723,30 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "gpu": {
+          "name": "gpu",
+          "type": "machine_gpu",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "machine_type": {
+          "name": "machine_type",
+          "type": "machine_type",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -862,6 +965,22 @@
         "runpod-serverless": "runpod-serverless",
         "modal-serverless": "modal-serverless",
         "comfy-deploy-serverless": "comfy-deploy-serverless"
+      }
+    },
+    "subscription_plan": {
+      "name": "subscription_plan",
+      "values": {
+        "basic": "basic",
+        "pro": "pro",
+        "enterprise": "enterprise"
+      }
+    },
+    "subscription_plan_status": {
+      "name": "subscription_plan_status",
+      "values": {
+        "active": "active",
+        "deleted": "deleted",
+        "paused": "paused"
       }
     },
     "workflow_run_origin": {

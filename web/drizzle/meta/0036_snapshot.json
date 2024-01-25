@@ -1,6 +1,6 @@
 {
-  "id": "2b2a5d0a-2494-45ea-9d4a-58a70df97829",
-  "prevId": "8d654f92-7f7e-420f-bbd3-73b6b27adf35",
+  "id": "4db08fc3-2444-42da-b742-f1832ad8caf1",
+  "prevId": "2b2a5d0a-2494-45ea-9d4a-58a70df97829",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -411,6 +411,66 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "subscription_status": {
+      "name": "subscription_status",
+      "schema": "comfyui_deploy",
+      "columns": {
+        "stripe_customer_id": {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plan": {
+          "name": "plan",
+          "type": "subscription_plan",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "subscription_plan_status",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscription_plan_id": {
+          "name": "subscription_plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -862,6 +922,22 @@
         "runpod-serverless": "runpod-serverless",
         "modal-serverless": "modal-serverless",
         "comfy-deploy-serverless": "comfy-deploy-serverless"
+      }
+    },
+    "subscription_plan": {
+      "name": "subscription_plan",
+      "values": {
+        "basic": "basic",
+        "pro": "pro",
+        "enterprise": "enterprise"
+      }
+    },
+    "subscription_plan_status": {
+      "name": "subscription_plan_status",
+      "values": {
+        "active": "active",
+        "deleted": "deleted",
+        "paused": "paused"
       }
     },
     "workflow_run_origin": {

@@ -1,6 +1,13 @@
 import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { db } from "@/db/db";
-import { workflowRunOutputs, workflowRunsTable } from "@/db/schema";
+import {
+  userUsageTable,
+  workflowRunOutputs,
+  workflowRunsTable,
+  workflowTable,
+} from "@/db/schema";
+import { getCurrentPlan } from "@/server/getCurrentPlan";
+import { stripe } from "@/server/stripe";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -27,8 +34,7 @@ export async function POST(request: Request) {
       data: output_data,
     });
   } else if (status) {
-    // console.log("status", status);
-    const workflow_run = await db
+    const [workflow_run] = await db
       .update(workflowRunsTable)
       .set({
         status: status,
@@ -37,6 +43,43 @@ export async function POST(request: Request) {
       })
       .where(eq(workflowRunsTable.id, run_id))
       .returning();
+
+    // Need to filter out only comfy deploy serverless
+    // Also multiply with the gpu selection
+    if (workflow_run.machine_type == "comfy-deploy-serverless") {
+      if (
+        (status === "success" || status === "failed") &&
+        workflow_run.user_id
+      ) {
+        const sub = await getCurrentPlan({
+          user_id: workflow_run.user_id,
+          org_id: workflow_run.org_id,
+        });
+
+        if (sub && sub.subscription_item_api_id && workflow_run.ended_at) {
+          let durationInSec = Math.abs(
+            (workflow_run.ended_at.getTime() -
+              workflow_run.created_at.getTime()) /
+              1000,
+          );
+          durationInSec = Math.ceil(durationInSec);
+          switch (workflow_run.gpu) {
+            case "A100":
+              durationInSec *= 7;
+              break;
+            case "A10G":
+              durationInSec *= 4;
+              break;
+          }
+          await stripe.subscriptionItems.createUsageRecord(
+            sub.subscription_item_api_id,
+            {
+              quantity: durationInSec,
+            },
+          );
+        }
+      }
+    }
   }
 
   // const workflow_version = await db.query.workflowVersionTable.findFirst({
@@ -51,6 +94,6 @@ export async function POST(request: Request) {
     },
     {
       status: 200,
-    }
+    },
   );
 }
