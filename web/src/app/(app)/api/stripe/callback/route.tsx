@@ -89,7 +89,7 @@ export async function POST(req: Request) {
         .insert(subscriptionStatusTable)
         .values({
           stripe_customer_id: customerId,
-          org_id: orgId,
+          org_id: orgId && orgId.length > 0 && orgId != "null" ? orgId : null,
           user_id: userId,
           subscription_id: subscriptionId,
           plan: plan as "pro" | "enterprise" | "basic",
