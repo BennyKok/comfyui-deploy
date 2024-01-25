@@ -8,7 +8,6 @@ import { Check, Info, Minus } from "lucide-react";
 
 import { Fragment } from "react";
 import { auth } from "@clerk/nextjs";
-import { subscriptionPlanStatus } from "@/db/schema";
 import { getCurrentPlan } from "../server/getCurrentPlan";
 
 const tiers = [
@@ -38,7 +37,22 @@ const tiers = [
     mostPopular: true,
   },
 ];
-const sections = [
+type TierFeature = {
+  Basic?: string | JSX.Element | boolean;
+  Pro?: string | JSX.Element | boolean;
+  Enterprise?: string | JSX.Element | boolean;
+};
+
+type Feature = {
+  name: string;
+  tiers: TierFeature;
+};
+
+type Section = {
+  name: string;
+  features: Feature[];
+};
+const sections: Section[] = [
   {
     name: "Features",
     features: [
@@ -212,7 +226,7 @@ export default async function PricingList() {
                   <li key={section.name}>
                     <ul role="list" className="space-y-4">
                       {section.features.map((feature) =>
-                        feature.tiers[tier.name] ? (
+                        feature.tiers[tier.name as keyof TierFeature] ? (
                           <li key={feature.name} className="flex gap-x-3">
                             <Check
                               className="h-6 w-5 flex-none text-indigo-600"
@@ -220,9 +234,17 @@ export default async function PricingList() {
                             />
                             <span>
                               {feature.name}{" "}
-                              {typeof feature.tiers[tier.name] === "string" ? (
+                              {typeof feature.tiers[
+                                tier.name as keyof TierFeature
+                              ] === "string" ? (
                                 <span className="text-sm leading-6 text-gray-500">
-                                  ({feature.tiers[tier.name]})
+                                  (
+                                  {
+                                    feature.tiers[
+                                      tier.name as keyof TierFeature
+                                    ]
+                                  }
+                                  )
                                 </span>
                               ) : null}
                             </span>
@@ -338,14 +360,20 @@ export default async function PricingList() {
                         </th>
                         {tiers.map((tier) => (
                           <td key={tier.id} className="px-6 py-4 xl:px-8">
-                            {typeof feature.tiers[tier.name] === "string" ||
-                            typeof feature.tiers[tier.name] === "object" ? (
+                            {typeof feature.tiers[
+                              tier.name as keyof TierFeature
+                            ] === "string" ||
+                            typeof feature.tiers[
+                              tier.name as keyof TierFeature
+                            ] === "object" ? (
                               <div className="flex items-center justify-center text-center text-sm leading-6 text-gray-500">
-                                {feature.tiers[tier.name]}
+                                {feature.tiers[tier.name as keyof TierFeature]}
                               </div>
                             ) : (
                               <>
-                                {feature.tiers[tier.name] === true ? (
+                                {feature.tiers[
+                                  tier.name as keyof TierFeature
+                                ] === true ? (
                                   <Check
                                     className="mx-auto h-5 w-5 text-indigo-600"
                                     aria-hidden="true"
@@ -358,7 +386,9 @@ export default async function PricingList() {
                                 )}
 
                                 <span className="sr-only">
-                                  {feature.tiers[tier.name] === true
+                                  {feature.tiers[
+                                    tier.name as keyof TierFeature
+                                  ] === true
                                     ? "Included"
                                     : "Not included"}{" "}
                                   in {tier.name}
