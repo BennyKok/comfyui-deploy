@@ -115,7 +115,9 @@ export function Navbar() {
         >
           <a href="/docs">Docs</a>
         </Button>
-        <UserButton />
+        <UserButton
+          afterSignOutUrl="/"
+        />
         <Button
           asChild
           variant="outline"
