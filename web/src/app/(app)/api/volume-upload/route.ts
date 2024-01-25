@@ -32,7 +32,6 @@ export async function POST(request: Request) {
       })
       .where(eq(checkpointTable.id, checkpoint_id));
   } else {
-    // console.log(data);
     await db
       .update(checkpointTable)
       .set({

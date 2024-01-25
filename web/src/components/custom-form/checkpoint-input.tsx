@@ -1,4 +1,4 @@
-// NOTE: this is work in progress
+// NOTE: this is WIP for doing client side validation for civitai model downloading
 import type { AutoFormInputComponentProps } from "../ui/auto-form/types";
 import { FormControl, FormItem, FormLabel } from "../ui/form";
 import { LoadingIcon } from "@/components/LoadingIcon";
