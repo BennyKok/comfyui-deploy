@@ -1,5 +1,4 @@
 import { stripe } from "@/server/stripe";
-import { createCheckout } from "@/server/linkToPricing";
 import { auth, clerkClient } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { getUrlServerSide } from "@/server/getUrlServerSide";
