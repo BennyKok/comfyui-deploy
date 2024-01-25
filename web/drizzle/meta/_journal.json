@@ -295,6 +295,13 @@
       "when": 1706111421524,
       "tag": "0041_thick_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1706164614659,
+      "tag": "0042_windy_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }
