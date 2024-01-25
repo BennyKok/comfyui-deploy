@@ -5,7 +5,7 @@ import * as schema from "./schema";
 const isDevContainer = process.env.REMOTE_CONTAINERS !== undefined;
 
 // if we're running locally
-if (process.env.VERCEL_ENV !== "production") {
+if (process.env.VERCEL_ENV !== "production" && process.env.VERCEL_ENV !== "preview") {
   // Set the WebSocket proxy to work with the local instance
   if (isDevContainer) {
     // Running inside a VS Code devcontainer
