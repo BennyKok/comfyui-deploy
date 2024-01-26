@@ -157,6 +157,7 @@ type CustomNodeList = {
     author: string;
     title: string;
     reference: string;
+    pip: string[];
     files: string[];
     install_type: string;
     description: string;
@@ -237,56 +238,12 @@ function CustomNodesSelector({
                     key={index}
                     value={framework.reference}
                     onSelect={async (currentValue) => {
-                      const repoName = extractRepoName(currentValue);
-
-                      console.log(repoName);
-
-                      const id = toast.loading(`Fetching repo info...`);
-                      // toast.info("hi");
-
-                      const repo = await fetch(
-                        `https://api.github.com/repos/${repoName}`
-                      )
-                        .then((x) => x.json())
-                        .then((x) => {
-                          console.log(x);
-                          return x;
-                        })
-                        .then((x) => RepoSchema.parse(x))
-                        .catch((e) => {
-                          console.error(e);
-                          toast.dismiss(id);
-                          toast.error(`Failed to fetch repo info ${e.message}`);
-                          return null;
-                        });
-
-                      if (!repo) return;
-
-                      const branch = repo.default_branch;
-
-                      const branchInfo = await fetch(
-                        `https://api.github.com/repos/${repoName}/branches/${branch}`
-                      )
-                        .then((x) => x.json())
-                        .then((x) => BranchInfoSchema.parse(x))
-                        .catch((e) => {
-                          console.error(e);
-                          toast.dismiss(id);
-                          toast.error(
-                            `Failed to fetch branch info ${e.message}`
-                          );
-                          return null;
-                        });
-
-                      toast.dismiss(id);
-
-                      if (!branchInfo) return;
-
                       let nodeList: Record<
                         string,
                         {
                           hash: string;
                           disabled: boolean;
+                          pip?: string[]
                         }
                       >;
                       const x = customNodeList;
@@ -296,10 +253,49 @@ function CustomNodesSelector({
                         delete newNodeList[currentValue];
                         nodeList = newNodeList;
                       } else {
+                        const repoName = extractRepoName(currentValue);
+                        const id = toast.loading(`Fetching repo info...`);
+                        const repo = await fetch(
+                          `https://api.github.com/repos/${repoName}`
+                        )
+                          .then((x) => x.json())
+                          .then((x) => {
+                            console.log(x);
+                            return x;
+                          })
+                          .then((x) => RepoSchema.parse(x))
+                          .catch((e) => {
+                            console.error(e);
+                            toast.dismiss(id);
+                            toast.error(`Failed to fetch repo info ${e.message}`);
+                            return null;
+                          });
+
+                        if (!repo) return;
+                        const branch = repo.default_branch;
+                        const branchInfo = await fetch(
+                          `https://api.github.com/repos/${repoName}/branches/${branch}`
+                        )
+                          .then((x) => x.json())
+                          .then((x) => BranchInfoSchema.parse(x))
+                          .catch((e) => {
+                            console.error(e);
+                            toast.dismiss(id);
+                            toast.error(
+                              `Failed to fetch branch info ${e.message}`
+                            );
+                            return null;
+                          });
+
+                        toast.dismiss(id);
+
+                        if (!branchInfo) return;
+
                         nodeList = {
                           [currentValue]: {
                             hash: branchInfo?.commit.sha,
                             disabled: false,
+                            pip: framework.pip
                           },
                           ...x,
                         };
