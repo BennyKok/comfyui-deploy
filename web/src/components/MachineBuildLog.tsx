@@ -6,6 +6,19 @@ import { getConnectionStatus } from "@/components/getConnectionStatus";
 import { useEffect, useState } from "react";
 import useWebSocket from "react-use-websocket";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useRouter } from "next/navigation";
+
 export function MachineBuildLog({
   machine_id,
   endpoint,
@@ -46,10 +59,32 @@ export function MachineBuildLog({
     }
   }, [lastMessage]);
 
+  const router = useRouter()
+
   return (
     <div>
       {connectionStatus}
       <LogsViewer logs={logs} />
+
+      <AlertDialog open={finished}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Machine Built</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your machine is built, you can now integrate your API, or directly run to check this machines.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => {
+              router.push("/workflows")
+            }}>See Workflows</AlertDialogAction>
+            <AlertDialogAction onClick={() => {
+              router.push("/machines")
+            }}>See All Machines</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
