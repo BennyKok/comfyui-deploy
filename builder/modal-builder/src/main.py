@@ -142,6 +142,7 @@ def read_root():
 class GitCustomNodes(BaseModel):
     hash: str
     disabled: bool
+    pip: Optional[List[str]] = None
 
 class FileCustomNodes(BaseModel):
     filename: str
@@ -377,13 +378,19 @@ async def build_logic(item: Item):
     cp_process = await asyncio.subprocess.create_subprocess_exec("cp", "-r", "/app/src/template", folder_path)
     await cp_process.wait()
 
+    pip_modules = set()
+    for git_custom_node in item.snapshot.git_custom_nodes.values():
+        if git_custom_node.pip:
+            pip_modules.update(git_custom_node.pip)
+
     # Write the config file
     config = {
         "name": item.name,
         "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
         "gpu": item.gpu,
         "public_model_volume": "model-store",
-        "private_model_volume": item.model_volume_name
+        "private_model_volume": item.model_volume_name,
+        "pip": list(pip_modules)
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))

@@ -65,6 +65,8 @@ if not deploy_test:
         .run_commands("chmod +x /start.sh")
 
         # Restore the custom nodes first
+        .pip_install(config["pip"])
+
         .copy_local_file(f"{current_directory}/data/restore_snapshot.py", "/")
         .copy_local_file(f"{current_directory}/data/snapshot.json", "/comfyui/custom_nodes/ComfyUI-Manager/startup-scripts/restore-snapshot.json")
         .run_commands("python restore_snapshot.py")
