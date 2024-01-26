@@ -113,7 +113,7 @@ export const columns: ColumnDef<Machine>[] = [
               {row.original.status} <LoadingIcon />
             </Badge>
           )}
-          {!row.original.disabled && row.original.status && (
+          {!row.original.disabled && row.original.status && row.original.status != "building" && (
             <Badge
               variant={
                 row.original.status == "ready" ? "success" : "destructive"
@@ -409,9 +409,9 @@ export function MachineList({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
