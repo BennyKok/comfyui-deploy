@@ -1,1 +1,0 @@
-ALTER TABLE "comfyui_deploy"."models" ALTER COLUMN "model_type" SET DEFAULT 'checkpoint';

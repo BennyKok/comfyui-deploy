@@ -1,5 +1,5 @@
 {
-  "id": "21883be1-791d-462f-94b1-a990074aefef",
+  "id": "b05a0662-d598-4ff1-b106-6020917bae69",
   "prevId": "ca4e598d-4205-4e48-a5d2-4202d38a8b5c",
   "version": "5",
   "dialect": "pg",
@@ -539,7 +539,8 @@
           "name": "model_type",
           "type": "model_type",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'checkpoint'"
         },
         "error_log": {
           "name": "error_log",

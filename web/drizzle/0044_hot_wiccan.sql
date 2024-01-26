@@ -7,6 +7,7 @@ ALTER TABLE "comfyui_deploy"."models" DROP CONSTRAINT "checkpoints_checkpoint_vo
 --> statement-breakpoint
 ALTER TABLE "comfyui_deploy"."user_volume" DROP CONSTRAINT "checkpoint_volume_user_id_users_id_fk";
 --> statement-breakpoint
+ALTER TABLE "comfyui_deploy"."models" ALTER COLUMN "model_type" SET DEFAULT 'checkpoint';--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "comfyui_deploy"."models" ADD CONSTRAINT "models_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "comfyui_deploy"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
