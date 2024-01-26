@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -20,6 +21,8 @@ export function NavbarMenu({ className }: { className?: string }) {
   const pathname = `/${pathnames.split("/")[1]}`;
 
   const router = useRouter();
+
+  const pricingPlanFlagEnable = useFeatureFlagEnabled("pricing-plan");
 
   const pages = [
     {
@@ -40,15 +43,31 @@ export function NavbarMenu({ className }: { className?: string }) {
     },
   ];
 
+  if (pricingPlanFlagEnable) {
+    pages.push({
+      name: "Pricing",
+      path: "/pricing",
+    })
+    pages.push({
+      name: "Usage",
+      path: "/usage",
+    })
+  }
+
+  pages.push({
+    name: "Docs",
+    path: "/docs",
+  })
+
   return (
     <div className={cn("mr-2", className)}>
       {/* <div className="w-full h-full absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"> */}
       {isDesktop && (
         <Tabs
           defaultValue={pathname}
-          className="w-[400px] flex pointer-events-auto"
+          className="w-fit flex pointer-events-auto"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className=" w-full ">
             {pages.map((page) => (
               <TabsTrigger
                 key={page.name}
