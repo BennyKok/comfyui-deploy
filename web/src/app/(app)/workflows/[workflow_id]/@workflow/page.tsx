@@ -21,6 +21,8 @@ import { getRelativeTime } from "@/lib/getRelativeTime";
 import { getMachines } from "@/server/curdMachine";
 import { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
 
+export const maxDuration = 300; // 5 minutes
+
 export default async function Page({
   params,
 }: {
