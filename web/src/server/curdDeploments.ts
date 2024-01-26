@@ -75,7 +75,7 @@ export async function createDeployments(
       machine_id,
       environment,
       org_id: orgId,
-      // only create share slug if this is plublic share
+      // only create share slug if this is public share
       share_slug: environment == "public-share" ? slugify(`${userName} ${workflow.name}`) : null
     });
   }
