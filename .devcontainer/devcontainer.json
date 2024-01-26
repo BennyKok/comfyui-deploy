@@ -14,7 +14,8 @@
         "stivo.tailwind-fold",
         "streetsidesoftware.code-spell-checker",
         "GitHub.copilot",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "ms-python.python"
       ]
     }
   }

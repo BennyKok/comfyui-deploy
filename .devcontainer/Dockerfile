@@ -12,6 +12,11 @@ RUN curl -L https://fly.io/install.sh | sh
 ENV FLYCTL_INSTALL="/root/.fly"
 ENV PATH="$FLYCTL_INSTALL/bin:$PATH"
 
+RUN sudo apt-get update
+RUN sudo apt-get install python3-pip python3 -y
+
+RUN pip3 install modal
+
 # RUN echo 'export FLYCTL_INSTALL="/home/node/.fly"' >> ~/.bashrc
 # RUN echo 'export PATH="$FLYCTL_INSTALL/bin:$PATH"' >> ~/.bashrc
 
