@@ -15,7 +15,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import "server-only";
 import type { z } from "zod";
-import { retrieveCheckpointVolumes } from "./curdCheckpoint";
+import { retrieveModelVolumes } from "./curdModel";
 
 export async function getMachines() {
   const { userId, orgId } = auth();
@@ -190,7 +190,7 @@ async function _buildMachine(
     throw new Error("No domain");
   }
 
-  const volumes = await retrieveCheckpointVolumes();
+  const volumes = await retrieveModelVolumes();
   // Call remote builder
   const result = await fetch(`${process.env.MODAL_BUILDER_URL!}/create`, {
     method: "POST",
@@ -204,7 +204,7 @@ async function _buildMachine(
       callback_url: `${protocol}://${domain}/api/machine-built`,
       models: data.models, //JSON.parse(data.models as string),
       gpu: data.gpu && data.gpu.length > 0 ? data.gpu : "T4",
-      checkpoint_volume_name: volumes[0].volume_name,
+      model_volume_name: volumes[0].volume_name,
     }),
   });
 

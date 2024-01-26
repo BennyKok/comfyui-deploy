@@ -1,4 +1,5 @@
-import { z } from "zod";
+import { TypeOf, z } from "zod";
+import { modelEnumType } from "@/db/schema";
 
 // from chatgpt https://chat.openai.com/share/4985d20b-30b1-4a28-87f6-6ebf84a1040e
 
@@ -110,12 +111,21 @@ export const statsSchema = z.object({
   tippedAmountCount: z.number(),
 });
 
+const civitaiModelType = z.enum([
+  "Checkpoint",
+  "TextualInversion",
+  "Hypernetwork",
+  "AestheticGradient",
+  "LORA",
+  "Controlnet",
+  "Poses",
+]);
+
 export const CivitaiModelResponse = z.object({
   id: z.number(),
   name: z.string().nullish(),
   description: z.string().nullish(),
-  // type: z.enum(["Checkpoint", "Lora"]), // TODO: this will be important to know
-  type: z.string(),
+  type: civitaiModelType,
   poi: z.boolean().nullish(),
   nsfw: z.boolean().nullish(),
   allowNoCredit: z.boolean().nullish(),
@@ -127,3 +137,22 @@ export const CivitaiModelResponse = z.object({
   tags: z.array(z.string()).nullish(),
   modelVersions: z.array(modelVersionSchema),
 });
+
+export function getModelTypeDetails(
+  modelType: typeof civitaiModelType["_type"],
+): modelEnumType | undefined {
+  switch (modelType) {
+    case "Checkpoint":
+      return "checkpoint"
+    case "TextualInversion":
+      return "embedding"
+    case "LORA":
+      return "lora"
+    case "AestheticGradient":
+    case "Hypernetwork":
+    case "Controlnet":
+    case "Poses":
+    default:
+      return undefined;
+  }
+}

@@ -7,7 +7,7 @@ import AutoFormInput from "../ui/auto-form/fields/input";
 import { useDebouncedCallback } from "use-debounce";
 import { CivitaiModelResponse } from "@/types/civitai";
 import { z } from "zod";
-import { insertCivitaiCheckpointSchema } from "@/db/schema";
+import { insertCivitaiModelSchema } from "@/db/schema";
 
 function getUrl(civitai_url: string) {
   // expect to be a URL to be https://civitai.com/models/36520
@@ -33,7 +33,7 @@ export default function AutoFormCheckpointInput(
 
   const handleSearch = useDebouncedCallback((search) => {
     const validationResult =
-      insertCivitaiCheckpointSchema.shape.civitai_url.safeParse(search);
+      insertCivitaiModelSchema.shape.civitai_url.safeParse(search);
     if (!validationResult.success) {
       console.error(validationResult.error);
       // Optionally set an error state here

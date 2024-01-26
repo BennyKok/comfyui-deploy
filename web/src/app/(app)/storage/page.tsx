@@ -1,14 +1,14 @@
 import { setInitialUserData } from "../../../lib/setInitialUserData";
 import { auth } from "@clerk/nextjs";
 import { clerkClient } from "@clerk/nextjs/server";
-import { CheckpointList } from "@/components/CheckpointList";
-import { getAllUserCheckpoints } from "@/server/getAllUserCheckpoints";
+import { ModelList } from "@/components/ModelList";
+import { getAllUserModels } from "@/server/getAllUserModel";
 
 export default function Page() {
-  return <CheckpointListServer />;
+  return <ModelListServer />;
 }
 
-async function CheckpointListServer() {
+async function ModelListServer() {
   const { userId } = auth();
 
   if (!userId) {
@@ -21,15 +21,15 @@ async function CheckpointListServer() {
     await setInitialUserData(userId);
   }
 
-  const checkpoints = await getAllUserCheckpoints();
+  const models = await getAllUserModels();
 
-  if (!checkpoints) {
-    return <div>No checkpoints found</div>;
+  if (!models) {
+    return <div>No models found</div>;
   }
 
   return (
     <div className="w-full">
-      <CheckpointList data={checkpoints} />
+      <ModelList data={models} />
     </div>
   );
 }

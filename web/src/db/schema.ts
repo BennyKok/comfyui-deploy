@@ -12,7 +12,7 @@ import {
   real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import { TypeOf, z } from "zod";
 
 export const dbSchema = pgSchema("comfyui_deploy");
 
@@ -376,15 +376,25 @@ export const modelUploadType = pgEnum("model_upload_type", [
   "other",
 ]);
 
-export const checkpointTable = dbSchema.table("checkpoints", {
+// https://www.answeroverflow.com/m/1125106227387584552 
+const modelTypes  = [
+  "checkpoint",
+  "lora",
+  "embedding",
+  "vae",
+] as const
+export const modelType = pgEnum("model_type", modelTypes);
+export type modelEnumType = typeof modelTypes[number]
+
+export const modelTable = dbSchema.table("models", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
-  user_id: text("user_id").references(() => usersTable.id, {}), // perhaps a "special" user_id for global checkpoints
+  user_id: text("user_id").references(() => usersTable.id, {}), // perhaps a "special" user_id for global models
   org_id: text("org_id"),
   description: text("description"),
 
-  checkpoint_volume_id: uuid("checkpoint_volume_id")
+  user_volume_id: uuid("user_volume_id")
     .notNull()
-    .references(() => checkpointVolumeTable.id, {
+    .references(() => userVolume.id, {
       onDelete: "cascade",
     })
     .notNull(),
@@ -408,12 +418,13 @@ export const checkpointTable = dbSchema.table("checkpoints", {
   status: resourceUpload("status").notNull().default("started"),
   upload_machine_id: text("upload_machine_id"), // TODO: review if actually needed
   upload_type: modelUploadType("upload_type").notNull(),
+  model_type: modelType("model_type").notNull(),
   error_log: text("error_log"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const checkpointVolumeTable = dbSchema.table("checkpoint_volume", {
+export const userVolume = dbSchema.table("user_volume", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
   user_id: text("user_id").references(() => usersTable.id, {
     // onDelete: "cascade",
@@ -425,23 +436,23 @@ export const checkpointVolumeTable = dbSchema.table("checkpoint_volume", {
   disabled: boolean("disabled").default(false).notNull(),
 });
 
-export const checkpointRelations = relations(checkpointTable, ({ one }) => ({
+export const modelRelations = relations(modelTable, ({ one }) => ({
   user: one(usersTable, {
-    fields: [checkpointTable.user_id],
+    fields: [modelTable.user_id],
     references: [usersTable.id],
   }),
-  volume: one(checkpointVolumeTable, {
-    fields: [checkpointTable.checkpoint_volume_id],
-    references: [checkpointVolumeTable.id],
+  volume: one(userVolume, {
+    fields: [modelTable.user_volume_id],
+    references: [userVolume.id],
   }),
 }));
 
-export const checkpointVolumeRelations = relations(
-  checkpointVolumeTable,
+export const modalVolumeRelations = relations(
+  userVolume,
   ({ many, one }) => ({
-    checkpoint: many(checkpointTable),
+    model: many(modelTable),
     user: one(usersTable, {
-      fields: [checkpointVolumeTable.user_id],
+      fields: [userVolume.user_id],
       references: [usersTable.id],
     }),
   })
@@ -473,8 +484,8 @@ export const subscriptionStatusTable = dbSchema.table("subscription_status", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertCivitaiCheckpointSchema = createInsertSchema(
-  checkpointTable,
+export const insertCivitaiModelSchema = createInsertSchema(
+  modelTable,
   {
     civitai_url: (schema) =>
       schema.civitai_url
@@ -491,8 +502,8 @@ export type WorkflowType = InferSelectModel<typeof workflowTable>;
 export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
-export type CheckpointType = InferSelectModel<typeof checkpointTable>;
-export type CheckpointVolumeType = InferSelectModel<
-  typeof checkpointVolumeTable
+export type ModelType = InferSelectModel<typeof modelTable>;
+export type UserVolumeType = InferSelectModel<
+  typeof userVolume
 >;
 export type UserUsageType = InferSelectModel<typeof userUsageTable>;

@@ -1,18 +1,18 @@
 config = {
     "volume_names": {
-        "test": {
-            "download_url": "https://pub-6230db03dc3a4861a9c3e55145ceda44.r2.dev/openpose-pose (1).png",
-            "folder_path": "images"
+        "user4": {
+            "download_url": "https://civitai.com/api/download/models/11745",
+            "folder_path": "checkpoints"
         }
     }, 
     "volume_paths": {
-        "test": "/volumes/something"
+        "user4": "/volumes/something",
     },
     "callback_url": "",
     "callback_body": {
-        "checkpoint_id": "",
+        "model_id": "",
         "volume_id": "",
-        "folder_path": "images",
+        "folder_path": "checkpoints",
     }, 
     "civitai_api_key": "",
 }

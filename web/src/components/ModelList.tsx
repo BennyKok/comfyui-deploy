@@ -4,7 +4,7 @@ import { getRelativeTime } from "../lib/getRelativeTime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { InsertModal, UpdateModal } from "./InsertModal";
+import { InsertModal } from "./InsertModal";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { getAllUserCheckpoints } from "@/server/getAllUserCheckpoints";
+import type { getAllUserModels as getAllUserModels } from "@/server/getAllUserModel";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -32,23 +32,22 @@ import {
 } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import * as React from "react";
-import { addCivitaiCheckpoint } from "@/server/curdCheckpoint";
-import { addCivitaiCheckpointSchema } from "@/server/addCheckpointSchema";
+import { addCivitaiModel } from "@/server/curdModel";
+import { addCivitaiModelSchema } from "@/server/addCivitaiModelSchema";
+import { modelEnumType } from "@/db/schema";
 
-export type CheckpointItemList = NonNullable<
-  Awaited<ReturnType<typeof getAllUserCheckpoints>>
+export type ModelItemList = NonNullable<
+  Awaited<ReturnType<typeof getAllUserModels>>
 >[0];
 
-export const columns: ColumnDef<CheckpointItemList>[] = [
+export const columns: ColumnDef<ModelItemList>[] = [
   {
     accessorKey: "id",
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        checked={table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -77,22 +76,23 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
       );
     },
     cell: ({ row }) => {
-      const checkpoint = row.original;
+      const model = row.original;
       return (
-        <a
+        <>
+          {
+            /*<a
           className="hover:underline flex gap-2"
-          href={`/storage/${checkpoint.id}`} // TODO
-        >
+          href={`/storage/${model.id}`} // TODO
+        >*/
+          }
           <span className="truncate max-w-[200px]">
             {row.original.model_name}
           </span>
 
-          {checkpoint.is_public ? (
-            <Badge variant="green">Public</Badge>
-          ) : (
-            <Badge variant="orange">Private</Badge>
-          )}
-        </a>
+          {model.is_public
+            ? <Badge variant="green">Public</Badge>
+            : <Badge variant="orange">Private</Badge>}
+        </>
       );
     },
   },
@@ -111,7 +111,11 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
     },
     cell: ({ row }) => {
       return (
-        <Badge variant={row.original.status === "failed" ? "red" : (row.original.status === "started" ? "yellow" : "green")}>
+        <Badge
+          variant={row.original.status === "failed"
+            ? "red"
+            : (row.original.status === "started" ? "yellow" : "green")}
+        >
           {row.original.status}
         </Badge>
       );
@@ -168,6 +172,35 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
     },
   },
   {
+    accessorKey: "model_type",
+    header: ({ column }) => {
+      return (
+        <button
+          className="flex items-center hover:underline"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Model Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </button>
+      );
+    },
+    cell: ({ row }) => {
+      const model_type_map: Record<modelEnumType, any> = {
+        "checkpoint": "amber",
+        "lora": "green",
+        "embedding": "violet",
+        "vae": "teal",
+      };
+
+      function getBadgeColor(modelType: modelEnumType) {
+        return model_type_map[modelType] || "default";
+      }
+
+      const color = getBadgeColor(row.original.model_type);
+      return <Badge variant={color}>{row.original.model_type}</Badge>;
+    },
+  },
+  {
     accessorKey: "date",
     sortingFn: "datetime",
     enableSorting: true,
@@ -221,13 +254,14 @@ export const columns: ColumnDef<CheckpointItemList>[] = [
   // },
 ];
 
-export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
+export function ModelList({ data }: { data: ModelItemList[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<
+    VisibilityState
+  >({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -254,10 +288,10 @@ export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
       <div className="flex flex-row w-full items-center py-4">
         <Input
           placeholder="Filter workflows..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("model_name")?.getFilterValue() as string) ??
+            ""}
           onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+            table.getColumn("model_name")?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
         <div className="ml-auto flex gap-2">
@@ -268,17 +302,17 @@ export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
               // TODO: limitations based on plan
             }
             tooltip={"Add models using their civitai url!"}
-            title="Civitai Checkpoint"
+            title="Add a Civitai Model"
             description="Pick a model from civitai"
-            serverAction={addCivitaiCheckpoint}
-            formSchema={addCivitaiCheckpointSchema}
+            serverAction={addCivitaiModel}
+            formSchema={addCivitaiModelSchema}
             fieldConfig={{
               civitai_url: {
                 fieldType: "fallback",
                 inputProps: { required: true },
                 description: (
                   <>
-                    Pick a checkpoint from{" "}
+                    Pick a model from{" "}
                     <a
                       href="https://www.civitai.com/models"
                       target="_blank"
@@ -302,12 +336,10 @@ export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                      {header.isPlaceholder ? null : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                     </TableHead>
                   );
                 })}
@@ -315,32 +347,34 @@ export function CheckpointList({ data }: { data: CheckpointItemList[] }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+            {table.getRowModel().rows?.length
+              ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
       </ScrollArea>

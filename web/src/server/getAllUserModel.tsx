@@ -1,18 +1,18 @@
 import { db } from "@/db/db";
 import {
-  checkpointTable,
+  modelTable,
 } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
-export async function getAllUserCheckpoints() {
+export async function getAllUserModels() {
   const { userId, orgId } = await auth();
 
   if (!userId) {
     return null;
   }
 
-  const checkpoints = await db.query.checkpointTable.findMany({
+  const models = await db.query.modelTable.findMany({
     with: {
       user: {
         columns: {
@@ -28,14 +28,15 @@ export async function getAllUserCheckpoints() {
       civitai_model_response: true,
       is_public: true,
       upload_type: true,
+      model_type: true,
       status: true,
     },
-    orderBy: desc(checkpointTable.updated_at),
+    orderBy: desc(modelTable.updated_at),
     where: 
       orgId != undefined
-        ? eq(checkpointTable.org_id, orgId)
-        : and(eq(checkpointTable.user_id, userId), isNull(checkpointTable.org_id)),
+        ? eq(modelTable.org_id, orgId)
+        : and(eq(modelTable.user_id, userId), isNull(modelTable.org_id)),
   });
 
-  return checkpoints;
+  return models;
 }

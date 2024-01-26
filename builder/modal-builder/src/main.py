@@ -177,7 +177,7 @@ class Item(BaseModel):
     snapshot: Snapshot
     models: List[Model]
     callback_url: str
-    checkpoint_volume_name: str
+    model_volume_name: str
     gpu: GPUType = Field(default=GPUType.T4)
 
     @field_validator('gpu')
@@ -227,24 +227,31 @@ async def websocket_endpoint(websocket: WebSocket, machine_id: str):
 
 #     return {"Hello": "World"}
 
+# definition based on web schema
 class UploadType(str, Enum):
     checkpoint = "checkpoint"
+    lora = "lora"
+    embedding = "embedding"
 
 class UploadBody(BaseModel):
     download_url: str
     volume_name: str
     volume_id: str
-    checkpoint_id: str
+    model_id: str
     upload_type: UploadType
     callback_url: str
 
 
+# based on ComfyUI's model dir, and our mappings in ./src/template/data/extra_model_paths.yaml
 UPLOAD_TYPE_DIR_MAP = {
-    UploadType.checkpoint: "checkpoints"
+    UploadType.checkpoint: "checkpoints",
+    UploadType.lora: "loras",
+    UploadType.embedding: "embeddings",
 }
 
+
 @app.post("/upload-volume")
-async def upload_checkpoint(body: UploadBody):
+async def upload_model(body: UploadBody):
     global last_activity_time
     last_activity_time = time.time()
     logger.info(f"Extended inactivity time to {global_timeout}")
@@ -253,6 +260,7 @@ async def upload_checkpoint(body: UploadBody):
 
     # check that this
     return JSONResponse(status_code=200, content={"message": "Volume uploading", "build_machine_instance_id": fly_instance_id})
+
 
 async def upload_logic(body: UploadBody):
     folder_path = f"/app/builds/{body.volume_id}"
@@ -270,7 +278,7 @@ async def upload_logic(body: UploadBody):
         }, 
         "callback_url": body.callback_url,
         "callback_body": {
-            "checkpoint_id": body.checkpoint_id,
+            "model_id": body.model_id,
             "volume_id": body.volume_id,
             "folder_path": upload_path,
         },
@@ -279,51 +287,11 @@ async def upload_logic(body: UploadBody):
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))
 
-    process = await asyncio.subprocess.create_subprocess_shell(
+    await asyncio.subprocess.create_subprocess_shell(
         f"modal run app.py",
-        # stdout=asyncio.subprocess.PIPE,
-        # stderr=asyncio.subprocess.PIPE,
         cwd=folder_path,
         env={**os.environ, "COLUMNS": "10000"}
     )
-    
-    # error_logs = []
-    # async def read_stream(stream):
-    #     while True:
-    #         line = await stream.readline()
-    #         if line:
-    #             l = line.decode('utf-8').strip()
-    #             error_logs.append(l)
-    #             logger.error(l)
-    #             error_logs.append({
-    #                 "logs": l,
-    #                 "timestamp": time.time()
-    #             })
-    #         else:
-    #             break
-
-    # stderr_read_task = asyncio.create_task(read_stream(process.stderr))
-    #
-    # await asyncio.wait([stderr_read_task])
-    # await process.wait()
-
-    # if process.returncode != 0:
-    #     error_logs.append({"logs": "Unable to upload volume.", "timestamp": time.time()})
-    #     # Error handling: send POST request to callback URL with error details
-    #     requests.post(body.callback_url, json={
-    #         "volume_id": body.volume_id, 
-    #         "checkpoint_id": body.checkpoint_id,
-    #         "folder_path": upload_path,
-    #         "error_logs": json.dumps(error_logs),
-    #         "status": "failed"
-    #     })
-    #
-    # requests.post(body.callback_url, json={
-    #     "checkpoint_id": body.checkpoint_id,
-    #     "volume_id": body.volume_id,
-    #     "folder_path": upload_path,
-    #     "status": "success"
-    # })
 
 @app.post("/create")
 async def create_machine(item: Item):
@@ -414,8 +382,8 @@ async def build_logic(item: Item):
         "name": item.name,
         "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
         "gpu": item.gpu,
-        "public_checkpoint_volume": "model-store",
-        "private_checkpoint_volume": item.checkpoint_volume_name
+        "public_model_volume": "model-store",
+        "private_model_volume": item.model_volume_name
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))
