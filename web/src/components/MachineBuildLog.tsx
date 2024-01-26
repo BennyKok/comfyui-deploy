@@ -57,7 +57,7 @@ export function MachineBuildLog({
       setLogs((logs) => [...(logs ?? []), message.data]);
     } else if (message?.event === "FINISHED") {
       setFinished(true);
-      setStatus(message.status)
+      setStatus(message.data.status)
     }
   }, [lastMessage]);
 
@@ -98,6 +98,7 @@ export function MachineBuildLog({
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
+                  <AlertDialogCancel>See logs</AlertDialogCancel>
                   <AlertDialogAction onClick={() => {
                     router.push("/machines")
                   }}>Back to machines</AlertDialogAction>
