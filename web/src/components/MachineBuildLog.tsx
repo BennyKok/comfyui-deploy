@@ -30,6 +30,7 @@ export function MachineBuildLog({
 }) {
   const [logs, setLogs] = useState<LogsType>([]);
   const [finished, setFinished] = useState(false);
+  const [status, setStatus] = useState<"failed" | "succuss">();
 
   const wsEndpoint = endpoint.replace(/^http/, "ws");
   const query = { fly_instance_id: instance_id };
@@ -56,6 +57,7 @@ export function MachineBuildLog({
       setLogs((logs) => [...(logs ?? []), message.data]);
     } else if (message?.event === "FINISHED") {
       setFinished(true);
+      setStatus(message.status)
     }
   }, [lastMessage]);
 
@@ -68,20 +70,42 @@ export function MachineBuildLog({
 
       <AlertDialog open={finished}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Machine Built</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your machine is built, you can now integrate your API, or directly run to check this machines.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => {
-              router.push("/workflows")
-            }}>See Workflows</AlertDialogAction>
-            <AlertDialogAction onClick={() => {
-              router.push("/machines")
-            }}>See All Machines</AlertDialogAction>
-          </AlertDialogFooter>
+          {
+            status == "succuss" ? (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Machine Built</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your machine is built, you can now integrate your API, or directly run to check this machines.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => {
+                    router.push("/workflows")
+                  }}>See Workflows</AlertDialogAction>
+                  <AlertDialogAction onClick={() => {
+                    router.push("/machines")
+                  }}>See All Machines</AlertDialogAction>
+                </AlertDialogFooter></>
+            ) : (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Machine Failed</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Something went wrong with the machine build, please check the log.
+                    Possible cause could be conflits with custom nodes, build got stuck, timeout, or too many custom nodes installed.
+                    Please attempt a rebuild or remove some of the custom nodes.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => {
+                    router.push("/machines")
+                  }}>Back to machines</AlertDialogAction>
+                </AlertDialogFooter></>
+            )
+          }
+
+
         </AlertDialogContent>
       </AlertDialog>
 
