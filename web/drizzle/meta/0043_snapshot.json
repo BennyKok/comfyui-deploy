@@ -1,5 +1,5 @@
 {
-  "id": "ca4e598d-4205-4e48-a5d2-4202d38a8b5c",
+  "id": "dd44755e-6a0d-4259-a920-c907b5edf078",
   "prevId": "4bbd69a1-bb1f-467b-a6d8-8412142c4c32",
   "version": "5",
   "dialect": "pg",
@@ -139,256 +139,6 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "checkpoints": {
-      "name": "checkpoints",
-      "schema": "comfyui_deploy",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "checkpoint_volume_id": {
-          "name": "checkpoint_volume_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "model_name": {
-          "name": "model_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "folder_path": {
-          "name": "folder_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "civitai_id": {
-          "name": "civitai_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "civitai_version_id": {
-          "name": "civitai_version_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "civitai_url": {
-          "name": "civitai_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "civitai_download_url": {
-          "name": "civitai_download_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "civitai_model_response": {
-          "name": "civitai_model_response",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "hf_url": {
-          "name": "hf_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "s3_url": {
-          "name": "s3_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "client_url": {
-          "name": "client_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_public": {
-          "name": "is_public",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "status": {
-          "name": "status",
-          "type": "resource_upload",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'started'"
-        },
-        "upload_machine_id": {
-          "name": "upload_machine_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "upload_type": {
-          "name": "upload_type",
-          "type": "model_upload_type",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "model_type": {
-          "name": "model_type",
-          "type": "model_type",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "error_log": {
-          "name": "error_log",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "checkpoints_user_id_users_id_fk": {
-          "name": "checkpoints_user_id_users_id_fk",
-          "tableFrom": "checkpoints",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "checkpoints_checkpoint_volume_id_checkpoint_volume_id_fk": {
-          "name": "checkpoints_checkpoint_volume_id_checkpoint_volume_id_fk",
-          "tableFrom": "checkpoints",
-          "tableTo": "checkpoint_volume",
-          "columnsFrom": [
-            "checkpoint_volume_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "checkpoint_volume": {
-      "name": "checkpoint_volume",
-      "schema": "comfyui_deploy",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "volume_name": {
-          "name": "volume_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "disabled": {
-          "name": "disabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "checkpoint_volume_user_id_users_id_fk": {
-          "name": "checkpoint_volume_user_id_users_id_fk",
-          "tableFrom": "checkpoint_volume",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -664,6 +414,187 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "models": {
+      "name": "models",
+      "schema": "comfyui_deploy",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_volume_id": {
+          "name": "user_volume_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_name": {
+          "name": "model_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "folder_path": {
+          "name": "folder_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "civitai_id": {
+          "name": "civitai_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "civitai_version_id": {
+          "name": "civitai_version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "civitai_url": {
+          "name": "civitai_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "civitai_download_url": {
+          "name": "civitai_download_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "civitai_model_response": {
+          "name": "civitai_model_response",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hf_url": {
+          "name": "hf_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "s3_url": {
+          "name": "s3_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_url": {
+          "name": "client_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_public": {
+          "name": "is_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "resource_upload",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'started'"
+        },
+        "upload_machine_id": {
+          "name": "upload_machine_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "upload_type": {
+          "name": "upload_type",
+          "type": "model_upload_type",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_type": {
+          "name": "model_type",
+          "type": "model_type",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'checkpoint'"
+        },
+        "error_log": {
+          "name": "error_log",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "models_user_id_users_id_fk": {
+          "name": "models_user_id_users_id_fk",
+          "tableFrom": "models",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "models_user_volume_id_user_volume_id_fk": {
+          "name": "models_user_volume_id_user_volume_id_fk",
+          "tableFrom": "models",
+          "tableTo": "user_volume",
+          "columnsFrom": [
+            "user_volume_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "subscription_status": {
       "name": "subscription_status",
       "schema": "comfyui_deploy",
@@ -801,6 +732,76 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "user_volume": {
+      "name": "user_volume",
+      "schema": "comfyui_deploy",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume_name": {
+          "name": "volume_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "disabled": {
+          "name": "disabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_volume_user_id_users_id_fk": {
+          "name": "user_volume_user_id_users_id_fk",
+          "tableFrom": "user_volume",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1282,7 +1283,12 @@
   },
   "_meta": {
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {
+      "\"comfyui_deploy\".\"checkpoints\"": "\"comfyui_deploy\".\"models\"",
+      "\"comfyui_deploy\".\"checkpoint_volume\"": "\"comfyui_deploy\".\"user_volume\""
+    },
+    "columns": {
+      "\"comfyui_deploy\".\"models\".\"checkpoint_volume_id\"": "\"comfyui_deploy\".\"models\".\"user_volume_id\""
+    }
   }
 }
