@@ -377,7 +377,7 @@ export const modelUploadType = pgEnum("model_upload_type", [
 ]);
 
 // https://www.answeroverflow.com/m/1125106227387584552 
-const modelTypes  = [
+const modelTypes = [
   "checkpoint",
   "lora",
   "embedding",
@@ -418,7 +418,7 @@ export const modelTable = dbSchema.table("models", {
   status: resourceUpload("status").notNull().default("started"),
   upload_machine_id: text("upload_machine_id"), // TODO: review if actually needed
   upload_type: modelUploadType("upload_type").notNull(),
-  model_type: modelType("model_type").notNull(),
+  model_type: modelType("model_type").notNull().default("checkpoint"),
   error_log: text("error_log"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
