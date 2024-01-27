@@ -15,27 +15,28 @@ const ext = {
     const auth_token = queryParams.get("auth_token");
     const org_display = queryParams.get("org_display");
     const origin = queryParams.get("origin");
+
+    const data = getData();
+    let endpoint = data.endpoint;
+    let apiKey = data.apiKey;
+
+    // If there is auth token override it
+    if (auth_token) {
+      apiKey = auth_token;
+      endpoint = origin;
+      saveData({
+        displayName: org_display,
+        endpoint: origin,
+        apiKey: auth_token,
+        displayName: org_display,
+        environment: "cloud",
+      });
+      localStorage.setItem("comfy_deploy_env", "cloud");
+    }
+
     if (!workflow_version_id) {
       console.error("No workflow_version_id provided in query parameters.");
     } else {
-      const data = getData();
-      let endpoint = data.endpoint;
-      let apiKey = data.apiKey;
-
-      // If there is auth token override it
-      if (auth_token) {
-        apiKey = auth_token;
-        endpoint = origin;
-        saveData({
-          displayName: org_display,
-          endpoint: origin,
-          apiKey: auth_token,
-          displayName: org_display,
-          environment: "cloud",
-        });
-        localStorage.setItem("comfy_deploy_env", "cloud");
-      }
-
       loadingDialog.showLoading(
         "Loading workflow from " + org_display,
         "Please wait...",
@@ -681,19 +682,16 @@ export class ConfigDialog extends ComfyDialog {
     </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
-          data.endpoint
-        }">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${data.endpoint
+      }">
       </label>
       <label style="color: white;">
         API Key: ${data.displayName ?? ""}
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
-          data.apiKey
-        }">
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${data.apiKey
+      }">
         <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
-          ${
-            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
-          }
+          ${data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
+      }
         </button>
       </label>
       </div>
