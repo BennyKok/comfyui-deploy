@@ -1,3 +1,5 @@
+export const maxDuration = 300; // 5 minutes
+
 export default async function Layout({
   children,
   deployment,

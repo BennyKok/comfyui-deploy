@@ -6,6 +6,8 @@ import { usersTable } from "@/db/schema";
 import { auth } from "@clerk/nextjs";
 import { eq } from "drizzle-orm";
 
+export const maxDuration = 300; // 5 minutes
+
 export default function Home() {
   return <WorkflowServer />;
 }
