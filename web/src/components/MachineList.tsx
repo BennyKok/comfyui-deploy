@@ -219,23 +219,19 @@ export const columns: ColumnDef<Machine>[] = [
             )}
             {machine.type === "comfy-deploy-serverless" && (
               <>
-                <DropdownMenuItem asChild>
-                  <button
-                    onClick={async () => {
-                      const id = toast.loading("Getting machine url...")
-                      const url = await callServerPromise(
-                        editWorkflowOnMachine(machine.id),
-                      );
-                      if (url && typeof url !== "object") {
-                        window.open(url, "_blank");
-                      } else if (url && typeof url === "object" && url.error) {
-                        console.error(url.error);
-                      }
-                      toast.dismiss(id)
-                    }}
-                  >
-                    Open ComfyUI
-                  </button>
+                <DropdownMenuItem onClick={async () => {
+                  const id = toast.loading("Getting machine url...")
+                  const url = await callServerPromise(
+                    editWorkflowOnMachine(machine.id),
+                  );
+                  if (url && typeof url !== "object") {
+                    window.open(url, "_blank");
+                  } else if (url && typeof url === "object" && url.error) {
+                    console.error(url.error);
+                  }
+                  toast.dismiss(id)
+                }}>
+                  Open ComfyUI
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -252,55 +248,57 @@ export const columns: ColumnDef<Machine>[] = [
               Edit
             </DropdownMenuItem>
           </DropdownMenuContent>
-          {machine.type === "comfy-deploy-serverless" ? (
-            <UpdateModal
-              dialogClassName="sm:max-w-[600px]"
-              data={machine}
-              open={open}
-              setOpen={setOpen}
-              title="Edit"
-              description="Edit machines"
-              serverAction={updateCustomMachine}
-              formSchema={addCustomMachineSchema}
-              fieldConfig={{
-                type: {
-                  fieldType: "fallback",
-                  inputProps: {
-                    disabled: true,
-                    showLabel: false,
-                    type: "hidden",
+          {
+            machine.type === "comfy-deploy-serverless" ? (
+              <UpdateModal
+                dialogClassName="sm:max-w-[600px]"
+                data={machine}
+                open={open}
+                setOpen={setOpen}
+                title="Edit"
+                description="Edit machines"
+                serverAction={updateCustomMachine}
+                formSchema={addCustomMachineSchema}
+                fieldConfig={{
+                  type: {
+                    fieldType: "fallback",
+                    inputProps: {
+                      disabled: true,
+                      showLabel: false,
+                      type: "hidden",
+                    },
                   },
-                },
-                snapshot: {
-                  fieldType: "snapshot",
-                },
-                models: {
-                  fieldType: "models",
-                },
-                gpu: {
-                  inputProps: {},
-                },
-              }}
-            />
-          ) : (
-            <UpdateModal
-              data={machine}
-              open={open}
-              setOpen={setOpen}
-              title="Edit"
-              description="Edit machines"
-              serverAction={updateMachine}
-              formSchema={addMachineSchema}
-              fieldConfig={{
-                auth_token: {
-                  inputProps: {
-                    type: "password",
+                  snapshot: {
+                    fieldType: "snapshot",
                   },
-                },
-              }}
-            />
-          )}
-        </DropdownMenu>
+                  models: {
+                    fieldType: "models",
+                  },
+                  gpu: {
+                    inputProps: {},
+                  },
+                }}
+              />
+            ) : (
+              <UpdateModal
+                data={machine}
+                open={open}
+                setOpen={setOpen}
+                title="Edit"
+                description="Edit machines"
+                serverAction={updateMachine}
+                formSchema={addMachineSchema}
+                fieldConfig={{
+                  auth_token: {
+                    inputProps: {
+                      type: "password",
+                    },
+                  },
+                }}
+              />
+            )
+          }
+        </DropdownMenu >
       );
     },
   },
