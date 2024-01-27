@@ -17,6 +17,8 @@ import "server-only";
 import { v4 } from "uuid";
 import { withServerPromise } from "./withServerPromise";
 
+export const maxDuration = 300; // 5 minutes
+
 export const createRun = withServerPromise(
   async ({
     origin,
