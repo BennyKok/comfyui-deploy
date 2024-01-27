@@ -27,6 +27,10 @@ export async function findAllRuns({
         sql<number>`(extract(epoch from ended_at) - extract(epoch from created_at))`.as(
           "duration",
         ),
+      comfy_deploy_cold_start:
+        sql<number>`(extract(epoch from queued_at) - extract(epoch from created_at))`.as(
+          "cold_start_duration",
+        ),
       cold_start_duration:
         sql<number>`(extract(epoch from started_at) - extract(epoch from queued_at))`.as(
           "cold_start_duration",

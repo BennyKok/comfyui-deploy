@@ -29,7 +29,12 @@ export async function RunDisplay({
     <Dialog>
       <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
         <TableRow>
-          <TableCell>{run.number}</TableCell>
+          <TableCell>
+            <Tooltip>
+              <TooltipTrigger>{run.number}</TooltipTrigger>
+              <TooltipContent>{run.id}</TooltipContent>
+            </Tooltip>
+          </TableCell>
           <TableCell className="font-medium truncate">
             {run.machine?.name}
           </TableCell>
@@ -46,7 +51,12 @@ export async function RunDisplay({
             <Tooltip>
               <TooltipTrigger>{getDuration(run.duration)}</TooltipTrigger>
               <TooltipContent>
-                <div>Cold start: {getDuration(run.cold_start_duration)}</div>
+                <div>
+                  Serverless latency: {getDuration(run.comfy_deploy_cold_start)}
+                </div>
+                <div>
+                  GPU Cold start: {getDuration(run.cold_start_duration)}
+                </div>
                 <div>Run duration: {getDuration(run.run_duration)}</div>
               </TooltipContent>
             </Tooltip>

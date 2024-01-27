@@ -12,13 +12,21 @@ export function getRelativeTime(time: string | Date | null | undefined) {
 }
 
 function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = seconds % 60;
-  if (minutes > 0) {
-    return `${minutes}.${remainingSeconds} mins`;
-  } else {
-    return `${remainingSeconds.toFixed(1)} secs`;
+
+  let result = "";
+  if (hours > 0) {
+    result += `${hours} hrs `;
   }
+  if (minutes > 0) {
+    result += `${minutes} mins `;
+  }
+  if (remainingSeconds > 0) {
+    result += `${remainingSeconds.toFixed(1)} secs`;
+  }
+  return result.trim();
 }
 
 export function getDuration(durationInSecs: number) {

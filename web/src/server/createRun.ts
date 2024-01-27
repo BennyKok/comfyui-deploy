@@ -148,14 +148,14 @@ export const createRun = withServerPromise(
             body: JSON.stringify(_data),
             cache: "no-store",
           });
-          console.log(___result);
+          // console.log(___result);
           if (!___result.ok)
             throw new Error(
               `Error creating run, ${
                 ___result.statusText
               } ${await ___result.text()}`,
             );
-          console.log(_data, ___result);
+          // console.log(_data, ___result);
           break;
         case "runpod-serverless":
           const data = {
@@ -182,14 +182,14 @@ export const createRun = withServerPromise(
             body: JSON.stringify(data),
             cache: "no-store",
           });
-          console.log(__result);
+          // console.log(__result);
           if (!__result.ok)
             throw new Error(
               `Error creating run, ${
                 __result.statusText
               } ${await __result.text()}`,
             );
-          console.log(data, __result);
+          // console.log(data, __result);
           break;
         case "classic":
           const body = {
