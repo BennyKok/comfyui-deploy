@@ -41,6 +41,7 @@ import {
   updateMachine,
 } from "@/server/curdMachine";
 import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
+import { getCurrentPlanWithAuth } from "@/server/getCurrentPlan";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -55,7 +56,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, Lock, MoreHorizontal, Plus } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -321,9 +322,11 @@ export const columns: ColumnDef<Machine>[] = [
 export function MachineList({
   data,
   userMetadata,
+  sub,
 }: {
   data: Machine[];
   userMetadata: z.infer<typeof AccessType>;
+  sub: Awaited<ReturnType<typeof getCurrentPlanWithAuth>>;
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -352,6 +355,21 @@ export function MachineList({
     },
   });
 
+  let machineMaxCount = 2;
+
+  // Temp fixes for machine count
+  if (userMetadata.betaFeaturesAccess) machineMaxCount = 5;
+
+  if (sub?.plan == "pro") {
+    machineMaxCount = 10;
+  } else if (sub?.plan == "enterprise") {
+    machineMaxCount = 99;
+  }
+
+  const locked =
+    data.some((machine) => machine.type === "modal-serverless") &&
+    data.length >= machineMaxCount;
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
@@ -366,17 +384,17 @@ export function MachineList({
         <div className="ml-auto flex gap-2">
           <InsertModal
             dialogClassName="sm:max-w-[600px]"
-            disabled={
-              data.some(
-                (machine) => machine.type === "comfy-deploy-serverless",
-              ) && !userMetadata.betaFeaturesAccess
-            }
+            disabled={locked}
             tooltip={
-              data.some((machine) => machine.type === "comfy-deploy-serverless")
-                ? "Only one hosted machine at preview stage"
-                : undefined
+              locked
+                ? `Max ${machineMaxCount} ComfyUI machine for your account, upgrade to unlock more cnfiguration.`
+                : `Max ${machineMaxCount} ComfyUI machine for your account`
             }
-            title="New Machine"
+            title={
+              <>
+                New Machine {locked ? <Lock size={14} /> : <Plus size={14} />}
+              </>
+            }
             description="Add custom ComfyUI machines to your account."
             serverAction={addCustomMachine}
             formSchema={addCustomMachineSchema}

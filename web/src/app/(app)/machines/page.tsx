@@ -2,6 +2,7 @@ import { AccessType } from "../../../lib/AccessType";
 import { MachineList } from "@/components/MachineList";
 import { db } from "@/db/db";
 import { machinesTable } from "@/db/schema";
+import { getCurrentPlanWithAuth } from "@/server/getCurrentPlan";
 import { auth } from "@clerk/nextjs";
 import { clerkClient } from "@clerk/nextjs/server";
 import { desc, eq, isNull, and } from "drizzle-orm";
@@ -19,6 +20,8 @@ async function MachineListServer() {
 
   const user = await clerkClient.users.getUser(userId);
 
+  const sub = await getCurrentPlanWithAuth();
+
   const machines = await db.query.machinesTable.findMany({
     orderBy: desc(machinesTable.updated_at),
     where:
@@ -31,6 +34,7 @@ async function MachineListServer() {
     <div className="w-full">
       {/* <div>Machines</div> */}
       <MachineList
+        sub={sub}
         data={machines}
         userMetadata={AccessType.parse(user.privateMetadata ?? {})}
       />

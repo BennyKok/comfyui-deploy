@@ -26,11 +26,11 @@ import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
 export function InsertModal<
   K extends ZodRawShape,
   Y extends UnknownKeysParam,
-  Z extends ZodObject<K, Y>
+  Z extends ZodObject<K, Y>,
 >(props: {
   tooltip?: string;
   disabled?: boolean;
-  title: string;
+  title: React.ReactNode;
   description: string;
   dialogClassName?: string;
   serverAction: (data: z.infer<Z>) => Promise<unknown>;
@@ -105,7 +105,7 @@ export function InsertModal<
 export function UpdateModal<
   K extends ZodRawShape,
   Y extends UnknownKeysParam,
-  Z extends ZodObject<K, Y>
+  Z extends ZodObject<K, Y>,
 >(props: {
   open?: boolean;
   setOpen?: (open: boolean) => void;
@@ -118,7 +118,7 @@ export function UpdateModal<
   serverAction: (
     data: z.infer<Z> & {
       id: string;
-    }
+    },
   ) => Promise<unknown>;
   formSchema: Z;
   fieldConfig?: FieldConfig<z.infer<Z>>;
@@ -165,7 +165,7 @@ export function UpdateModal<
               props.serverAction({
                 ...data,
                 id: props.data.id,
-              })
+              }),
             );
             setIsLoading(false);
             setOpen(false);
