@@ -235,9 +235,11 @@ export const columns: ColumnDef<Machine>[] = [
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
-                    buildMachine({
+                    callServerPromise(buildMachine({
                       id: machine.id,
-                    });
+                    }), {
+                      loadingText: "Starting machine build process"
+                    })
                   }}
                 >
                   Rebuild

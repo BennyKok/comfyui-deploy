@@ -2,7 +2,13 @@
 
 import { toast } from "sonner";
 
-export async function callServerPromise<T>(result: Promise<T>) {
+export async function callServerPromise<T>(result: Promise<T>, props?: {
+  loadingText: string
+}) {
+  let id: string | number
+  if (props?.loadingText) {
+    id = toast.loading(props.loadingText)
+  }
   return result
     .then((x) => {
       if ((x as { message: string })?.message !== undefined) {
@@ -15,5 +21,8 @@ export async function callServerPromise<T>(result: Promise<T>) {
     .catch((error) => {
       toast.error(error.message);
       return null;
+    }).finally(() => {
+      if (id != undefined)
+        toast.dismiss(id)
     });
 }
