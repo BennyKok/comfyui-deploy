@@ -36,6 +36,7 @@ export async function GET(req: Request) {
       orgId: orgId ?? null,
       plan: plan,
     },
+    allow_promotion_codes: true,
     client_reference_id: orgId ?? userId,
     customer_email: user.emailAddresses[0].emailAddress,
     mode: "subscription",
