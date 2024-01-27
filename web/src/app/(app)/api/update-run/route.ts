@@ -1,6 +1,7 @@
 import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { db } from "@/db/db";
 import {
+  WorkflowRunStatusSchema,
   userUsageTable,
   workflowRunOutputs,
   workflowRunsTable,
@@ -14,9 +15,8 @@ import { z } from "zod";
 
 const Request = z.object({
   run_id: z.string(),
-  status: z
-    .enum(["not-started", "running", "uploading", "success", "failed"])
-    .optional(),
+  status: WorkflowRunStatusSchema.optional(),
+  time: z.date().optional(),
   output_data: z.any().optional(),
 });
 
@@ -24,9 +24,27 @@ export async function POST(request: Request) {
   const [data, error] = await parseDataSafe(Request, request);
   if (!data || error) return error;
 
-  const { run_id, status, output_data } = data;
+  const { run_id, status, time, output_data } = data;
 
-  // console.log(run_id, status, output_data);
+  if (status == "started" && time != undefined) {
+    // It successfully started, update the started_at time
+    await db
+      .update(workflowRunsTable)
+      .set({
+        started_at: time,
+      })
+      .where(eq(workflowRunsTable.id, run_id));
+  }
+
+  if (status == "queued" && time != undefined) {
+    // It successfully started, update the started_at time
+    await db
+      .update(workflowRunsTable)
+      .set({
+        queued_at: time,
+      })
+      .where(eq(workflowRunsTable.id, run_id));
+  }
 
   if (output_data) {
     const workflow_run_output = await db.insert(workflowRunOutputs).values({
@@ -81,12 +99,6 @@ export async function POST(request: Request) {
       }
     }
   }
-
-  // const workflow_version = await db.query.workflowVersionTable.findFirst({
-  //   where: eq(workflowRunsTable.id, workflow_run[0].workflow_version_id),
-  // });
-
-  // revalidatePath(`./${workflow_version?.workflow_id}`);
 
   return NextResponse.json(
     {

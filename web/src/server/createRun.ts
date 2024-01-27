@@ -229,15 +229,6 @@ export const createRun = withServerPromise(
       throw e;
     }
 
-    // It successfully started, update the started_at time
-
-    await db
-      .update(workflowRunsTable)
-      .set({
-        started_at: new Date(),
-      })
-      .where(eq(workflowRunsTable.id, workflow_run[0].id));
-
     return {
       workflow_run_id: workflow_run[0].id,
       message: "Successful workflow run",

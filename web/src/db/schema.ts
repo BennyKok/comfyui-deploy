@@ -93,7 +93,7 @@ export const workflowVersionRelations = relations(
       fields: [workflowVersionTable.workflow_id],
       references: [workflowTable.id],
     }),
-  })
+  }),
 );
 
 export const workflowRunStatus = pgEnum("workflow_run_status", [
@@ -102,6 +102,8 @@ export const workflowRunStatus = pgEnum("workflow_run_status", [
   "uploading",
   "success",
   "failed",
+  "started",
+  "queued",
 ]);
 
 export const deploymentEnvironment = pgEnum("deployment_environment", [
@@ -115,6 +117,8 @@ export const workflowRunOrigin = pgEnum("workflow_run_origin", [
   "api",
   "public-share",
 ]);
+
+export const WorkflowRunStatusSchema = z.enum(workflowRunStatus.enumValues);
 
 export const WorkflowRunOriginSchema = z.enum(workflowRunOrigin.enumValues);
 export type WorkflowRunOriginType = z.infer<typeof WorkflowRunOriginSchema>;
@@ -142,7 +146,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
     () => workflowVersionTable.id,
     {
       onDelete: "set null",
-    }
+    },
   ),
   workflow_inputs:
     jsonb("workflow_inputs").$type<Record<string, string | number>>(),
@@ -158,7 +162,11 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   origin: workflowRunOrigin("origin").notNull().default("api"),
   status: workflowRunStatus("status").notNull().default("not-started"),
   ended_at: timestamp("ended_at"),
+  // comfy deploy run created time
   created_at: timestamp("created_at").defaultNow().notNull(),
+  // modal gpu cold start begin
+  queued_at: timestamp("queued_at"),
+  // modal gpu function actual start time
   started_at: timestamp("started_at"),
   gpu: machineGPUOptions("gpu"),
   machine_type: machinesType("machine_type"),
@@ -182,7 +190,7 @@ export const workflowRunRelations = relations(
       fields: [workflowRunsTable.workflow_id],
       references: [workflowTable.id],
     }),
-  })
+  }),
 );
 
 // We still want to keep the workflow run record.
@@ -206,7 +214,7 @@ export const workflowOutputRelations = relations(
       fields: [workflowRunOutputs.run_id],
       references: [workflowRunsTable.id],
     }),
-  })
+  }),
 );
 
 // when user delete, also delete all the workflow versions
@@ -239,7 +247,7 @@ export const snapshotType = z.object({
     z.object({
       hash: z.string(),
       disabled: z.boolean(),
-    })
+    }),
   ),
   file_custom_nodes: z.array(z.any()),
 });
@@ -254,7 +262,7 @@ export const showcaseMedia = z.array(
   z.object({
     url: z.string(),
     isCover: z.boolean().default(false),
-  })
+  }),
 );
 
 export const showcaseMediaNullable = z
@@ -262,7 +270,7 @@ export const showcaseMediaNullable = z
     z.object({
       url: z.string(),
       isCover: z.boolean().default(false),
-    })
+    }),
   )
   .nullable();
 
@@ -376,15 +384,10 @@ export const modelUploadType = pgEnum("model_upload_type", [
   "other",
 ]);
 
-// https://www.answeroverflow.com/m/1125106227387584552 
-const modelTypes = [
-  "checkpoint",
-  "lora",
-  "embedding",
-  "vae",
-] as const
+// https://www.answeroverflow.com/m/1125106227387584552
+const modelTypes = ["checkpoint", "lora", "embedding", "vae"] as const;
 export const modelType = pgEnum("model_type", modelTypes);
-export type modelEnumType = typeof modelTypes[number]
+export type modelEnumType = (typeof modelTypes)[number];
 
 export const modelTable = dbSchema.table("models", {
   id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -447,16 +450,13 @@ export const modelRelations = relations(modelTable, ({ one }) => ({
   }),
 }));
 
-export const modalVolumeRelations = relations(
-  userVolume,
-  ({ many, one }) => ({
-    model: many(modelTable),
-    user: one(usersTable, {
-      fields: [userVolume.user_id],
-      references: [usersTable.id],
-    }),
-  })
-);
+export const modalVolumeRelations = relations(userVolume, ({ many, one }) => ({
+  model: many(modelTable),
+  user: one(usersTable, {
+    fields: [userVolume.user_id],
+    references: [usersTable.id],
+  }),
+}));
 
 export const subscriptionPlan = pgEnum("subscription_plan", [
   "basic",
@@ -484,18 +484,15 @@ export const subscriptionStatusTable = dbSchema.table("subscription_status", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertCivitaiModelSchema = createInsertSchema(
-  modelTable,
-  {
-    civitai_url: (schema) =>
-      schema.civitai_url
-        .trim()
-        .url({ message: "URL required" })
-        .includes("civitai.com/models", {
-          message: "civitai.com/models link required",
-        }),
-  }
-);
+export const insertCivitaiModelSchema = createInsertSchema(modelTable, {
+  civitai_url: (schema) =>
+    schema.civitai_url
+      .trim()
+      .url({ message: "URL required" })
+      .includes("civitai.com/models", {
+        message: "civitai.com/models link required",
+      }),
+});
 
 export type UserType = InferSelectModel<typeof usersTable>;
 export type WorkflowType = InferSelectModel<typeof workflowTable>;
@@ -503,7 +500,5 @@ export type MachineType = InferSelectModel<typeof machinesTable>;
 export type WorkflowVersionType = InferSelectModel<typeof workflowVersionTable>;
 export type DeploymentType = InferSelectModel<typeof deploymentsTable>;
 export type ModelType = InferSelectModel<typeof modelTable>;
-export type UserVolumeType = InferSelectModel<
-  typeof userVolume
->;
+export type UserVolumeType = InferSelectModel<typeof userVolume>;
 export type UserUsageType = InferSelectModel<typeof userUsageTable>;
