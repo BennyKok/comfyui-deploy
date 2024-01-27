@@ -56,5 +56,5 @@ fly launch
 ```
 if not, run this instead
 ```
-fly deploy
+fly deploy -c "toml file"
 ```
