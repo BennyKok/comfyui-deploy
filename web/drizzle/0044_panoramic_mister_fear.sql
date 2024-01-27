@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_deploy"."models" ALTER COLUMN "is_public" SET DEFAULT true;

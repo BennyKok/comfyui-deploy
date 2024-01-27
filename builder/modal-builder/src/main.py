@@ -47,7 +47,8 @@ machine_id_websocket_dict = {}
 machine_id_status = {}
 
 fly_instance_id = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
-civitai_api_key = os.environ.get('FLY_ALLOC_ID', 'local').split('-')[0]
+civitai_api_key = os.environ.get('FLY_ALLOC_ID', 'local')
+public_model_volume_name = os.environ.get('PUBLIC_MODEL_VOLUME_NAME', 'local')
 
 
 class FlyReplayMiddleware(BaseHTTPMiddleware):
@@ -388,7 +389,7 @@ async def build_logic(item: Item):
         "name": item.name,
         "deploy_test": os.environ.get("DEPLOY_TEST_FLAG", "False"),
         "gpu": item.gpu,
-        "public_model_volume": "model-store",
+        "public_model_volume": public_model_volume_name,
         "private_model_volume": item.model_volume_name,
         "pip": list(pip_modules)
     }

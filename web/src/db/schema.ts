@@ -414,7 +414,7 @@ export const modelTable = dbSchema.table("models", {
   s3_url: text("s3_url"),
   user_url: text("client_url"),
 
-  is_public: boolean("is_public").notNull().default(false),
+  is_public: boolean("is_public").notNull().default(true),
   status: resourceUpload("status").notNull().default("started"),
   upload_machine_id: text("upload_machine_id"), // TODO: review if actually needed
   upload_type: modelUploadType("upload_type").notNull(),

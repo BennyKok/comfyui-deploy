@@ -90,7 +90,7 @@ export const columns: ColumnDef<ModelItemList>[] = [
           </span>
 
           {model.is_public
-            ? <Badge variant="green">Public</Badge>
+            ? <></>
             : <Badge variant="orange">Private</Badge>}
         </>
       );

@@ -90,11 +90,10 @@ export async function addModelVolume() {
     .values({
       user_id: userId,
       org_id: orgId,
-      volume_name: `checkpoints_${userId}`,
-      // created_at and updated_at will be set to current timestamp by default
-      disabled: false, // Default value
+      volume_name: `models_${orgId ? orgId: userId}`, // if orgid is avalible use as part of the volume name
+      disabled: false, 
     })
-    .returning(); // Returns the inserted row
+    .returning(); 
   return insertedVolume;
 }
 
@@ -121,7 +120,6 @@ export const addCivitaiModel = withServerPromise(
     const civitaiModelRes = await fetch(url)
       .then((x) => x.json())
       .then((a) => {
-        console.log(a);
         return CivitaiModelResponse.parse(a);
       });
 
