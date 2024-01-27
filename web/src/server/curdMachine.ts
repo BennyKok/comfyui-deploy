@@ -30,10 +30,10 @@ export async function getMachines() {
           : // make sure org_id is null
             and(
               eq(machinesTable.user_id, userId),
-              isNull(machinesTable.org_id)
+              isNull(machinesTable.org_id),
             ),
-        eq(machinesTable.disabled, false)
-      )
+        eq(machinesTable.disabled, false),
+      ),
     );
   return machines;
 }
@@ -50,10 +50,10 @@ export async function getMachineById(id: string) {
           ? eq(machinesTable.org_id, orgId)
           : and(
               eq(machinesTable.user_id, userId),
-              isNull(machinesTable.org_id)
+              isNull(machinesTable.org_id),
             ),
-        eq(machinesTable.id, id)
-      )
+        eq(machinesTable.id, id),
+      ),
     );
   return machines[0];
 }
@@ -70,7 +70,7 @@ export const addMachine = withServerPromise(
     });
     revalidatePath("/machines");
     return { message: "Machine Added" };
-  }
+  },
 );
 
 export const updateCustomMachine = withServerPromise(
@@ -121,7 +121,7 @@ export const updateCustomMachine = withServerPromise(
     }
 
     return { message: "Machine Updated" };
-  }
+  },
 );
 
 export const buildMachine = withServerPromise(
@@ -147,7 +147,7 @@ export const buildMachine = withServerPromise(
     // Perform custom build if there are changes
     await _buildMachine(datas[0], currentMachine);
     redirect(`/machines/${id}`);
-  }
+  },
 );
 
 export const addCustomMachine = withServerPromise(
@@ -174,12 +174,12 @@ export const addCustomMachine = withServerPromise(
     redirect(`/machines/${b.id}`);
     // revalidatePath("/machines");
     return { message: "Machine Building" };
-  }
+  },
 );
 
 async function _buildMachine(
   data: z.infer<typeof addCustomMachineSchema>,
-  b: MachineType
+  b: MachineType,
 ) {
   const headersList = headers();
 
@@ -244,7 +244,7 @@ export const updateMachine = withServerPromise(
     await db.update(machinesTable).set(data).where(eq(machinesTable.id, id));
     revalidatePath("/machines");
     return { message: "Machine Updated" };
-  }
+  },
 );
 
 export const deleteMachine = withServerPromise(
@@ -255,26 +255,33 @@ export const deleteMachine = withServerPromise(
 
     if (machine?.type === "comfy-deploy-serverless") {
       // Call remote builder to stop the app on modal
-      const result = await fetch(`${process.env.MODAL_BUILDER_URL!}/stop-app`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          machine_id: machine_id,
-        }),
-      });
+      // Only check for deletion error upon new migration
+      const newUpgradeDate = new Date("2024-01-27T14:24:23.737Z");
+      if (machine.created_at > newUpgradeDate) {
+        const result = await fetch(
+          `${process.env.MODAL_BUILDER_URL!}/stop-app`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              machine_id: machine_id,
+            }),
+          },
+        );
 
-      if (!result.ok) {
-        const error_log = await result.text();
-        throw new Error(`Error: ${result.statusText} ${error_log}`);
+        if (!result.ok) {
+          const error_log = await result.text();
+          throw new Error(`Error: ${result.statusText} ${error_log}`);
+        }
       }
     }
 
     await db.delete(machinesTable).where(eq(machinesTable.id, machine_id));
     revalidatePath("/machines");
     return { message: "Machine Deleted" };
-  }
+  },
 );
 
 export const disableMachine = withServerPromise(
@@ -287,7 +294,7 @@ export const disableMachine = withServerPromise(
       .where(eq(machinesTable.id, machine_id));
     revalidatePath("/machines");
     return { message: "Machine Disabled" };
-  }
+  },
 );
 
 export const enableMachine = withServerPromise(
@@ -300,5 +307,5 @@ export const enableMachine = withServerPromise(
       .where(eq(machinesTable.id, machine_id));
     revalidatePath("/machines");
     return { message: "Machine Enabled" };
-  }
+  },
 );
