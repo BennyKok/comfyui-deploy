@@ -115,16 +115,18 @@ export const columns: ColumnDef<Machine>[] = [
               {row.original.status} <LoadingIcon />
             </Badge>
           )}
-          {!row.original.disabled && row.original.status && row.original.status != "building" && (
-            <Badge
-              variant={
-                row.original.status == "ready" ? "success" : "destructive"
-              }
-              className="capitalize"
-            >
-              {row.original.status}
-            </Badge>
-          )}
+          {!row.original.disabled &&
+            row.original.status &&
+            row.original.status != "building" && (
+              <Badge
+                variant={
+                  row.original.status == "ready" ? "success" : "destructive"
+                }
+                className="capitalize"
+              >
+                {row.original.status}
+              </Badge>
+            )}
         </div>
         // </a>
       );
@@ -194,7 +196,9 @@ export const columns: ColumnDef<Machine>[] = [
             <DropdownMenuItem
               className="text-destructive"
               onClick={async () => {
-                callServerPromise(deleteMachine(machine.id));
+                callServerPromise(deleteMachine(machine.id), {
+                  loadingText: "Deleting machine",
+                });
               }}
             >
               Delete Machine
@@ -202,7 +206,9 @@ export const columns: ColumnDef<Machine>[] = [
             {machine.disabled ? (
               <DropdownMenuItem
                 onClick={async () => {
-                  callServerPromise(enableMachine(machine.id));
+                  callServerPromise(enableMachine(machine.id), {
+                    loadingText: "Enabling machine",
+                  });
                 }}
               >
                 Enable Machine
@@ -211,7 +217,9 @@ export const columns: ColumnDef<Machine>[] = [
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={async () => {
-                  callServerPromise(disableMachine(machine.id));
+                  callServerPromise(disableMachine(machine.id), {
+                    loadingText: "Disabling machine",
+                  });
                 }}
               >
                 Disable Machine
@@ -219,27 +227,33 @@ export const columns: ColumnDef<Machine>[] = [
             )}
             {machine.type === "comfy-deploy-serverless" && (
               <>
-                <DropdownMenuItem onClick={async () => {
-                  const id = toast.loading("Getting machine url...")
-                  const url = await callServerPromise(
-                    editWorkflowOnMachine(machine.id),
-                  );
-                  if (url && typeof url !== "object") {
-                    window.open(url, "_blank");
-                  } else if (url && typeof url === "object" && url.error) {
-                    console.error(url.error);
-                  }
-                  toast.dismiss(id)
-                }}>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const url = await callServerPromise(
+                      editWorkflowOnMachine(machine.id),
+                      {
+                        loadingText: "Getting machine url...",
+                      },
+                    );
+                    if (url && typeof url !== "object") {
+                      window.open(url, "_blank");
+                    } else if (url && typeof url === "object" && url.error) {
+                      console.error(url.error);
+                    }
+                  }}
+                >
                   Open ComfyUI
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
-                    callServerPromise(buildMachine({
-                      id: machine.id,
-                    }), {
-                      loadingText: "Starting machine build process"
-                    })
+                    callServerPromise(
+                      buildMachine({
+                        id: machine.id,
+                      }),
+                      {
+                        loadingText: "Starting machine build process",
+                      },
+                    );
                   }}
                 >
                   Rebuild
@@ -250,57 +264,55 @@ export const columns: ColumnDef<Machine>[] = [
               Edit
             </DropdownMenuItem>
           </DropdownMenuContent>
-          {
-            machine.type === "comfy-deploy-serverless" ? (
-              <UpdateModal
-                dialogClassName="sm:max-w-[600px]"
-                data={machine}
-                open={open}
-                setOpen={setOpen}
-                title="Edit"
-                description="Edit machines"
-                serverAction={updateCustomMachine}
-                formSchema={addCustomMachineSchema}
-                fieldConfig={{
-                  type: {
-                    fieldType: "fallback",
-                    inputProps: {
-                      disabled: true,
-                      showLabel: false,
-                      type: "hidden",
-                    },
+          {machine.type === "comfy-deploy-serverless" ? (
+            <UpdateModal
+              dialogClassName="sm:max-w-[600px]"
+              data={machine}
+              open={open}
+              setOpen={setOpen}
+              title="Edit"
+              description="Edit machines"
+              serverAction={updateCustomMachine}
+              formSchema={addCustomMachineSchema}
+              fieldConfig={{
+                type: {
+                  fieldType: "fallback",
+                  inputProps: {
+                    disabled: true,
+                    showLabel: false,
+                    type: "hidden",
                   },
-                  snapshot: {
-                    fieldType: "snapshot",
+                },
+                snapshot: {
+                  fieldType: "snapshot",
+                },
+                models: {
+                  fieldType: "models",
+                },
+                gpu: {
+                  inputProps: {},
+                },
+              }}
+            />
+          ) : (
+            <UpdateModal
+              data={machine}
+              open={open}
+              setOpen={setOpen}
+              title="Edit"
+              description="Edit machines"
+              serverAction={updateMachine}
+              formSchema={addMachineSchema}
+              fieldConfig={{
+                auth_token: {
+                  inputProps: {
+                    type: "password",
                   },
-                  models: {
-                    fieldType: "models",
-                  },
-                  gpu: {
-                    inputProps: {},
-                  },
-                }}
-              />
-            ) : (
-              <UpdateModal
-                data={machine}
-                open={open}
-                setOpen={setOpen}
-                title="Edit"
-                description="Edit machines"
-                serverAction={updateMachine}
-                formSchema={addMachineSchema}
-                fieldConfig={{
-                  auth_token: {
-                    inputProps: {
-                      type: "password",
-                    },
-                  },
-                }}
-              />
-            )
-          }
-        </DropdownMenu >
+                },
+              }}
+            />
+          )}
+        </DropdownMenu>
       );
     },
   },
@@ -315,7 +327,7 @@ export function MachineList({
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -356,7 +368,7 @@ export function MachineList({
             dialogClassName="sm:max-w-[600px]"
             disabled={
               data.some(
-                (machine) => machine.type === "comfy-deploy-serverless"
+                (machine) => machine.type === "comfy-deploy-serverless",
               ) && !userMetadata.betaFeaturesAccess
             }
             tooltip={
@@ -418,9 +430,9 @@ export function MachineList({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   );
                 })}
@@ -438,7 +450,7 @@ export function MachineList({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
