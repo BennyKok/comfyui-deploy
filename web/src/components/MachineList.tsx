@@ -40,6 +40,7 @@ import {
   updateCustomMachine,
   updateMachine,
 } from "@/server/curdMachine";
+import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -57,6 +58,7 @@ import {
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { z } from "zod";
 
 export type Machine = MachineType;
@@ -218,15 +220,22 @@ export const columns: ColumnDef<Machine>[] = [
             {machine.type === "comfy-deploy-serverless" && (
               <>
                 <DropdownMenuItem asChild>
-                  <a
-                    target="_blank"
-                    href={machine.endpoint.replace(
-                      "comfyui-api",
-                      "comfyui-app"
-                    )} rel="noreferrer"
+                  <button
+                    onClick={async () => {
+                      const id = toast.loading("Getting machine url...")
+                      const url = await callServerPromise(
+                        editWorkflowOnMachine(machine.id),
+                      );
+                      if (url && typeof url !== "object") {
+                        window.open(url, "_blank");
+                      } else if (url && typeof url === "object" && url.error) {
+                        console.error(url.error);
+                      }
+                      toast.dismiss(id)
+                    }}
                   >
                     Open ComfyUI
-                  </a>
+                  </button>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {

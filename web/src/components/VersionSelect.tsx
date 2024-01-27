@@ -402,7 +402,7 @@ export function OpenEditButton({
         onClick={async () => {
           setIsLoading(true);
           const url = await callServerPromise(
-            editWorkflowOnMachine(workflow_version_id, machine),
+            editWorkflowOnMachine(machine, workflow_version_id),
           );
           if (url && typeof url !== "object") {
             window.open(url, "_blank");

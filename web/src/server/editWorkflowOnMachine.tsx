@@ -9,7 +9,7 @@ import "server-only";
 import { getUrlServerSide } from "./getUrlServerSide";
 
 export const editWorkflowOnMachine = withServerPromise(
-  async (workflow_version_id: string, machine_id: string) => {
+  async (machine_id: string, workflow_version_id?: string) => {
     const { userId, orgId } = auth();
 
     const domain = getUrlServerSide();
@@ -37,10 +37,18 @@ export const editWorkflowOnMachine = withServerPromise(
       endpoint = machine.endpoint.replace("comfyui-api", "comfyui-app");
     }
 
-    return `${endpoint}?workflow_version_id=${encodeURIComponent(
-      workflow_version_id,
-    )}&auth_token=${encodeURIComponent(token)}&org_display=${encodeURIComponent(
-      userName,
-    )}&origin=${encodeURIComponent(domain)}`;
+    const params = {
+      workflow_version_id: workflow_version_id,
+      auth_token: token,
+      org_display: userName,
+      origin: domain,
+    };
+
+    const queryString = Object.entries(params)
+      .filter(([key, value]) => value !== undefined)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value as string)}`)
+      .join('&');
+
+    return `${endpoint}?${queryString}`;
   },
 );
