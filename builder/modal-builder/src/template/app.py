@@ -1,14 +1,14 @@
 from config import config
 import modal
-from modal import Image, Mount, web_endpoint, Stub, asgi_app 
+from modal import Image, Mount, web_endpoint, Stub, asgi_app, method, enter, exit
 import json
 import urllib.request
 import urllib.parse
 from pydantic import BaseModel
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from volume_setup import volumes
-
+from datetime import datetime
 # deploy_test = False
 
 import os
@@ -158,89 +158,106 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-@stub.function(image=target_image, gpu=config["gpu"]
-   ,volumes=volumes 
-)
-def run(input: Input):
-    import subprocess
-    import time
-    # Make sure that the ComfyUI API is available
-    print(f"comfy-modal - check server")
+@stub.cls(image=target_image, gpu=config["gpu"] ,volumes=volumes, timeout=60 * 10, container_idle_timeout=60 * 5)
+class ComfyDeployRunner:
 
-    command = ["python", "main.py",
-               "--disable-auto-launch", "--disable-metadata"]
+    @enter()
+    def setup(self):
+        import subprocess
+        import time
+        # Make sure that the ComfyUI API is available
+        print(f"comfy-modal - check server")
 
-    server_process = subprocess.Popen(command, cwd="/comfyui")
+        command = ["python", "main.py",
+                "--disable-auto-launch", "--disable-metadata"]
 
-    check_server(
-        f"http://{COMFY_HOST}",
-        COMFY_API_AVAILABLE_MAX_RETRIES,
-        COMFY_API_AVAILABLE_INTERVAL_MS,
-    )
+        self.server_process = subprocess.Popen(command, cwd="/comfyui")
 
-    job_input = input
+        check_server(
+            f"http://{COMFY_HOST}",
+            COMFY_API_AVAILABLE_MAX_RETRIES,
+            COMFY_API_AVAILABLE_INTERVAL_MS,
+        )
 
-    # print(f"comfy-modal - got input {job_input}")
+    @exit()
+    def cleanup(self, exc_type, exc_value, traceback):
+        self.server_process.terminate()
 
-    # Queue the workflow
-    try:
-        # job_input is the json input
-        queued_workflow = queue_workflow_comfy_deploy(
-            job_input)  # queue_workflow(workflow)
-        prompt_id = queued_workflow["prompt_id"]
-        print(f"comfy-modal - queued workflow with ID {prompt_id}")
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return {"error": f"Error queuing workflow: {str(e)}"}
+    @method()
+    def run(self, input: Input):
+        data = json.dumps({
+            "run_id": input.prompt_id,
+            "status": "started",
+            "time": datetime.now().isoformat()
+        }).encode('utf-8')
+        req = urllib.request.Request(input.status_endpoint, data=data, method='POST')
+        urllib.request.urlopen(req)
 
-    # Poll for completion
-    print(f"comfy-modal - wait until image generation is complete")
-    retries = 0
-    status = ""
-    try:
-        print("getting request")
-        while retries < COMFY_POLLING_MAX_RETRIES:
-            status_result = check_status(prompt_id=prompt_id)
-            # history = get_history(prompt_id)
+        job_input = input
 
-            # Exit the loop if we have found the history
-            # if prompt_id in history and history[prompt_id].get("outputs"):
-            #     break
+        try:
+            queued_workflow = queue_workflow_comfy_deploy(job_input)  # queue_workflow(workflow)
+            prompt_id = queued_workflow["prompt_id"]
+            print(f"comfy-modal - queued workflow with ID {prompt_id}")
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return {"error": f"Error queuing workflow: {str(e)}"}
 
-            # Exit the loop if we have found the status both success or failed
-            if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
-                status = status_result['status']
-                print(status)
-                break
+        # Poll for completion
+        print(f"comfy-modal - wait until image generation is complete")
+        retries = 0
+        status = ""
+        try:
+            print("getting request")
+            while retries < COMFY_POLLING_MAX_RETRIES:
+                status_result = check_status(prompt_id=prompt_id)
+                # history = get_history(prompt_id)
+
+                # Exit the loop if we have found the history
+                # if prompt_id in history and history[prompt_id].get("outputs"):
+                #     break
+
+                # Exit the loop if we have found the status both success or failed
+                if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
+                    status = status_result['status']
+                    print(status)
+                    break
+                else:
+                    # Wait before trying again
+                    time.sleep(COMFY_POLLING_INTERVAL_MS / 1000)
+                    retries += 1
             else:
-                # Wait before trying again
-                time.sleep(COMFY_POLLING_INTERVAL_MS / 1000)
-                retries += 1
-        else:
-            return {"error": "Max retries reached while waiting for image generation"}
-    except Exception as e:
-        return {"error": f"Error waiting for image generation: {str(e)}"}
+                return {"error": "Max retries reached while waiting for image generation"}
+        except Exception as e:
+            return {"error": f"Error waiting for image generation: {str(e)}"}
 
-    print(f"comfy-modal - Finished, turning off")
-    server_process.terminate()
+        print(f"comfy-modal - Finished, turning off")
 
-    # Get the generated image and return it as URL in an AWS bucket or as base64
-    # images_result = process_output_images(history[prompt_id].get("outputs"), job["id"])
-    # result = {**images_result, "refresh_worker": REFRESH_WORKER}
-    result = {"status": status}
+        result = {"status": status}
 
-    return result
-    print("Running remotely on Modal!")
-
+        return result
+    
 
 @web_app.post("/run")
-async def bar(request_input: RequestInput):
-    # print(request_input)
+async def post_run(request_input: RequestInput):
     if not deploy_test:
-        return run.remote(request_input.input)
-    # pass
+        # print(request_input.input.prompt_id, request_input.input.status_endpoint)
+        data = json.dumps({
+            "run_id": request_input.input.prompt_id,
+            "status": "queued",
+            "time": datetime.now().isoformat()
+        }).encode('utf-8')
+        req = urllib.request.Request(request_input.input.status_endpoint, data=data, method='POST')
+        urllib.request.urlopen(req)
 
+        model = ComfyDeployRunner()
+        call = model.run.spawn(request_input.input)
+
+        # call = run.spawn()
+        return {"call_id": call.object_id}
+    
+    return {"call_id": None}
 
 @stub.function(image=image
    ,volumes=volumes
