@@ -16,7 +16,6 @@ docker build -t bennykok/comfydeploy-builder:dev . && docker run --env-file .env
 ```
 
 ## Before Deploy to Fly.io
-there are 2 `toml` files one is for `preview` and the other is for `prod`
 ## Fly.io installation
 
 ### Mac/Liunx
@@ -42,6 +41,9 @@ fly secrets set MODAL_TOKEN_SECRET=
 ```
 
 ## To deploy
+
+We have 2 `toml` files one for `production` and the other for `staging`
+it will default to `staging` if you don't include the `-c` flag to choose your config file
 
 ```
 // model-builder/fly.toml
