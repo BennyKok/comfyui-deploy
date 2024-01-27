@@ -16,6 +16,7 @@ docker build -t bennykok/comfydeploy-builder:dev . && docker run --env-file .env
 ```
 
 ## Before Deploy to Fly.io
+there are 2 `toml` files one is for `preview` and the other is for `prod`
 ## Fly.io installation
 
 ### Mac/Liunx
