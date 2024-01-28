@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { CivitaiModelRegistry } from "./CivitaiModelRegistry";
 import { ComfyUIManagerModelRegistry } from "./ComfyUIManagerModelRegistry";
+import { ExternalLink } from "lucide-react";
 
 export default function AutoFormModelsPicker({
   label,
@@ -38,6 +39,7 @@ export default function AutoFormModelsPicker({
           {isRequired && <span className="text-destructive"> *</span>}
         </FormLabel>
       )}
+
       <FormControl>
         <Suspense fallback={<LoadingIcon />}>
           <ModelPickerView field={field} />
@@ -46,6 +48,21 @@ export default function AutoFormModelsPicker({
       {fieldConfigItem.description && (
         <FormDescription>{fieldConfigItem.description}</FormDescription>
       )}
+      <FormDescription>
+        {" "}
+        <div className="text-sm">
+          Models are moving to{" "}
+          <a
+            href="/storage"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 underline"
+          >
+            <ExternalLink size={12} />
+            Storage
+          </a>
+        </div>
+      </FormDescription>
       <FormMessage />
     </FormItem>
   );
@@ -58,12 +75,12 @@ function ModelPickerView({
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
         <AccordionTrigger className="text-sm">
-          Models (ComfyUI Manager & Civitai)
+          Models (ComfyUI Manager)
         </AccordionTrigger>
         <AccordionContent>
           <div className="flex gap-2 flex-col px-1">
             <ComfyUIManagerModelRegistry field={field} />
-            <CivitaiModelRegistry field={field} />
+            {/* <CivitaiModelRegistry field={field} /> */}
             {/* <span>{field.value.length} selected</span> */}
             {field.value && (
               <ScrollArea className="w-full bg-gray-100 mx-auto rounded-lg mt-2">
