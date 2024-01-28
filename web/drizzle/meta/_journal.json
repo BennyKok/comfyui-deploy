@@ -323,6 +323,20 @@
       "when": 1706336448134,
       "tag": "0045_careful_cerise",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1706383154642,
+      "tag": "0046_complex_mentallo",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1706384528895,
+      "tag": "0047_gifted_starbolt",
+      "breakpoints": true
     }
   ]
 }

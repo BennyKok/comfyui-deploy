@@ -42,7 +42,7 @@ def download_model(volume_name, download_config):
 
     volume_base_path = vol_name_to_path[volume_name]
     model_store_path = os.path.join(volume_base_path, folder_path)
-    modified_download_url = download_url + ("&" if "?" in download_url else "?") + "token=" + civitai_key
+    modified_download_url = download_url + ("&" if "?" in download_url else "?") + "token=" + civitai_key # civitai requires auth
     print('downloading', modified_download_url)
 
     subprocess.run(["wget", modified_download_url , "--content-disposition", "-P", model_store_path])

@@ -1,5 +1,8 @@
-import { insertCivitaiModelSchema } from "@/db/schema";
+import { z } from "zod";
+import { modelTypes } from "@/db/schema";
 
-export const addCivitaiModelSchema = insertCivitaiModelSchema.pick({
-  civitai_url: true,
+export const downloadUrlModelSchema = z.object({
+  url: z.string().url(),
+  model_type: z.enum(modelTypes).default("checkpoint")
 });
+

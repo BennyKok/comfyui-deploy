@@ -380,12 +380,18 @@ export const resourceUpload = pgEnum("resource_upload", [
 
 export const modelUploadType = pgEnum("model_upload_type", [
   "civitai",
-  "huggingface",
+  "download-url",
+  "huggingface", // remove?
   "other",
 ]);
 
-// https://www.answeroverflow.com/m/1125106227387584552
-const modelTypes = ["checkpoint", "lora", "embedding", "vae"] as const;
+// https://www.answeroverflow.com/m/1125106227387584552 
+export const modelTypes = [
+  "checkpoint",
+  "lora",
+  "embedding",
+  "vae",
+] as const
 export const modelType = pgEnum("model_type", modelTypes);
 export type modelEnumType = (typeof modelTypes)[number];
 
@@ -399,8 +405,7 @@ export const modelTable = dbSchema.table("models", {
     .notNull()
     .references(() => userVolume.id, {
       onDelete: "cascade",
-    })
-    .notNull(),
+    }),
 
   model_name: text("model_name"),
   folder_path: text("folder_path"), // in volume
@@ -413,8 +418,10 @@ export const modelTable = dbSchema.table("models", {
     z.infer<typeof CivitaiModelResponse>
   >(),
 
+  // for our own storage
   hf_url: text("hf_url"),
   s3_url: text("s3_url"),
+
   user_url: text("client_url"),
 
   is_public: boolean("is_public").notNull().default(true),
@@ -482,16 +489,6 @@ export const subscriptionStatusTable = dbSchema.table("subscription_status", {
   cancel_at_period_end: boolean("cancel_at_period_end").default(false),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertCivitaiModelSchema = createInsertSchema(modelTable, {
-  civitai_url: (schema) =>
-    schema.civitai_url
-      .trim()
-      .url({ message: "URL required" })
-      .includes("civitai.com/models", {
-        message: "civitai.com/models link required",
-      }),
 });
 
 export type UserType = InferSelectModel<typeof usersTable>;

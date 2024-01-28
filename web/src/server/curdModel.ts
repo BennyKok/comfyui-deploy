@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs";
 import {
+  modelEnumType,
   modelTable,
   ModelType,
   userVolume,
@@ -11,7 +12,7 @@ import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
 import type { z } from "zod";
 import { headers } from "next/headers";
-import { addCivitaiModelSchema } from "./addCivitaiModelSchema";
+import { downloadUrlModelSchema } from "./addCivitaiModelSchema";
 import { and, eq, isNull } from "drizzle-orm";
 import { CivitaiModelResponse, getModelTypeDetails } from "@/types/civitai";
 
@@ -90,10 +91,10 @@ export async function addModelVolume() {
     .values({
       user_id: userId,
       org_id: orgId,
-      volume_name: `models_${orgId ? orgId: userId}`, // if orgid is avalible use as part of the volume name
-      disabled: false, 
+      volume_name: `models_${orgId ? orgId : userId}`, // if orgid is avalible use as part of the volume name
+      disabled: false,
     })
-    .returning(); 
+    .returning();
   return insertedVolume;
 }
 
@@ -109,14 +110,150 @@ function getUrl(civitai_url: string) {
   return { url: baseUrl + modelId, modelVersionId };
 }
 
+// Helper function to make a HEAD request and follow redirects
+async function fetchFinalUrl(
+  url: string,
+): Promise<{ finalUrl: string; dispositionFilename?: string }> {
+  console.log("fetching");
+  const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+  if (!response.ok) {
+    console.log("response not ok");
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  const contentDisposition = response.headers.get("content-disposition");
+  let filename;
+  if (contentDisposition) {
+    const matches = contentDisposition.match(
+      /filename\*?=['"]?(?:UTF-8'')?([^;'"\n]*)['"]?;?/i,
+    );
+    filename = matches && matches[1]
+      ? decodeURIComponent(matches[1])
+      : undefined;
+  }
+  return { finalUrl: response.url, dispositionFilename: filename };
+}
+
+// The main function for validation
+export const addModel = withServerPromise(
+  async (data: z.infer<typeof downloadUrlModelSchema>) => {
+    const { url } = data;
+
+    if (url.includes("civitai.com/models/")) {
+      // Make a HEAD request to check for 200 OK
+      const response = await fetch(url, { method: "HEAD" });
+      if (!response.ok) {
+        createModelErrorRecord(
+          url,
+          `civitai gave non-ok response`,
+          "civitai",
+          data.model_type,
+        );
+      }
+      addCivitaiModel(data);
+    } else {
+      const { finalUrl, dispositionFilename } = await fetchFinalUrl(url);
+      console.log("finished fetching");
+      console.log(finalUrl, dispositionFilename);
+
+      if (!dispositionFilename) {
+        console.log("no file name");
+        createModelErrorRecord(
+          url,
+          `Could not find a filename from resolved Url: ${finalUrl}`,
+          "download-url",
+          data.model_type,
+        );
+        return;
+      }
+
+      const validExtensions = [".ckpt", ".pt", ".bin", ".pth", ".safetensors"];
+      const extension = dispositionFilename.slice(
+        dispositionFilename.lastIndexOf("."),
+      );
+      if (!validExtensions.includes(extension)) {
+        console.log("invalid extension");
+        createModelErrorRecord(
+          url,
+          `file ext ${extension} is invalid. Valid extensions: ${validExtensions}`,
+          "download-url",
+          data.model_type,
+        );
+      }
+      addModelDownloadUrl(data, dispositionFilename);
+    }
+  },
+);
+
+export const addModelDownloadUrl = withServerPromise(
+  async (data: z.infer<typeof downloadUrlModelSchema>, filename: string) => {
+    console.log("adding model download");
+    const { userId, orgId } = auth();
+    if (!userId) return { error: "No user id" };
+    const volumes = await retrieveModelVolumes();
+
+    const a = await db
+      .insert(modelTable)
+      .values({
+        user_id: userId,
+        org_id: orgId,
+        upload_type: "download-url",
+        model_name: filename,
+        user_url: data.url,
+        user_volume_id: volumes[0].id,
+        model_type: data.model_type,
+      })
+      .returning();
+
+    const b = a[0];
+    console.log("download url about to upload");
+    await uploadModel(data, b, volumes[0]);
+  },
+);
+
+export const getCivitaiModelRes = async (civitaiUrl: string) => {
+  const { url, modelVersionId } = getUrl(civitaiUrl);
+  const civitaiModelRes = await fetch(url)
+    .then((x) => x.json())
+    .then((a) => {
+      return CivitaiModelResponse.parse(a);
+    });
+  return { civitaiModelRes, url, modelVersionId };
+};
+
+const createModelErrorRecord = async (
+  url: string,
+  errorMessage: string,
+  upload_type: "civitai" | "download-url",
+  model_type: modelEnumType,
+) => {
+  const { userId, orgId } = auth();
+  if (!userId) return { error: "No user id" };
+  const volumes = await retrieveModelVolumes();
+
+  const a = await db
+    .insert(modelTable)
+    .values({
+      user_id: userId,
+      org_id: orgId,
+      user_volume_id: volumes[0].id,
+      upload_type: "civitai",
+      model_type,
+      civitai_url: upload_type === "civitai" ? url : undefined,
+      user_url: upload_type === "download-url" ? url : undefined,
+      error_log: errorMessage,
+      status: "failed",
+    })
+    .returning();
+  return a;
+};
+
 export const addCivitaiModel = withServerPromise(
-  async (data: z.infer<typeof addCivitaiModelSchema>) => {
+  async (data: z.infer<typeof downloadUrlModelSchema>) => {
     const { userId, orgId } = auth();
 
-    if (!data.civitai_url) return { error: "no civitai_url" };
     if (!userId) return { error: "No user id" };
 
-    const { url, modelVersionId } = getUrl(data?.civitai_url);
+    const { url, modelVersionId } = getUrl(data.url);
     const civitaiModelRes = await fetch(url)
       .then((x) => x.json())
       .then((a) => {
@@ -142,18 +279,17 @@ export const addCivitaiModel = withServerPromise(
       selectedModelVersionId = selectedModelVersion?.id.toString();
     }
 
-    const userVolume = await getModelVolumes();
-    let cVolume;
-    if (userVolume.length === 0) {
-      const volume = await addModelVolume();
-      cVolume = volume[0];
-    } else {
-      cVolume = userVolume[0];
-    }
+    const volumes = await retrieveModelVolumes();
 
     const model_type = getModelTypeDetails(civitaiModelRes.type);
     if (!model_type) {
-      return 
+      createModelErrorRecord(
+        url,
+        `Civitai model type ${civitaiModelRes.type} is not currently supported`,
+        "civitai",
+        data.model_type,
+      );
+      return;
     }
 
     const a = await db
@@ -165,18 +301,17 @@ export const addCivitaiModel = withServerPromise(
         model_name: selectedModelVersion.files[0].name,
         civitai_id: civitaiModelRes.id.toString(),
         civitai_version_id: selectedModelVersionId,
-        civitai_url: data.civitai_url,
+        civitai_url: data.url, // TODO: need to confirm
         civitai_download_url: selectedModelVersion.files[0].downloadUrl,
         civitai_model_response: civitaiModelRes,
-        user_volume_id: cVolume.id,
-        model_type, 
-        updated_at: new Date(),
+        user_volume_id: volumes[0].id,
+        model_type,
       })
       .returning();
 
     const b = a[0];
 
-    await uploadModel(data, b, cVolume);
+    await uploadModel(data, b, volumes[0]);
   },
 );
 
@@ -216,7 +351,7 @@ export const addCivitaiModel = withServerPromise(
 // );
 
 async function uploadModel(
-  data: z.infer<typeof addCivitaiModelSchema>,
+  data: z.infer<typeof downloadUrlModelSchema>,
   c: ModelType,
   v: UserVolumeType,
 ) {
@@ -238,7 +373,9 @@ async function uploadModel(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        download_url: c.civitai_download_url,
+        download_url: c.upload_type === "civitai"
+          ? c.civitai_download_url
+          : c.user_url,
         volume_name: v.volume_name,
         volume_id: v.id,
         model_id: c.id,
@@ -253,7 +390,6 @@ async function uploadModel(
     await db
       .update(modelTable)
       .set({
-        ...data,
         status: "failed",
         error_log: error_log,
       })

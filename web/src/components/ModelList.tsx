@@ -32,8 +32,8 @@ import {
 } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import * as React from "react";
-import { addCivitaiModel } from "@/server/curdModel";
-import { addCivitaiModelSchema } from "@/server/addCivitaiModelSchema";
+import { addModel } from "@/server/curdModel";
+import { downloadUrlModelSchema } from "@/server/addCivitaiModelSchema";
 import { modelEnumType } from "@/db/schema";
 
 export type ModelItemList = NonNullable<
@@ -89,9 +89,7 @@ export const columns: ColumnDef<ModelItemList>[] = [
             {row.original.model_name}
           </span>
 
-          {model.is_public
-            ? <></>
-            : <Badge variant="orange">Private</Badge>}
+          {model.is_public ? <></> : <Badge variant="orange">Private</Badge>}
         </>
       );
     },
@@ -298,16 +296,14 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
           <InsertModal
             dialogClassName="sm:max-w-[600px]"
             disabled={
-              false
-              // TODO: limitations based on plan
+              false // TODO: limitations based on plan
             }
-            tooltip={"Add models using their civitai url!"}
-            title="Add a Civitai Model"
-            description="Pick a model from civitai"
-            serverAction={addCivitaiModel}
-            formSchema={addCivitaiModelSchema}
+            title="Add a Model"
+            description="using a link to a model"
+            serverAction={addModel}
+            formSchema={downloadUrlModelSchema}
             fieldConfig={{
-              civitai_url: {
+              url: {
                 fieldType: "fallback",
                 inputProps: { required: true },
                 description: (
@@ -320,9 +316,18 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
                     >
                       civitai.com
                     </a>{" "}
-                    and place it's url here
+                    or a url we can download a model from
                   </>
                 ),
+              },
+              model_type: {
+                fieldType: "select",
+                inputProps: { required: true },
+                description: (
+                  <>
+                    We'll figure this out if you pick a civitai model
+                  </>
+                ), 
               },
             }}
           />
