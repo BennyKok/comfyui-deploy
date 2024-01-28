@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { getAllUserModels as getAllUserModels } from "@/server/getAllUserModel";
+import type { getAllUserModels } from "@/server/getAllUserModel";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -46,8 +46,10 @@ export const columns: ColumnDef<ModelItemList>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")}
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -79,12 +81,10 @@ export const columns: ColumnDef<ModelItemList>[] = [
       const model = row.original;
       return (
         <>
-          {
-            /*<a
+          {/*<a
           className="hover:underline flex gap-2"
           href={`/storage/${model.id}`} // TODO
-        >*/
-          }
+        >*/}
           <span className="truncate max-w-[200px]">
             {row.original.model_name}
           </span>
@@ -110,9 +110,13 @@ export const columns: ColumnDef<ModelItemList>[] = [
     cell: ({ row }) => {
       return (
         <Badge
-          variant={row.original.status === "failed"
-            ? "red"
-            : (row.original.status === "started" ? "yellow" : "green")}
+          variant={
+            row.original.status === "failed"
+              ? "red"
+              : row.original.status === "started"
+                ? "yellow"
+                : "green"
+          }
         >
           {row.original.status}
         </Badge>
@@ -184,10 +188,10 @@ export const columns: ColumnDef<ModelItemList>[] = [
     },
     cell: ({ row }) => {
       const model_type_map: Record<modelEnumType, any> = {
-        "checkpoint": "amber",
-        "lora": "green",
-        "embedding": "violet",
-        "vae": "teal",
+        checkpoint: "amber",
+        lora: "green",
+        embedding: "violet",
+        vae: "teal",
       };
 
       function getBadgeColor(modelType: modelEnumType) {
@@ -257,9 +261,8 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
-  const [columnVisibility, setColumnVisibility] = React.useState<
-    VisibilityState
-  >({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -286,10 +289,12 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
       <div className="flex flex-row w-full items-center py-4">
         <Input
           placeholder="Filter workflows..."
-          value={(table.getColumn("model_name")?.getFilterValue() as string) ??
-            ""}
+          value={
+            (table.getColumn("model_name")?.getFilterValue() as string) ?? ""
+          }
           onChange={(event) =>
-            table.getColumn("model_name")?.setFilterValue(event.target.value)}
+            table.getColumn("model_name")?.setFilterValue(event.target.value)
+          }
           className="max-w-sm"
         />
         <div className="ml-auto flex gap-2">
@@ -304,7 +309,7 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
             formSchema={downloadUrlModelSchema}
             fieldConfig={{
               url: {
-                fieldType: "fallback",
+                fieldType: "modelUrlPicker",
                 inputProps: { required: true },
                 description: (
                   <>
@@ -313,6 +318,7 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
                       href="https://www.civitai.com/models"
                       target="_blank"
                       className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                      rel="noreferrer"
                     >
                       civitai.com
                     </a>{" "}
@@ -324,10 +330,8 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
                 fieldType: "select",
                 inputProps: { required: true },
                 description: (
-                  <>
-                    We'll figure this out if you pick a civitai model
-                  </>
-                ), 
+                  <>We'll figure this out if you pick a civitai model</>
+                ),
               },
             }}
           />
@@ -341,10 +345,12 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   );
                 })}
@@ -352,34 +358,32 @@ export function ModelList({ data }: { data: ModelItemList[] }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length
-              ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )
-              : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )}
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </ScrollArea>

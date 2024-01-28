@@ -9,6 +9,7 @@ import AutoFormSwitch from "./fields/switch";
 import AutoFormTextarea from "./fields/textarea";
 import AutoFormModelsPicker from "@/components/custom-form/model-picker";
 import AutoFormSnapshotPicker from "@/components/custom-form/snapshot-picker";
+import AutoFormModelsPickerUrl from "@/components/custom-form/model-picker-url-only";
 
 export const INPUT_COMPONENTS = {
   checkbox: AutoFormCheckbox,
@@ -24,6 +25,7 @@ export const INPUT_COMPONENTS = {
   snapshot: AutoFormSnapshotPicker,
   models: AutoFormModelsPicker,
   gpuPicker: AutoFormGPUPicker,
+  modelUrlPicker: AutoFormModelsPickerUrl,
 };
 
 /**

@@ -22,13 +22,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { CivitaiModelRegistry } from "./CivitaiModelRegistry";
 import { ComfyUIManagerModelRegistry } from "./ComfyUIManagerModelRegistry";
+import { Input } from "@/components/ui/input";
+import { ModelList } from "@/components/custom-form/CivitalModelSchema";
+import { z } from "zod";
 
-export default function AutoFormModelsPicker({
+export default function AutoFormModelsPickerUrl({
   label,
   isRequired,
   field,
   fieldConfigItem,
   zodItem,
+  fieldProps,
 }: AutoFormInputComponentProps) {
   return (
     <FormItem>
@@ -40,7 +44,7 @@ export default function AutoFormModelsPicker({
       )}
       <FormControl>
         <Suspense fallback={<LoadingIcon />}>
-          <ModelPickerView field={field} />
+          <ModelPickerView field={field} fieldProps={fieldProps} />
         </Suspense>
       </FormControl>
       {fieldConfigItem.description && (
@@ -53,32 +57,40 @@ export default function AutoFormModelsPicker({
 
 function ModelPickerView({
   field,
-}: Pick<AutoFormInputComponentProps, "field">) {
+  fieldProps,
+}: Pick<AutoFormInputComponentProps, "field" | "fieldProps">) {
+  const customOverride = React.useMemo(() => {
+    const customOnChange = (value: z.infer<typeof ModelList>) => {
+      field.onChange(value[0]?.url);
+    };
+    return {
+      ...field,
+      onChange: customOnChange,
+      value: field.value
+        ? [
+            {
+              url: field.value,
+            },
+          ]
+        : [],
+    };
+  }, [field]);
+
   return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionTrigger className="text-sm">
-          Models (ComfyUI Manager & Civitai)
-        </AccordionTrigger>
-        <AccordionContent>
-          <div className="flex gap-2 flex-col px-1">
-            <ComfyUIManagerModelRegistry field={field} />
-            <CivitaiModelRegistry field={field} />
-            {/* <span>{field.value.length} selected</span> */}
-            {field.value && (
-              <ScrollArea className="w-full bg-gray-100 mx-auto rounded-lg mt-2">
-                <Textarea
-                  className="min-h-[150px] max-h-[300px] p-2 rounded-lg text-xs w-full"
-                  value={JSON.stringify(field.value, null, 2)}
-                  onChange={(e) => {
-                    field.onChange(JSON.parse(e.target.value));
-                  }}
-                />
-              </ScrollArea>
-            )}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+    <div className="flex gap-2 flex-col px-1">
+      <ComfyUIManagerModelRegistry
+        field={customOverride}
+        selectMultiple={false}
+      />
+      <CivitaiModelRegistry field={customOverride} selectMultiple={false} />
+      <Input
+        // className="min-h-[150px] max-h-[300px] p-2 rounded-lg text-xs w-full"
+        value={field.value ?? ""}
+        onChange={(e) => {
+          field.onChange(e.target.value);
+        }}
+        type="text"
+      />
+    </div>
   );
 }
