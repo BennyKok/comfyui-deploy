@@ -65,13 +65,14 @@ function SnapshotPresetPicker({
   const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<string | null>(null);
 
-  const [frameworks, setFramework] = React.useState<
-    {
-      id: string;
-      label: string;
-      value: string;
-    }[]
-  >();
+  const [frameworks, setFramework] =
+    React.useState<
+      {
+        id: string;
+        label: string;
+        value: string;
+      }[]
+    >();
 
   React.useEffect(() => {
     findAllDeployments().then((a) => {
@@ -140,7 +141,7 @@ function SnapshotPresetPicker({
                     "ml-auto h-4 w-4",
                     field.value === framework.value
                       ? "opacity-100"
-                      : "opacity-0"
+                      : "opacity-0",
                   )}
                 />
               </CommandItem>
@@ -199,12 +200,12 @@ function CustomNodesSelector({
 
   const { data, error, isLoading } = useSWR<CustomNodeList>(
     "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json",
-    fetcher
+    fetcher,
   );
 
   const keys = React.useMemo(
     () => Object.keys(customNodeList),
-    [customNodeList, data]
+    [customNodeList, data],
   );
 
   function findItem(value: string) {
@@ -212,6 +213,11 @@ function CustomNodesSelector({
     const included = keys.includes(value.toLowerCase());
     return included;
   }
+
+  const onChangeRef = React.useRef(field.onChange);
+  React.useEffect(() => {
+    onChangeRef.current = field.onChange;
+  }, [field.onChange]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -243,7 +249,7 @@ function CustomNodesSelector({
                         {
                           hash: string;
                           disabled: boolean;
-                          pip?: string[]
+                          pip?: string[];
                         }
                       >;
                       const x = customNodeList;
@@ -256,7 +262,7 @@ function CustomNodesSelector({
                         const repoName = extractRepoName(currentValue);
                         const id = toast.loading(`Fetching repo info...`);
                         const repo = await fetch(
-                          `https://api.github.com/repos/${repoName}`
+                          `https://api.github.com/repos/${repoName}`,
                         )
                           .then((x) => x.json())
                           .then((x) => {
@@ -267,14 +273,16 @@ function CustomNodesSelector({
                           .catch((e) => {
                             console.error(e);
                             toast.dismiss(id);
-                            toast.error(`Failed to fetch repo info ${e.message}`);
+                            toast.error(
+                              `Failed to fetch repo info ${e.message}`,
+                            );
                             return null;
                           });
 
                         if (!repo) return;
                         const branch = repo.default_branch;
                         const branchInfo = await fetch(
-                          `https://api.github.com/repos/${repoName}/branches/${branch}`
+                          `https://api.github.com/repos/${repoName}/branches/${branch}`,
                         )
                           .then((x) => x.json())
                           .then((x) => BranchInfoSchema.parse(x))
@@ -282,7 +290,7 @@ function CustomNodesSelector({
                             console.error(e);
                             toast.dismiss(id);
                             toast.error(
-                              `Failed to fetch branch info ${e.message}`
+                              `Failed to fetch branch info ${e.message}`,
                             );
                             return null;
                           });
@@ -291,19 +299,27 @@ function CustomNodesSelector({
 
                         if (!branchInfo) return;
 
+                        const value: Record<string, any> = {
+                          hash: branchInfo?.commit.sha,
+                          disabled: false,
+                        };
+
+                        if (framework.pip) {
+                          value["pip"] = framework.pip;
+                        }
+
                         nodeList = {
-                          [currentValue]: {
-                            hash: branchInfo?.commit.sha,
-                            disabled: false,
-                            pip: framework.pip
-                          },
+                          [currentValue]: value,
                           ...x,
                         };
                       }
-                      field.onChange({
+
+                      const newValue = {
                         ...field.value,
                         git_custom_nodes: nodeList,
-                      });
+                      };
+
+                      field.onChange(newValue);
                     }}
                   >
                     {framework.title}
@@ -312,7 +328,7 @@ function CustomNodesSelector({
                         "ml-auto h-4 w-4",
                         findItem(framework.reference)
                           ? "opacity-100"
-                          : "opacity-0"
+                          : "opacity-0",
                       )}
                     />
                   </CommandItem>
