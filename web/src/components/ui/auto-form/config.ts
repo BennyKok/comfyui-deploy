@@ -1,3 +1,4 @@
+import AutoFormGPUPicker from "@/components/custom-form/gpu-picker";
 import AutoFormCheckbox from "./fields/checkbox";
 import AutoFormDate from "./fields/date";
 import AutoFormEnum from "./fields/enum";
@@ -22,6 +23,7 @@ export const INPUT_COMPONENTS = {
   // Customs
   snapshot: AutoFormSnapshotPicker,
   models: AutoFormModelsPicker,
+  gpuPicker: AutoFormGPUPicker,
 };
 
 /**

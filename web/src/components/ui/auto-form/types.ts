@@ -1,3 +1,4 @@
+import type { getCurrentPlanWithAuth } from "@/server/getCurrentPlan";
 import type { INPUT_COMPONENTS } from "./config";
 import type { ControllerRenderProps, FieldValues } from "react-hook-form";
 import type * as z from "zod";
@@ -6,6 +7,7 @@ export type FieldConfigItem = {
   description?: React.ReactNode;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement> & {
     showLabel?: boolean;
+    sub?: Awaited<ReturnType<typeof getCurrentPlanWithAuth>>;
   };
   fieldType?:
     | keyof typeof INPUT_COMPONENTS

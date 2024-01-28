@@ -183,6 +183,7 @@ export const columns: ColumnDef<Machine>[] = [
     cell: ({ row }) => {
       const machine = row.original;
       const [open, setOpen] = useState(false);
+      const sub = useCurrentPlan();
 
       return (
         <DropdownMenu>
@@ -291,7 +292,10 @@ export const columns: ColumnDef<Machine>[] = [
                   fieldType: "models",
                 },
                 gpu: {
-                  inputProps: {},
+                  fieldType: "gpuPicker",
+                  inputProps: {
+                    sub: sub,
+                  },
                 },
               }}
             />
@@ -319,14 +323,14 @@ export const columns: ColumnDef<Machine>[] = [
   },
 ];
 
+import { useCurrentPlan } from "./useCurrentPlan";
+
 export function MachineList({
   data,
   userMetadata,
-  sub,
 }: {
   data: Machine[];
   userMetadata: z.infer<typeof AccessType>;
-  sub: Awaited<ReturnType<typeof getCurrentPlanWithAuth>>;
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -335,6 +339,8 @@ export function MachineList({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  const sub = useCurrentPlan();
 
   const table = useReactTable({
     data,
@@ -420,11 +426,9 @@ export function MachineList({
                 },
               },
               gpu: {
-                fieldType: !userMetadata.betaFeaturesAccess
-                  ? "fallback"
-                  : "select",
+                fieldType: "gpuPicker",
                 inputProps: {
-                  disabled: !userMetadata.betaFeaturesAccess,
+                  sub: sub,
                 },
               },
             }}

@@ -1,5 +1,6 @@
 import { AccessType } from "../../../lib/AccessType";
 import { MachineList } from "@/components/MachineList";
+import { SubscriptionProvider } from "@/components/useCurrentPlan";
 import { db } from "@/db/db";
 import { machinesTable } from "@/db/schema";
 import { getCurrentPlanWithAuth } from "@/server/getCurrentPlan";
@@ -32,12 +33,12 @@ async function MachineListServer() {
 
   return (
     <div className="w-full">
-      {/* <div>Machines</div> */}
-      <MachineList
-        sub={sub}
-        data={machines}
-        userMetadata={AccessType.parse(user.privateMetadata ?? {})}
-      />
+      <SubscriptionProvider sub={sub}>
+        <MachineList
+          data={machines}
+          userMetadata={AccessType.parse(user.privateMetadata ?? {})}
+        />
+      </SubscriptionProvider>
     </div>
   );
 }
