@@ -158,7 +158,7 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-@stub.cls(image=target_image, gpu=config["gpu"] ,volumes=volumes, timeout=60 * 10, container_idle_timeout=60 * 5)
+@stub.cls(image=target_image, gpu=config["gpu"] ,volumes=volumes, timeout=60 * 10, container_idle_timeout=60)
 class ComfyDeployRunner:
 
     @enter()
