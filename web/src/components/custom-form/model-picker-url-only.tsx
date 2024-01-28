@@ -61,7 +61,8 @@ function ModelPickerView({
 }: Pick<AutoFormInputComponentProps, "field" | "fieldProps">) {
   const customOverride = React.useMemo(() => {
     const customOnChange = (value: z.infer<typeof ModelList>) => {
-      field.onChange(value[0]?.url);
+      const model = value[0];
+      field.onChange(model?.url);
     };
     return {
       ...field,

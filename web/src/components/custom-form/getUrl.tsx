@@ -27,7 +27,8 @@ export function mapModelsList(
           description: item.description,
           reference: "",
           filename: v.files[0].name,
-          url: v.files[0].downloadUrl,
+          // Quick hack to get the download url back as normal url
+          url: `https://civitai.com/models/${v.modelId}?modelVersionId=${v.id}`, //v.files[0].downloadUrl,
         } as z.infer<typeof Model>;
       });
     }),
