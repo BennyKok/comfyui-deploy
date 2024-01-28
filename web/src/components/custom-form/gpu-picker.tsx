@@ -1,5 +1,6 @@
 import { AutoFormInputComponentProps } from "@/components/ui/auto-form/types";
 import { getBaseSchema } from "@/components/ui/auto-form/utils";
+import { Badge } from "@/components/ui/badge";
 import {
   FormItem,
   FormLabel,
@@ -41,6 +42,11 @@ export default function AutoFormGPUPicker({
   const plan = fieldConfigItem.inputProps?.sub?.plan;
   const enabledGPU = ["T4"];
 
+  const planMapping: Record<string, string> = {
+    A10G: "pro",
+    A100: "enterprise",
+  };
+
   if (plan == "pro") {
     enabledGPU.push("A10G");
   } else if (plan == "enterprise") {
@@ -72,7 +78,9 @@ export default function AutoFormGPUPicker({
                   {label}
                   {!enabled && (
                     <span className="mx-2 inline-flex items-center justify-center gap-2">
-                      Upgrade to enabled this options <Lock size={14}></Lock>
+                      <Badge className="capitalize">{planMapping[value]}</Badge>{" "}
+                      plan required
+                      <Lock size={14}></Lock>
                     </span>
                   )}
                 </SelectItem>
