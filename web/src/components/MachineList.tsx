@@ -149,9 +149,16 @@ export const columns: ColumnDef<Machine>[] = [
     header: () => <div className="text-left">Type</div>,
     cell: ({ row }) => {
       return (
-        <div className="text-left font-medium truncate">
+        <Badge
+          className="text-left font-medium truncate"
+          variant={
+            row.original.type == "comfy-deploy-serverless"
+              ? "success"
+              : "outline"
+          }
+        >
           {row.original.type}
-        </div>
+        </Badge>
       );
     },
   },
