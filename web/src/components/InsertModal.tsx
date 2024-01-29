@@ -31,6 +31,7 @@ export function InsertModal<
   tooltip?: string;
   disabled?: boolean;
   title: React.ReactNode;
+  buttonTitle?: React.ReactNode;
   description: string;
   dialogClassName?: string;
   serverAction: (data: z.infer<Z>) => Promise<unknown>;
@@ -54,7 +55,7 @@ export function InsertModal<
                 setOpen(true);
               }}
             >
-              {props.title}
+              {props.buttonTitle ?? props.title}
             </Button>
           </TooltipTrigger>
           <TooltipContent>

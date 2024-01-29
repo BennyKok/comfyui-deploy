@@ -396,11 +396,12 @@ export function MachineList({
                 ? `Max ${machineMaxCount} ComfyUI machine for your account, upgrade to unlock more cnfiguration.`
                 : `Max ${machineMaxCount} ComfyUI machine for your account`
             }
-            title={
+            buttonTitle={
               <>
                 New Machine {locked ? <Lock size={14} /> : <Plus size={14} />}
               </>
             }
+            title={"New Machine"}
             description="Add custom ComfyUI machines to your account."
             serverAction={addCustomMachine}
             formSchema={addCustomMachineSchema}
