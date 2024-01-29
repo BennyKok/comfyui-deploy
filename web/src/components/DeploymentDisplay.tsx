@@ -118,15 +118,12 @@ export function DeploymentDisplay({
             </TabsList>
             <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
               <div>
-                Copy and paste the ComfyDeployClient form&nbsp;
-                <a
-                  href="https://github.com/BennyKok/comfyui-deploy-next-example/blob/main/src/lib/comfy-deploy.ts"
-                  className="text-blue-500 hover:underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  here
-                </a>
+                Install the node comfydeploy SDK
+                <CodeBlock
+                  lang="bash"
+                  code={`npm i comfydeploy`}
+                />
+                Initialize your client
               </div>
               <CodeBlock
                 lang="js"
@@ -200,18 +197,20 @@ function formatCode(
   if (inputs && inputs.length > 0) {
     codeTemplate = codeTemplate.replace(
       "inputs: {}",
-      `inputs: ${JSON.stringify(
-        Object.fromEntries(
-          inputs.map((x) => {
-            return [x?.input_id, ""];
-          }),
-        ),
-        null,
-        2,
-      )
-        .split("\n")
-        .map((line, index) => (index === 0 ? line : `    ${line}`)) // Add two spaces indentation except for the first line
-        .join("\n")}`,
+      `inputs: ${
+        JSON.stringify(
+          Object.fromEntries(
+            inputs.map((x) => {
+              return [x?.input_id, ""];
+            }),
+          ),
+          null,
+          2,
+        )
+          .split("\n")
+          .map((line, index) => (index === 0 ? line : `    ${line}`)) // Add two spaces indentation except for the first line
+          .join("\n")
+      }`,
     );
   } else {
     codeTemplate = codeTemplate.replace(
