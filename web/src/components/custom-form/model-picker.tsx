@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { CivitaiModelRegistry } from "./CivitaiModelRegistry";
 import { ComfyUIManagerModelRegistry } from "./ComfyUIManagerModelRegistry";
 import { ExternalLink } from "lucide-react";
 

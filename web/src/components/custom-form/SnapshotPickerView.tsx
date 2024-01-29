@@ -8,7 +8,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Command,
   CommandEmpty,
@@ -18,6 +20,22 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -25,7 +43,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { findAllDeployments } from "@/server/curdDeploments";
-import { Check, ChevronsUpDown } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Edit,
+  ExternalLink,
+  FolderInput,
+  MoreVertical,
+  Plus,
+} from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -39,19 +65,95 @@ export function SnapshotPickerView({
       <AccordionItem value="item-1">
         <AccordionTrigger className="text-sm">Custom Nodes</AccordionTrigger>
         <AccordionContent className="flex gap-2 flex-col px-1">
-          <SnapshotPresetPicker field={field} />
-          <CustomNodesSelector field={field} />
+          <div className="flex flex-wrap gap-2 justify-end">
+            <CustomNodesSelector field={field} />
+            <SnapshotPresetPicker field={field} />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="w-fit">
+                  Edit <Edit size={14}></Edit>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] h-full max-h-[600px] grid grid-rows-[auto,1fr,auto]">
+                <DialogHeader>
+                  <DialogTitle>Edit custom nodes</DialogTitle>
+                  <DialogDescription>
+                    Make advacne changes to the snapshots
+                  </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                  className="h-full p-2 max-h-[600px] rounded-md text-xs w-full"
+                  value={JSON.stringify(field.value, null, 2)}
+                  onChange={(e) => {
+                    // Update field.onChange to pass the array of selected models
+                    field.onChange(JSON.parse(e.target.value));
+                  }}
+                />
+                <DialogFooter>
+                  <DialogClose>
+                    <Button type="button" variant="secondary">
+                      Close
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           {field.value && (
-            // <ScrollArea className="w-full bg-gray-100 mx-auto max-w-[500px] rounded-lg">
-            <Textarea
-              className="min-h-[150px] max-h-[300px] p-2 rounded-md text-xs w-full"
-              value={JSON.stringify(field.value, null, 2)}
-              onChange={(e) => {
-                // Update field.onChange to pass the array of selected models
-                field.onChange(JSON.parse(e.target.value));
-              }}
-            />
-            // </ScrollArea>
+            <div className="flex gap-2 flex-col">
+              {Object.entries(field.value.git_custom_nodes).map(
+                ([key, item], index) => (
+                  <Card className="p-4 flex gap-4 items-center justify-between">
+                    <div className="flex gap-4 items-center">
+                      <div className="bg-gray-200 aspect-square w-6 h-6 rounded-full text-center">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <a
+                          target="_blank"
+                          href={key}
+                          className="hover:underline flex items-center gap-2"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink size={12} /> {key}
+                        </a>
+                        <div className="text-2xs text-primary/50">
+                          {item.hash}
+                        </div>
+                      </div>
+                    </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild type="button">
+                        <Button type="button" variant={"ghost"}>
+                          <MoreVertical size={12} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          disabled={key.endsWith("comfyui-deploy.git")}
+                          // className="opacity-50"
+                          onClick={() => {
+                            const newNodeList = {
+                              ...field.value.git_custom_nodes,
+                            };
+                            delete newNodeList[key];
+                            const nodeList = newNodeList;
+                            const newValue = {
+                              ...field.value,
+                              git_custom_nodes: nodeList,
+                            };
+                            field.onChange(newValue);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </Card>
+                ),
+              )}
+            </div>
           )}
         </AccordionContent>
       </AccordionItem>
@@ -109,12 +211,13 @@ function SnapshotPresetPicker({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between flex"
+          className="w-fit justify-between flex"
         >
-          {selected
+          <FolderInput size={14} />
+          Import
+          {/* {selected
             ? findItem(selected)?.label
-            : "Select snapshot (From deployments)"}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            : "Select snapshot (From deployments)"} */}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[375px] p-0">
@@ -226,10 +329,10 @@ function CustomNodesSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between flex"
+          className="w-fit justify-between flex"
         >
-          Add custom nodes - {keys.length} selected
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <Plus size={14}></Plus> <Badge>{keys.length} </Badge>
+          {/* <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /> */}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[375px] p-0" side="bottom">
@@ -309,8 +412,8 @@ function CustomNodesSelector({
                         }
 
                         nodeList = {
-                          [currentValue]: value,
                           ...x,
+                          [currentValue]: value,
                         };
                       }
 
