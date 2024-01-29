@@ -50,7 +50,7 @@ import {
   Play,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import type { z } from "zod";
@@ -60,6 +60,7 @@ import { callServerPromise } from "./callServerPromise";
 import fetcher from "./fetcher";
 import { ButtonAction } from "@/components/ButtonActionLoader";
 import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function VersionSelect({
   workflow,
@@ -126,12 +127,27 @@ export function MachineSelect({
 
 export function useSelectedMachine(
   machines: Awaited<ReturnType<typeof getMachines>>,
-) {
-  const a = useQueryState("machine", {
-    defaultValue: machines?.[0]?.id ?? "",
-  });
+): [string, (v: string) => void] {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  return a;
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams],
+  );
+
+  return [
+    searchParams.get("machine") ?? machines?.[0]?.id ?? "",
+    (v: string) => {
+      router.push(pathname + "?" + createQueryString("machine", v));
+    },
+  ];
 }
 
 type PublicRunStore = {
