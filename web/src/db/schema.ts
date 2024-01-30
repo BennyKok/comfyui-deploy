@@ -104,6 +104,7 @@ export const workflowRunStatus = pgEnum("workflow_run_status", [
   "failed",
   "started",
   "queued",
+  "timeout",
 ]);
 
 export const deploymentEnvironment = pgEnum("deployment_environment", [
@@ -172,6 +173,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   machine_type: machinesType("machine_type"),
   user_id: text("user_id"),
   org_id: text("org_id"),
+  run_log: text("run_log"),
 });
 
 export const workflowRunRelations = relations(
@@ -385,13 +387,8 @@ export const modelUploadType = pgEnum("model_upload_type", [
   "other",
 ]);
 
-// https://www.answeroverflow.com/m/1125106227387584552 
-export const modelTypes = [
-  "checkpoint",
-  "lora",
-  "embedding",
-  "vae",
-] as const
+// https://www.answeroverflow.com/m/1125106227387584552
+export const modelTypes = ["checkpoint", "lora", "embedding", "vae"] as const;
 export const modelType = pgEnum("model_type", modelTypes);
 export type modelEnumType = (typeof modelTypes)[number];
 

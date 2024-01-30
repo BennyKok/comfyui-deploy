@@ -16,7 +16,7 @@ export function LiveStatus({
     (state) =>
       state.data
         .filter((x) => x.id === run.id)
-        .sort((a, b) => b.timestamp - a.timestamp)?.[0]
+        .sort((a, b) => b.timestamp - a.timestamp)?.[0],
   );
 
   let status = run.status;
@@ -51,7 +51,9 @@ export function LiveStatus({
     <>
       <TableCell>
         {data && status != "success"
-          ? `${data.json.event} - ${data.json.data.node}`
+          ? `${data.json.event}${
+              data.json.data.node ? " - " + data.json.data.node : ""
+            }`
           : "-"}
       </TableCell>
       <TableCell className="truncate text-right">

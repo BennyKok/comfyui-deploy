@@ -19,6 +19,7 @@ import { getDuration, getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
 import { Suspense } from "react";
 import { LiveStatus } from "./LiveStatus";
+import { LogsType, LogsViewer } from "@/components/LogsViewer";
 
 export async function RunDisplay({
   run,
@@ -75,6 +76,9 @@ export async function RunDisplay({
           <RunInputs run={run} />
           <Suspense>
             <RunOutputs run_id={run.id} />
+            {run.run_log && (
+              <LogsViewer logs={JSON.parse(run.run_log) as LogsType} />
+            )}
           </Suspense>
         </div>
         {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}

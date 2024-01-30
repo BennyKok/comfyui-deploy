@@ -17,6 +17,8 @@ export function StatusBadge({
       );
     case "success":
       return <Badge variant="success">{status}</Badge>;
+    case "timeout":
+      return <Badge variant="amber">{status}</Badge>;
     case "failed":
       return <Badge variant="destructive">{status}</Badge>;
   }

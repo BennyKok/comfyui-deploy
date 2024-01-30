@@ -180,6 +180,8 @@ class Item(BaseModel):
     models: List[Model]
     callback_url: str
     model_volume_name: str
+    run_timeout: Optional[int] = Field(default=60 * 5)
+    idle_timeout: Optional[int] = Field(default=60)
     gpu: GPUType = Field(default=GPUType.T4)
 
     @field_validator('gpu')
@@ -391,7 +393,9 @@ async def build_logic(item: Item):
         "gpu": item.gpu,
         "public_model_volume": public_model_volume_name,
         "private_model_volume": item.model_volume_name,
-        "pip": list(pip_modules)
+        "pip": list(pip_modules),
+        "run_timeout": item.run_timeout,
+        "idle_timeout": item.idle_timeout,
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))

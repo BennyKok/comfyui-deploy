@@ -112,7 +112,7 @@ def check_server(url, retries=50, delay=500):
 
             # If the response status code is 200, the server is up and running
             if response.status_code == 200:
-                print(f"runpod-worker-comfy - API is reachable")
+                print(f"comfy-modal - API is reachable")
                 return True
         except requests.RequestException as e:
             # If an exception occurs, the server may not be ready
@@ -124,7 +124,7 @@ def check_server(url, retries=50, delay=500):
         time.sleep(delay / 1000)
 
     print(
-        f"runpod-worker-comfy - Failed to connect to server at {url} after {retries} attempts."
+        f"comfy-modal - Failed to connect to server at {url} after {retries} attempts."
     )
     return False
 
@@ -158,20 +158,68 @@ image = Image.debian_slim()
 
 target_image = image if deploy_test else dockerfile_image
 
-@stub.cls(image=target_image, gpu=config["gpu"] ,volumes=volumes, timeout=60 * 10, container_idle_timeout=60)
+run_timeout = config["run_timeout"]
+idle_timeout = config["idle_timeout"]
+
+import asyncio
+
+@stub.cls(image=target_image, gpu=config["gpu"] ,volumes=volumes, timeout=60 * 10, container_idle_timeout=idle_timeout)
 class ComfyDeployRunner:
 
+    machine_logs = []
+
+    async def read_stream(self, stream, isStderr):
+        import time
+        while True:
+            line = await stream.readline()
+            if line:
+                l = line.decode('utf-8').strip()
+
+                if l == "":
+                    continue
+
+                if not isStderr:
+                    print(l, flush=True)
+                    self.machine_logs.append({
+                        "logs": l,
+                        "timestamp": time.time()
+                    })
+
+                else:
+                    # is error
+                    # logger.error(l)
+                    print(l, flush=True)
+                    self.machine_logs.append({
+                        "logs": l,
+                        "timestamp": time.time()
+                    })
+            else:
+                break
+
     @enter()
-    def setup(self):
+    async def setup(self):
         import subprocess
         import time
         # Make sure that the ComfyUI API is available
         print(f"comfy-modal - check server")
 
-        command = ["python", "main.py",
-                "--disable-auto-launch", "--disable-metadata"]
+        # command = ["python", "main.py",
+        #         "--disable-auto-launch", "--disable-metadata"]
 
-        self.server_process = subprocess.Popen(command, cwd="/comfyui")
+        # self.server_process = subprocess.Popen(command, cwd="/comfyui")
+
+        self.server_process = await asyncio.subprocess.create_subprocess_shell(
+            f"python main.py --disable-auto-launch --disable-metadata",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd="/comfyui",
+            # env={**os.environ, "COLUMNS": "10000"}
+        )
+
+        self.stdout_task = asyncio.create_task(
+            self.read_stream(self.server_process.stdout, False))
+        self.stderr_task = asyncio.create_task(
+            self.read_stream(self.server_process.stderr, True))
 
         check_server(
             f"http://{COMFY_HOST}",
@@ -180,63 +228,108 @@ class ComfyDeployRunner:
         )
 
     @exit()
-    def cleanup(self, exc_type, exc_value, traceback):
-        self.server_process.terminate()
+    async def cleanup(self, exc_type, exc_value, traceback):
+        print(f"comfy-modal - cleanup", exc_type, exc_value, traceback)
+        self.stderr_task.cancel()
+        self.stdout_task.cancel()
+        # self.server_process.kill()
 
     @method()
-    def run(self, input: Input):
+    async def run(self, input: Input):
+        import signal
+        import time
+        # import asyncio
+
+        self.stderr_task.cancel()
+        self.stdout_task.cancel()
+
+        self.stdout_task = asyncio.create_task(
+            self.read_stream(self.server_process.stdout, False))
+        self.stderr_task = asyncio.create_task(
+            self.read_stream(self.server_process.stderr, True))
+        
+        class TimeoutError(Exception):
+            pass
+
+        def timeout_handler(signum, frame):
+            data = json.dumps({
+                "run_id": input.prompt_id,
+                "status": "timeout",
+                "time": datetime.now().isoformat()
+            }).encode('utf-8')
+            req = urllib.request.Request(input.status_endpoint, data=data, method='POST')
+            urllib.request.urlopen(req)
+            raise TimeoutError("Operation timed out")
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+
+        try:
+            # Set an alarm for some seconds in the future
+            signal.alarm(run_timeout)  # 5 seconds timeout
+
+            data = json.dumps({
+                "run_id": input.prompt_id,
+                "status": "started",
+                "time": datetime.now().isoformat()
+            }).encode('utf-8')
+            req = urllib.request.Request(input.status_endpoint, data=data, method='POST')
+            urllib.request.urlopen(req)
+
+            job_input = input
+
+            try:
+                queued_workflow = queue_workflow_comfy_deploy(job_input)  # queue_workflow(workflow)
+                prompt_id = queued_workflow["prompt_id"]
+                print(f"comfy-modal - queued workflow with ID {prompt_id}")
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                return {"error": f"Error queuing workflow: {str(e)}"}
+
+            # Poll for completion
+            print(f"comfy-modal - wait until image generation is complete")
+            retries = 0
+            status = ""
+            try:
+                print("getting request")
+                while retries < COMFY_POLLING_MAX_RETRIES:
+                    status_result = check_status(prompt_id=prompt_id)
+                    if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
+                        status = status_result['status']
+                        print(status)
+                        break
+                    else:
+                        # Wait before trying again
+                        time.sleep(COMFY_POLLING_INTERVAL_MS / 1000)
+                        retries += 1
+                else:
+                    return {"error": "Max retries reached while waiting for image generation"}
+            except Exception as e:
+                return {"error": f"Error waiting for image generation: {str(e)}"}
+
+            print(f"comfy-modal - Finished, turning off")
+
+            result = {"status": status}
+
+        except TimeoutError:
+            print("Operation timed out")
+            return {"status": "failed"}
+            
+        
+        print("uploading log_data")
         data = json.dumps({
             "run_id": input.prompt_id,
-            "status": "started",
-            "time": datetime.now().isoformat()
+            "time": datetime.now().isoformat(),
+            "log_data": json.dumps(self.machine_logs)
         }).encode('utf-8')
+        print("my logs", len(self.machine_logs))
+        # Clear logs
+        self.machine_logs = []
         req = urllib.request.Request(input.status_endpoint, data=data, method='POST')
         urllib.request.urlopen(req)
-
-        job_input = input
-
-        try:
-            queued_workflow = queue_workflow_comfy_deploy(job_input)  # queue_workflow(workflow)
-            prompt_id = queued_workflow["prompt_id"]
-            print(f"comfy-modal - queued workflow with ID {prompt_id}")
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-            return {"error": f"Error queuing workflow: {str(e)}"}
-
-        # Poll for completion
-        print(f"comfy-modal - wait until image generation is complete")
-        retries = 0
-        status = ""
-        try:
-            print("getting request")
-            while retries < COMFY_POLLING_MAX_RETRIES:
-                status_result = check_status(prompt_id=prompt_id)
-                # history = get_history(prompt_id)
-
-                # Exit the loop if we have found the history
-                # if prompt_id in history and history[prompt_id].get("outputs"):
-                #     break
-
-                # Exit the loop if we have found the status both success or failed
-                if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
-                    status = status_result['status']
-                    print(status)
-                    break
-                else:
-                    # Wait before trying again
-                    time.sleep(COMFY_POLLING_INTERVAL_MS / 1000)
-                    retries += 1
-            else:
-                return {"error": "Max retries reached while waiting for image generation"}
-        except Exception as e:
-            return {"error": f"Error waiting for image generation: {str(e)}"}
-
-        print(f"comfy-modal - Finished, turning off")
-
-        result = {"status": status}
-
+        
         return result
+        
     
 
 @web_app.post("/run")
@@ -252,10 +345,12 @@ async def post_run(request_input: RequestInput):
         urllib.request.urlopen(req)
 
         model = ComfyDeployRunner()
-        call = model.run.spawn(request_input.input)
+        call = await model.run.spawn.aio(request_input.input)
+
+        print("call", call)
 
         # call = run.spawn()
-        return {"call_id": call.object_id}
+        return {"call_id": None}
     
     return {"call_id": None}
 

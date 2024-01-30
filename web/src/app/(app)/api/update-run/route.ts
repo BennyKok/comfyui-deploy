@@ -2,10 +2,8 @@ import { parseDataSafe } from "../../../../lib/parseDataSafe";
 import { db } from "@/db/db";
 import {
   WorkflowRunStatusSchema,
-  userUsageTable,
   workflowRunOutputs,
   workflowRunsTable,
-  workflowTable,
 } from "@/db/schema";
 import { getCurrentPlan } from "@/server/getCurrentPlan";
 import { stripe } from "@/server/stripe";
@@ -18,6 +16,7 @@ const Request = z.object({
   status: WorkflowRunStatusSchema.optional(),
   time: z.coerce.date().optional(),
   output_data: z.any().optional(),
+  log_data: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -26,7 +25,17 @@ export async function POST(request: Request) {
 
     if (!data || error) return error;
 
-    const { run_id, status, time, output_data } = data;
+    const { run_id, status, time, output_data, log_data } = data;
+
+    if (log_data) {
+      // It successfully started, update the started_at time
+      await db
+        .update(workflowRunsTable)
+        .set({
+          run_log: log_data,
+        })
+        .where(eq(workflowRunsTable.id, run_id));
+    }
 
     if (status == "started" && time != undefined) {
       // It successfully started, update the started_at time
@@ -48,6 +57,9 @@ export async function POST(request: Request) {
         .where(eq(workflowRunsTable.id, run_id));
     }
 
+    const ended =
+      status === "success" || status === "failed" || status === "timeout";
+
     if (output_data) {
       const workflow_run_output = await db.insert(workflowRunOutputs).values({
         run_id: run_id,
@@ -58,8 +70,7 @@ export async function POST(request: Request) {
         .update(workflowRunsTable)
         .set({
           status: status,
-          ended_at:
-            status === "success" || status === "failed" ? new Date() : null,
+          ended_at: ended ? new Date() : null,
         })
         .where(eq(workflowRunsTable.id, run_id))
         .returning();
@@ -67,10 +78,7 @@ export async function POST(request: Request) {
       // Need to filter out only comfy deploy serverless
       // Also multiply with the gpu selection
       if (workflow_run.machine_type == "comfy-deploy-serverless") {
-        if (
-          (status === "success" || status === "failed") &&
-          workflow_run.user_id
-        ) {
+        if (ended && workflow_run.user_id) {
           const sub = await getCurrentPlan({
             user_id: workflow_run.user_id,
             org_id: workflow_run.org_id,

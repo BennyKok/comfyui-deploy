@@ -337,6 +337,13 @@
       "when": 1706384528895,
       "tag": "0047_gifted_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1706600255919,
+      "tag": "0048_dear_korath",
+      "breakpoints": true
     }
   ]
 }
