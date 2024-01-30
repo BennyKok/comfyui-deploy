@@ -26,6 +26,7 @@ import threading
 api = None
 api_task = None
 prompt_metadata = {}
+cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
 
 def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
@@ -157,7 +158,9 @@ async def websocket_handler(request):
     try:
         # Send initial state to the new client
         await send("status", { 'sid': sid }, sid)
-        await send_first_time_log(sid)
+
+        if cd_enable_log:
+            await send_first_time_log(sid)
             
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.ERROR:
@@ -480,4 +483,5 @@ def run_in_new_thread(coroutine):
     t.start()
     asyncio.run_coroutine_threadsafe(coroutine, new_loop)
 
-run_in_new_thread(watch_file_changes(log_file_path, send_logs_to_websocket))
+if cd_enable_log:
+    run_in_new_thread(watch_file_changes(log_file_path, send_logs_to_websocket))
