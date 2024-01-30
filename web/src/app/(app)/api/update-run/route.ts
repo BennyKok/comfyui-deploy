@@ -16,7 +16,7 @@ const Request = z.object({
   status: WorkflowRunStatusSchema.optional(),
   time: z.coerce.date().optional(),
   output_data: z.any().optional(),
-  log_data: z.string().optional(),
+  log_data: z.any().optional(),
 });
 
 export async function POST(request: Request) {
