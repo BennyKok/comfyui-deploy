@@ -8,8 +8,8 @@ import {
   OpenEditButton,
   RunWorkflowButton,
   VersionSelect,
-  ViewWorkflowDetailsButton,
 } from "@/components/VersionSelect";
+import { ViewWorkflowDetailsButton } from "@/components/ViewWorkflowDetailsButton";
 import {
   Card,
   CardContent,

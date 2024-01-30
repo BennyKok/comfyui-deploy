@@ -2,7 +2,6 @@
 
 import { LoadingIcon } from "@/components/LoadingIcon";
 import AutoForm, { AutoFormSubmit } from "@/components/ui/auto-form";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,36 +27,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type { showcaseMediaNullable, workflowAPINodeType } from "@/db/schema";
+import type { showcaseMediaNullable } from "@/db/schema";
 import { checkStatus, createRun } from "@/server/createRun";
 import { createDeployments } from "@/server/curdDeploments";
 import type { getMachines } from "@/server/curdMachine";
 import type { findFirstTableWithVersion } from "@/server/findFirstTableWithVersion";
-import {
-  Copy,
-  Edit,
-  ExternalLink,
-  Info,
-  MoreVertical,
-  Play,
-} from "lucide-react";
+import { Copy, Edit, MoreVertical, Play } from "lucide-react";
 import { parseAsInteger, useQueryState } from "next-usequerystate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
 import type { z } from "zod";
 import { create } from "zustand";
 import { workflowVersionInputsToZod } from "../lib/workflowVersionInputsToZod";
 import { callServerPromise } from "./callServerPromise";
-import fetcher from "./fetcher";
 import { ButtonAction } from "@/components/ButtonActionLoader";
 import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -125,29 +107,47 @@ export function MachineSelect({
   );
 }
 
+type SelectedMachineStore = {
+  selectedMachine: string;
+  setSelectedMachine: (machine: string) => void;
+};
+
+export const selectedMachineStore = create<SelectedMachineStore>((set) => ({
+  selectedMachine: "",
+  setSelectedMachine: (machine) => set(() => ({ selectedMachine: machine })),
+}));
+
 export function useSelectedMachine(
   machines: Awaited<ReturnType<typeof getMachines>>,
 ): [string, (v: string) => void] {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
+  const { selectedMachine, setSelectedMachine } = selectedMachineStore();
+  return [selectedMachine, setSelectedMachine];
+  // const searchParams = useSearchParams();
+  // const pathname = usePathname();
+  // const router = useRouter();
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
+  // const createQueryString = useCallback(
+  //   (name: string, value: string) => {
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set(name, value);
 
-      return params.toString();
-    },
-    [searchParams],
-  );
+  //     return params.toString();
+  //   },
+  //   [searchParams],
+  // );
 
-  return [
-    searchParams.get("machine") ?? machines?.[0]?.id ?? "",
-    (v: string) => {
-      router.push(pathname + "?" + createQueryString("machine", v));
-    },
-  ];
+  // return [
+  //   searchParams.get("machine") ?? machines?.[0]?.id ?? "",
+  //   (v: string) => {
+  //     // window.history.pushState(
+  //     //   "new url",
+  //     //   "",
+  //     //   pathname + "?" + createQueryString("machine", v),
+  //     // );
+  //     // router.push(pathname + "?" + createQueryString("machine", v));
+  //     router.replace(pathname + "?" + createQueryString("machine", v));
+  //   },
+  // ];
 }
 
 type PublicRunStore = {
@@ -499,151 +499,4 @@ export function getWorkflowVersionFromVersionIndex(
   const workflow_version = workflow?.versions.find((x) => x.version == version);
 
   return workflow_version;
-}
-
-export function ViewWorkflowDetailsButton({
-  workflow,
-}: {
-  workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
-}) {
-  const [version] = useQueryState("version", {
-    defaultValue: workflow?.versions[0].version ?? 1,
-    ...parseAsInteger,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [open, setOpen] = useState(false);
-
-  const {
-    data,
-    error,
-    isLoading: isNodesIndexLoading,
-  } = useSWR(
-    "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/extension-node-map.json",
-    fetcher,
-  );
-
-  const groupedByAuxName = useMemo(() => {
-    if (!data) return null;
-
-    // console.log(data);
-
-    const workflow_version = getWorkflowVersionFromVersionIndex(
-      workflow,
-      version,
-    );
-
-    const api = workflow_version?.workflow_api;
-
-    if (!api) return null;
-
-    const crossCheckedApi = Object.entries(api)
-      .map(([_, value]) => {
-        const classType = value.class_type;
-        const classTypeData = Object.entries(data).find(([_, nodeArray]) =>
-          nodeArray[0].includes(classType),
-        );
-        return classTypeData ? { node: value, classTypeData } : null;
-      })
-      .filter((item) => item !== null);
-
-    // console.log(crossCheckedApi);
-
-    const groupedByAuxName = crossCheckedApi.reduce(
-      (acc, data) => {
-        if (!data) return acc;
-
-        const { node, classTypeData } = data;
-        const auxName = classTypeData[1][1].title_aux;
-        // console.log(auxName);
-        if (!acc[auxName]) {
-          acc[auxName] = {
-            url: classTypeData[0],
-            node: [],
-          };
-        }
-        acc[auxName].node.push(node);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          node: z.infer<typeof workflowAPINodeType>[];
-          url: string;
-        }
-      >,
-    );
-
-    // console.log(groupedByAuxName);
-
-    return groupedByAuxName;
-  }, [version, data]);
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild className="appearance-none hover:cursor-pointer">
-        <Button className="gap-2" variant="outline">
-          Details <Info size={14} />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Workflow Details</DialogTitle>
-          <DialogDescription>
-            View your custom nodes, models, external files used in this workflow
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="overflow-auto max-h-[400px] w-full">
-          <Table>
-            <TableHeader className="bg-background top-0 sticky">
-              <TableRow>
-                <TableHead className="w-[200px]">File</TableHead>
-                <TableHead className="">Output</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {groupedByAuxName &&
-                Object.entries(groupedByAuxName).map(([key, group]) => {
-                  // const filePath
-                  return (
-                    <TableRow key={key}>
-                      <TableCell className="break-words">
-                        <a
-                          href={group.url}
-                          target="_blank"
-                          className="hover:underline"
-                          rel="noreferrer"
-                        >
-                          {key}
-                          <ExternalLink
-                            className="inline-block ml-1"
-                            size={12}
-                          />
-                        </a>
-                      </TableCell>
-                      <TableCell className="flex flex-wrap gap-2">
-                        {group.node.map((x) => (
-                          <Badge key={x.class_type} variant="outline">
-                            {x.class_type}
-                          </Badge>
-                        ))}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="flex justify-end">
-          <Button className="w-fit" onClick={() => setOpen(false)}>
-            Close
-          </Button>
-        </div>
-        {/* </div> */}
-        {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}
-      </DialogContent>
-    </Dialog>
-  );
 }
