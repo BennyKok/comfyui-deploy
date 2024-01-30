@@ -102,7 +102,7 @@ export function SnapshotPickerView({
           {field.value && (
             <div className="flex gap-2 flex-col">
               {Object.entries(field.value.git_custom_nodes).map(
-                ([key, item], index) => (
+                ([key, item]: [string, any], index) => (
                   <Card className="p-4 flex gap-4 items-center justify-between">
                     <div className="flex gap-4 items-center">
                       <div className="bg-gray-200 aspect-square w-6 h-6 rounded-full text-center">
