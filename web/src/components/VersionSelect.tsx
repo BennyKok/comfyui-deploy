@@ -108,12 +108,12 @@ export function MachineSelect({
 }
 
 type SelectedMachineStore = {
-  selectedMachine: string;
+  selectedMachine: string | undefined;
   setSelectedMachine: (machine: string) => void;
 };
 
 export const selectedMachineStore = create<SelectedMachineStore>((set) => ({
-  selectedMachine: "",
+  selectedMachine: undefined,
   setSelectedMachine: (machine) => set(() => ({ selectedMachine: machine })),
 }));
 
@@ -121,7 +121,7 @@ export function useSelectedMachine(
   machines: Awaited<ReturnType<typeof getMachines>>,
 ): [string, (v: string) => void] {
   const { selectedMachine, setSelectedMachine } = selectedMachineStore();
-  return [selectedMachine ?? machines?.[0]?.id, setSelectedMachine];
+  return [selectedMachine ?? machines?.[0]?.id ?? "", setSelectedMachine];
 
   // const searchParams = useSearchParams();
   // const pathname = usePathname();
