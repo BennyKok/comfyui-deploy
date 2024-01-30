@@ -1,3 +1,4 @@
+import { LogsType } from "@/components/LogsViewer";
 import { CivitaiModelResponse } from "@/types/civitai";
 import { type InferSelectModel, relations } from "drizzle-orm";
 import {
@@ -173,7 +174,7 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
   machine_type: machinesType("machine_type"),
   user_id: text("user_id"),
   org_id: text("org_id"),
-  run_log: text("run_log"),
+  run_log: jsonb("run_log").$type<LogsType>(),
 });
 
 export const workflowRunRelations = relations(

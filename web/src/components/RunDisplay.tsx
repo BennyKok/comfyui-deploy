@@ -76,9 +76,7 @@ export async function RunDisplay({
           <RunInputs run={run} />
           <Suspense>
             <RunOutputs run_id={run.id} />
-            {run.run_log && (
-              <LogsViewer logs={JSON.parse(run.run_log) as LogsType} />
-            )}
+            {run.run_log && <LogsViewer logs={run.run_log} />}
           </Suspense>
         </div>
         {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}

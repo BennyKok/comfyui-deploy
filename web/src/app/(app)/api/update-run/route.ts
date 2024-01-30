@@ -35,6 +35,15 @@ export async function POST(request: Request) {
           run_log: log_data,
         })
         .where(eq(workflowRunsTable.id, run_id));
+
+      return NextResponse.json(
+        {
+          message: "success",
+        },
+        {
+          status: 200,
+        },
+      );
     }
 
     if (status == "started" && time != undefined) {
