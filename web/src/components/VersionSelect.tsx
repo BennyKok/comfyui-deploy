@@ -121,7 +121,8 @@ export function useSelectedMachine(
   machines: Awaited<ReturnType<typeof getMachines>>,
 ): [string, (v: string) => void] {
   const { selectedMachine, setSelectedMachine } = selectedMachineStore();
-  return [selectedMachine, setSelectedMachine];
+  return [selectedMachine ?? machines?.[0]?.id, setSelectedMachine];
+
   // const searchParams = useSearchParams();
   // const pathname = usePathname();
   // const router = useRouter();
