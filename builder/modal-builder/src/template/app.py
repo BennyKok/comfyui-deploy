@@ -36,6 +36,9 @@ if not deploy_test:
 
     dockerfile_image = (
         modal.Image.debian_slim()
+        .env({
+            "CIVITAI_TOKEN": config["civitai_token"],
+        })
         .apt_install("git", "wget")
         .pip_install(
             "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
