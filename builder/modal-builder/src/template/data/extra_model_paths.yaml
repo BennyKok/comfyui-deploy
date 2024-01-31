@@ -9,6 +9,8 @@ public:
   loras: loras
   upscale_models: upscale_models
   vae: vae
+  ipadapter: ipadapter
+
 
 private:
   base_path: /private_models/
@@ -21,3 +23,4 @@ private:
   loras: loras
   upscale_models: upscale_models
   vae: vae
+  ipadapter: ipadapter

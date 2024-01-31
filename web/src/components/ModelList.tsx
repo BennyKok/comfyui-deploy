@@ -8,6 +8,13 @@ import { InsertModal } from "./InsertModal";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,9 +37,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import * as React from "react";
-import { addModel } from "@/server/curdModel";
+import { addModel, deleteModel } from "@/server/curdModel";
 import { downloadUrlModelSchema } from "@/server/addCivitaiModelSchema";
 import { modelEnumType } from "@/db/schema";
 
@@ -192,10 +199,16 @@ export const columns: ColumnDef<ModelItemList>[] = [
         lora: "green",
         embedding: "violet",
         vae: "teal",
+        clip: "default",
+        clip_vision: "default",
+        configs: "default",
+        controlnet: "default",
+        upscale_models: "default",
+        ipadapter: "default",
       };
 
       function getBadgeColor(modelType: modelEnumType) {
-        return model_type_map[modelType] || "default";
+        return model_type_map[modelType]
       }
 
       const color = getBadgeColor(row.original.model_type);
@@ -225,35 +238,35 @@ export const columns: ColumnDef<ModelItemList>[] = [
     ),
   },
   // TODO: deletion and editing for future sprint
-  // {
-  //   id: "actions",
-  //   enableHiding: false,
-  //   cell: ({ row }) => {
-  //     const checkpoint = row.original;
-  //
-  //     return (
-  //       <DropdownMenu>
-  //         <DropdownMenuTrigger asChild>
-  //           <Button variant="ghost" className="h-8 w-8 p-0">
-  //             <span className="sr-only">Open menu</span>
-  //             <MoreHorizontal className="h-4 w-4" />
-  //           </Button>
-  //         </DropdownMenuTrigger>
-  //         <DropdownMenuContent align="end">
-  //           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-  //           <DropdownMenuItem
-  //             className="text-destructive"
-  //             onClick={() => {
-  //               deleteWorkflow(checkpoint.id);
-  //             }}
-  //           >
-  //             Delete Workflow
-  //           </DropdownMenuItem>
-  //         </DropdownMenuContent>
-  //       </DropdownMenu>
-  //     );
-  //   },
-  // },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const model = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => {
+                deleteModel(model.id);
+              }}
+            >
+              Delete Model
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
 ];
 
 export function ModelList({ data }: { data: ModelItemList[] }) {

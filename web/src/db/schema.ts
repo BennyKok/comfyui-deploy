@@ -7,10 +7,10 @@ import {
   jsonb,
   pgEnum,
   pgSchema,
+  real,
   text,
   timestamp,
   uuid,
-  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { TypeOf, z } from "zod";
@@ -150,8 +150,9 @@ export const workflowRunsTable = dbSchema.table("workflow_runs", {
       onDelete: "set null",
     },
   ),
-  workflow_inputs:
-    jsonb("workflow_inputs").$type<Record<string, string | number>>(),
+  workflow_inputs: jsonb("workflow_inputs").$type<
+    Record<string, string | number>
+  >(),
   workflow_id: uuid("workflow_id")
     .notNull()
     .references(() => workflowTable.id, {
@@ -298,8 +299,9 @@ export const deploymentsTable = dbSchema.table("deployments", {
     .references(() => machinesTable.id),
   share_slug: text("share_slug").unique(),
   description: text("description"),
-  showcase_media:
-    jsonb("showcase_media").$type<z.infer<typeof showcaseMedia>>(),
+  showcase_media: jsonb("showcase_media").$type<
+    z.infer<typeof showcaseMedia>
+  >(),
   environment: deploymentEnvironment("environment").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -389,7 +391,18 @@ export const modelUploadType = pgEnum("model_upload_type", [
 ]);
 
 // https://www.answeroverflow.com/m/1125106227387584552
-export const modelTypes = ["checkpoint", "lora", "embedding", "vae"] as const;
+export const modelTypes = [
+  "checkpoint",
+  "lora",
+  "embedding",
+  "vae",
+  "clip",
+  "clip_vision",
+  "configs",
+  "controlnet",
+  "upscale_models",
+  "ipadapter",
+] as const;
 export const modelType = pgEnum("model_type", modelTypes);
 export type modelEnumType = (typeof modelTypes)[number];
 

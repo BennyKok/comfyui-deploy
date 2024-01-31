@@ -1,10 +1,18 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 import modal
 from config import config
 import os
 import subprocess
 from pprint import pprint
 
-stub = modal.Stub()
+stub = modal.Stub(config["app_name"])
+vol_name_to_links = config["volume_names"]
+vol_name_to_path = config["volume_paths"]
+callback_url = config["callback_url"]
+callback_body = config["callback_body"]
+civitai_key = config["civitai_api_key"]
+web_app = FastAPI()
 
 # Volume names may only contain alphanumeric characters, dashes, periods, and underscores, and must be less than 64 characters in length.
 def is_valid_name(name: str) -> bool:
@@ -20,12 +28,6 @@ def create_volumes(volume_names, paths):
         path_to_vol[paths[volume_name]] = modal_volume
  
     return path_to_vol
-
-vol_name_to_links = config["volume_names"]
-vol_name_to_path = config["volume_paths"]
-callback_url = config["callback_url"]
-callback_body = config["callback_body"]
-civitai_key = config["civitai_api_key"]
 
 volumes = create_volumes(vol_name_to_links, vol_name_to_path)
 image = ( 
@@ -45,7 +47,7 @@ def download_model(volume_name, download_config):
     modified_download_url = download_url + ("&" if "?" in download_url else "?") + "token=" + civitai_key # civitai requires auth
     print('downloading', modified_download_url)
 
-    subprocess.run(["wget", modified_download_url , "--content-disposition", "-P", model_store_path])
+    subprocess.run(["wget", modified_download_url , "--content-disposition", "-P", model_store_path, "-nv"])
     subprocess.run(["ls", "-la", volume_base_path])
     subprocess.run(["ls", "-la", model_store_path])
     volumes[volume_base_path].commit()
@@ -56,11 +58,12 @@ def download_model(volume_name, download_config):
     print(f"finished! sending to {callback_url}")
     pprint({**status, **callback_body})
 
-@stub.local_entrypoint()
+@stub.function(image=image)
+# @modal.asgi_app()
 def simple_download():
     import requests
     try:
-        list(download_model.starmap([(vol_name, link) for vol_name,link in vol_name_to_links.items()]))
+        list(download_model.starmap([(vol_name, download_conf) for vol_name,download_conf in vol_name_to_links.items()]))
     except modal.exception.FunctionTimeoutError as e:
         status =  {"status": "failed", "error_logs": f"{str(e)}", "timeout": timeout}
         requests.post(callback_url, json={**status, **callback_body})
@@ -71,4 +74,3 @@ def simple_download():
         requests.post(callback_url, json={**status, **callback_body})
         print(f"finished! sending to {callback_url}")
         pprint({**status, **callback_body})
-        

@@ -15,4 +15,5 @@ config = {
         "folder_path": "checkpoints",
     }, 
     "civitai_api_key": "",
+    "app_name": "",
 }

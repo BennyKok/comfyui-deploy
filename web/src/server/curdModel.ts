@@ -11,6 +11,7 @@ import {
 import { withServerPromise } from "./withServerPromise";
 import { db } from "@/db/db";
 import type { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { downloadUrlModelSchema } from "./addCivitaiModelSchema";
 import { and, eq, isNull } from "drizzle-orm";
@@ -210,6 +211,47 @@ export const addModelDownloadUrl = withServerPromise(
   },
 );
 
+export const deleteModel = withServerPromise(
+  async (modelId: string) => {
+    const model = await db.query.modelTable.findFirst({
+      where: eq(modelTable.id, modelId),
+    });
+
+    // If the model does not exist, throw an error or return a message
+    if (!model) {
+      throw new Error("Model not found");
+      // Or return { error: "Model not found" }; if you prefer to handle it without throwing
+    }
+
+    const volumes = await retrieveModelVolumes();
+    if (
+      model.status === "success" && !!model.folder_path && !!model.model_name
+    ) {
+      const result = await fetch(
+        `${process.env.MODAL_BUILDER_URL!}/delete-volume-model`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            volume_name: volumes[0].volume_name,
+            path: model.folder_path,
+            file_name: model.model_name,
+          }),
+        },
+      );
+      if (!result.ok) {
+        const error_log = await result.text();
+        throw new Error(`Error: ${result.statusText} ${error_log}`);
+      }
+    }
+    await db.delete(modelTable).where(eq(modelTable.id, modelId));
+    revalidatePath("/storage");
+    return { message: "Model Deleted" };
+  },
+);
+
 export const getCivitaiModelRes = async (civitaiUrl: string) => {
   const { url, modelVersionId } = getUrl(civitaiUrl);
   const civitaiModelRes = await fetch(url)
@@ -301,8 +343,8 @@ export const addCivitaiModel = withServerPromise(
         model_name: selectedModelVersion.files[0].name,
         civitai_id: civitaiModelRes.id.toString(),
         civitai_version_id: selectedModelVersionId,
-        civitai_url: data.url, // TODO: need to confirm
-        civitai_download_url: selectedModelVersion.files[0].downloadUrl,
+        civitai_url: data.url,
+        civitai_download_url: selectedModelVersion.files[0].downloadUrl, // there is an issue when a model hoster might put multiple different types of files i.e. their training data.
         civitai_model_response: civitaiModelRes,
         user_volume_id: volumes[0].id,
         model_type,
@@ -312,6 +354,7 @@ export const addCivitaiModel = withServerPromise(
     const b = a[0];
 
     await uploadModel(data, b, volumes[0]);
+    revalidatePath("/storage");
   },
 );
 

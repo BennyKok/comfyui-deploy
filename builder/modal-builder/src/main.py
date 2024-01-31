@@ -19,7 +19,7 @@ import requests
 from urllib.parse import parse_qs
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Scope, Receive, Send
-
+import modal
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -236,6 +236,14 @@ class UploadType(str, Enum):
     checkpoint = "checkpoint"
     lora = "lora"
     embedding = "embedding"
+    clip = "clip"
+    clip_vision = "clip_vision"
+    configs = "configs"
+    controlnet = "controlnet"
+    upscale_models = "upscale_models"
+    vae = "vae"
+    ipadapter = "ipadapter"
+    other = "other"
 
 class UploadBody(BaseModel):
     download_url: str
@@ -251,8 +259,46 @@ UPLOAD_TYPE_DIR_MAP = {
     UploadType.checkpoint: "checkpoints",
     UploadType.lora: "loras",
     UploadType.embedding: "embeddings",
+    UploadType.clip: "clip",
+    UploadType.clip_vision: "clip_vision",
+    UploadType.configs: "configs",
+    UploadType.controlnet: "controlnet",
+    UploadType.upscale_models: "upscale_models",
+    UploadType.vae: "vae",
+    UploadType.ipadapter: "ipadapter",
+    UploadType.other: "",
 }
 
+class DeleteBody(BaseModel):
+    volume_name: str
+    path: str
+    file_name: str
+
+
+@app.post("/delete-volume-model")
+async def delete_model(body: DeleteBody):
+    global last_activity_time
+    last_activity_time = time.time()
+    logger.info(f"Extended inactivity time to {global_timeout}")
+    
+    full_path = f"{body.path.rstrip('/')}/{body.file_name}"
+
+    rm_process = await asyncio.subprocess.create_subprocess_exec("modal", "volume", "rm", body.volume_name, full_path,
+                                                                 stdout=asyncio.subprocess.PIPE,
+                                                                 stderr=asyncio.subprocess.PIPE,)
+    await rm_process.wait()
+
+    logger.info(f"Successfully deleted: {full_path} from volume: {body.volume_name}")
+    stdout, stderr = await rm_process.communicate()
+    if stdout:
+        logger.info(f"cp_process stdout: {stdout.decode()}")
+    if stderr:
+        logger.info(f"cp_process stderr: {stderr.decode()}")
+
+    if rm_process.returncode == 0:
+        return JSONResponse(status_code=200, content={"status":f"Successfully deleted {full_path} from volume {body.volume_name}"})
+    else:
+        return JSONResponse(status_code=500, content={"status": "error", "error": stderr.decode()})
 
 @app.post("/upload-volume")
 async def upload_model(body: UploadBody):
@@ -267,12 +313,16 @@ async def upload_model(body: UploadBody):
 
 
 async def upload_logic(body: UploadBody):
-    folder_path = f"/app/builds/{body.volume_id}"
+    folder_path = f"/app/builds/{body.volume_id}-{uuid4()}"
 
-    cp_process = await asyncio.subprocess.create_subprocess_exec("cp", "-r", "/app/src/volume-builder", folder_path)
+    cp_process = await asyncio.subprocess.create_subprocess_exec("cp", "-r", "/app/src/volume_builder", folder_path)
     await cp_process.wait()
 
     upload_path = UPLOAD_TYPE_DIR_MAP[body.upload_type]
+    if upload_path == "":
+        # TODO: deal with custom paths
+        pass
+
     config = {
         "volume_names": {
             body.volume_name: {"download_url": body.download_url, "folder_path": upload_path}
@@ -286,16 +336,22 @@ async def upload_logic(body: UploadBody):
             "volume_id": body.volume_id,
             "folder_path": upload_path,
         },
-        "civitai_api_key": os.environ.get('CIVITAI_API_KEY')
+        "civitai_api_key": os.environ.get('CIVITAI_API_KEY'),
+        "app_name": f"vol_name_{uuid4()}"
     }
     with open(f"{folder_path}/config.py", "w") as f:
         f.write("config = " + json.dumps(config))
 
-    await asyncio.subprocess.create_subprocess_shell(
-        f"modal run app.py",
+    process = await asyncio.subprocess.create_subprocess_shell(
+        f"python runner.py",
         cwd=folder_path,
         env={**os.environ, "COLUMNS": "10000"}
     )
+    await process.wait()
+
+    # import modal
+    # modal.deploy_stub(stub)
+    # stub["download_model"].web_url
 
 @app.post("/create")
 async def create_machine(item: Item):
