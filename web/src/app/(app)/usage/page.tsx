@@ -16,11 +16,19 @@ const freeTierSeconds = 30000;
 export default async function Home() {
   const sub = await getCurrentPlanWithAuth();
 
-  const data = sub?.subscription_item_api_id
-    ? await stripe.subscriptionItems.listUsageRecordSummaries(
-        sub?.subscription_item_api_id,
-      )
-    : null;
+  let data: Awaited<
+    ReturnType<typeof stripe.subscriptionItems.listUsageRecordSummaries>
+  > | null = null;
+
+  try {
+    data = sub?.subscription_item_api_id
+      ? await stripe.subscriptionItems.listUsageRecordSummaries(
+          sub?.subscription_item_api_id,
+        )
+      : null;
+  } catch (e) {
+    console.error(e);
+  }
 
   return (
     <div className="mt-4 flex items-center justify-center">

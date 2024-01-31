@@ -108,12 +108,16 @@ export async function POST(request: Request) {
                 durationInSec *= 4;
                 break;
             }
-            await stripe.subscriptionItems.createUsageRecord(
-              sub.subscription_item_api_id,
-              {
-                quantity: durationInSec,
-              },
-            );
+            try {
+              await stripe.subscriptionItems.createUsageRecord(
+                sub.subscription_item_api_id,
+                {
+                  quantity: durationInSec,
+                },
+              );
+            } catch (error) {
+              console.log(error);
+            }
           }
         }
       }
