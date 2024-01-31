@@ -66,7 +66,7 @@ export function MachineBuildLog({
   return (
     <div>
       {connectionStatus}
-      <LogsViewer logs={logs} hideTimestamp />
+      <LogsViewer logs={logs} className="h-full max-h-[600px]" />
 
       <AlertDialog open={finished}>
         <AlertDialogContent>

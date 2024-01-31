@@ -35,7 +35,10 @@ export default async function Page({
             />
           )}
           {machine.status !== "building" && machine.build_log && (
-            <LogsViewer logs={JSON.parse(machine.build_log)} />
+            <LogsViewer
+              logs={JSON.parse(machine.build_log)}
+              className="h-full max-h-[600px]"
+            />
           )}
         </CardContent>
       </Card>

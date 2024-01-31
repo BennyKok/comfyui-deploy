@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export type LogsType = {
@@ -12,7 +13,8 @@ export type LogsType = {
 export function LogsViewer({
   logs,
   hideTimestamp,
-}: { logs: LogsType; hideTimestamp?: boolean }) {
+  className,
+}: { logs: LogsType; hideTimestamp?: boolean; className?: string }) {
   const container = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -40,7 +42,10 @@ export function LogsViewer({
         }
         container.current = ref;
       }}
-      className="h-full w-full flex flex-col text-xs p-2 overflow-y-scroll whitespace-break-spaces"
+      className={cn(
+        "h-full w-full flex flex-col text-xs p-2 overflow-y-scroll whitespace-break-spaces",
+        className,
+      )}
     >
       {logs.map((x, i) => (
         <div
