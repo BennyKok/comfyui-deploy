@@ -69,13 +69,16 @@ const client = new ComfyDeployClient({
 `;
 
 const jsClientCreateRunTemplate = `
-const { run_id } = await client.run("<ID>", {
+const { run_id } = await client.run({
+  deployment_id: "<ID>",
   inputs: {}
 });
 `;
 
 const jsClientCreateRunNoInputsTemplate = `
-const { run_id } = await client.run("<ID>");
+const { run_id } = await client.run({
+  deployment_id: "<ID>"
+});
 `;
 
 const clientTemplate_checkStatus = `
@@ -119,10 +122,7 @@ export function DeploymentDisplay({
             <TabsContent className="flex flex-col gap-2 !mt-0" value="client">
               <div>
                 Install the node comfydeploy SDK
-                <CodeBlock
-                  lang="bash"
-                  code={`npm i comfydeploy`}
-                />
+                <CodeBlock lang="bash" code={`npm i comfydeploy`} />
                 Initialize your client
               </div>
               <CodeBlock
@@ -197,20 +197,18 @@ function formatCode(
   if (inputs && inputs.length > 0) {
     codeTemplate = codeTemplate.replace(
       "inputs: {}",
-      `inputs: ${
-        JSON.stringify(
-          Object.fromEntries(
-            inputs.map((x) => {
-              return [x?.input_id, ""];
-            }),
-          ),
-          null,
-          2,
-        )
-          .split("\n")
-          .map((line, index) => (index === 0 ? line : `    ${line}`)) // Add two spaces indentation except for the first line
-          .join("\n")
-      }`,
+      `inputs: ${JSON.stringify(
+        Object.fromEntries(
+          inputs.map((x) => {
+            return [x?.input_id, ""];
+          }),
+        ),
+        null,
+        2,
+      )
+        .split("\n")
+        .map((line, index) => (index === 0 ? line : `    ${line}`)) // Add two spaces indentation except for the first line
+        .join("\n")}`,
     );
   } else {
     codeTemplate = codeTemplate.replace(
