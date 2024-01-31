@@ -49,24 +49,26 @@ export async function getRunsData(run_id: string, user?: APIKeyUserType) {
       for (let i = 0; i < data.outputs.length; i++) {
         const output = data.outputs[i];
 
-        if (output.data?.images !== undefined) {
-          for (let j = 0; j < output.data?.images.length; j++) {
-            const element = output.data?.images[j];
-            element.url = replaceCDNUrl(
-              `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${data.id}/${element.filename}`
-            );
-          }
-        } else if (output.data?.files !== undefined) {
-          for (let j = 0; j < output.data?.files.length; j++) {
-            const element = output.data?.files[j];
-            element.url = replaceCDNUrl(
-              `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${data.id}/${element.filename}`
-            );
-          }
-        }
+        if (output.data?.images !== undefined)
+          replaceUrls(output.data?.images, data.id);
+
+        if (output.data?.files !== undefined)
+          replaceUrls(output.data?.files, data.id);
+
+        if (output.data?.gifs !== undefined)
+          replaceUrls(output.data?.gifs, data.id);
       }
     }
   }
 
   return data;
+}
+
+function replaceUrls(dataType: any[], dataId: string) {
+  for (let j = 0; j < dataType.length; j++) {
+    const element = dataType[j];
+    element.url = replaceCDNUrl(
+      `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/outputs/runs/${dataId}/${element.filename}`,
+    );
+  }
 }
