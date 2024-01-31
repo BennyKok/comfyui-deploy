@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, or } from "drizzle-orm";
 import { subscriptionStatusTable } from "@/db/schema";
 import { APIKeyUserType } from "@/server/APIKeyBodyRequest";
 import { auth } from "@clerk/nextjs";
@@ -28,6 +28,7 @@ export async function getCurrentPlan({ user_id, org_id }: APIKeyUserType) {
             isNull(subscriptionStatusTable.org_id),
             eq(subscriptionStatusTable.org_id, ""),
           ),
+      ne(subscriptionStatusTable.status, "deleted"),
     ),
     orderBy: desc(subscriptionStatusTable.created_at),
   });
