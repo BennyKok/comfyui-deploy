@@ -23,19 +23,7 @@ export const insertCustomMachineSchema = createInsertSchema(machinesTable, {
       },
       file_custom_nodes: [],
     }),
-  models: (schema) =>
-    schema.models.default([
-      {
-        name: "v1-5-pruned-emaonly.ckpt",
-        type: "checkpoints",
-        base: "SD1.5",
-        save_path: "default",
-        description: "Stable Diffusion 1.5 base model",
-        reference: "https://huggingface.co/runwayml/stable-diffusion-v1-5",
-        filename: "v1-5-pruned-emaonly.ckpt",
-        url: "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt",
-      },
-    ]),
+  models: (schema) => schema.models.default([]),
 });
 
 export const addCustomMachineSchema = insertCustomMachineSchema.pick({
