@@ -68,10 +68,10 @@ export function InsertModal<
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const a = useState<Partial<z.infer<Z>>>({});
+  const [values, setValues] = useState<Partial<z.infer<Z>>>({});
 
   return (
-    <AutoFormValueProvider value={a}>
+    <AutoFormValueProvider value={[values, setValues]}>
       <Dialog open={open} onOpenChange={setOpen}>
         {/* <DialogTrigger disabled={props.disabled}> */}
         {props.tooltip ? (
