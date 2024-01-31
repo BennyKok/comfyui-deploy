@@ -7,10 +7,12 @@ import { toast } from "sonner";
 
 export function CopyButton({
   className,
+  children,
   ...props
 }: {
   text: string;
   className?: string;
+  children?: React.ReactNode;
 }) {
   return (
     <Button
@@ -21,7 +23,7 @@ export function CopyButton({
       }}
       className={cn(" p-2 min-h-0 aspect-square", className)}
     >
-      <Copy size={14} />
+      {children} <Copy size={14} />
     </Button>
   );
 }

@@ -3,8 +3,10 @@ import { RunOutputs } from "@/components/RunOutputs";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -20,6 +22,8 @@ import { type findAllRuns } from "@/server/findAllRuns";
 import { Suspense } from "react";
 import { LiveStatus } from "./LiveStatus";
 import { LogsType, LogsViewer } from "@/components/LogsViewer";
+import { Button } from "@/components/ui/button";
+import { Edit, ExternalLink } from "lucide-react";
 
 export async function RunDisplay({
   run,
@@ -75,8 +79,7 @@ export async function RunDisplay({
         <div className="max-h-96 overflow-y-scroll">
           <RunInputs run={run} />
           <Suspense>
-            <RunOutputs run_id={run.id} />
-            {run.run_log && <LogsViewer logs={run.run_log} />}
+            <RunOutputs run={run} />
           </Suspense>
         </div>
         {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}

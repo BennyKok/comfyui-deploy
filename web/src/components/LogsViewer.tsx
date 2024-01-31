@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 export type LogsType = {
   machine_id?: string;
@@ -36,10 +37,24 @@ export function LogsViewer({ logs }: { logs: LogsType }) {
         }
         container.current = ref;
       }}
-      className="flex flex-col text-xs p-2 overflow-y-scroll max-h-[400px] whitespace-break-spaces"
+      className="flex flex-col text-xs p-2 overflow-y-scroll whitespace-break-spaces"
     >
       {logs.map((x, i) => (
-        <div key={i}>{x.logs}</div>
+        <div
+          key={i}
+          className="hover:bg-gray-100 flex flex-row items-center gap-2"
+          onClick={() => {
+            toast.success("Copied to clipboard");
+            navigator.clipboard.writeText(x.logs);
+          }}
+        >
+          <span className="min-w-fit">
+            {new Date(x.timestamp).toLocaleString()}
+          </span>
+          <div className="h-full w-[1px] bg-stone-400 flex-shrink-0"></div>
+          {/* Display timestamp */}
+          <div>{x.logs}</div>
+        </div>
       ))}
     </div>
   );

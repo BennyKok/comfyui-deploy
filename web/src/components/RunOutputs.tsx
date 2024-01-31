@@ -1,3 +1,13 @@
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { OutputRender } from "./OutputRender";
 import { CodeBlock } from "@/components/CodeBlock";
 import {
@@ -8,10 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { findAllRuns } from "@/server/findAllRuns";
 import { getRunsOutput } from "@/server/getRunsOutput";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
+import { LogsViewer } from "@/components/LogsViewer";
+import { CopyButton } from "@/components/CopyButton";
 
-export async function RunOutputs({ run_id }: { run_id: string }) {
-  const outputs = await getRunsOutput(run_id);
+export async function RunOutputs({
+  run,
+}: { run: Awaited<ReturnType<typeof findAllRuns>>[0] }) {
+  const outputs = await getRunsOutput(run.id);
   return (
     <Table className="table-fixed">
       <TableHeader className="bg-background top-0 sticky">
@@ -21,6 +38,42 @@ export async function RunOutputs({ run_id }: { run_id: string }) {
         </TableRow>
       </TableHeader>
       <TableBody>
+        <TableRow key={run.id}>
+          <TableCell className="break-words">Run log</TableCell>
+          <TableCell>
+            {run.run_log ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" className="w-fit">
+                    View Log <ExternalLink size={14} />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[1000px] h-full max-h-[600px] grid grid-rows-[auto,1fr,auto]">
+                  <DialogHeader>
+                    <DialogTitle>Run Log</DialogTitle>
+                  </DialogHeader>
+                  <LogsViewer logs={run.run_log} />
+                  <DialogFooter>
+                    <CopyButton
+                      className="w-fit aspect-auto p-4"
+                      text={JSON.stringify(run.run_log)}
+                    >
+                      Copy
+                    </CopyButton>
+                    <DialogClose>
+                      <Button type="button" variant="secondary">
+                        Close
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              "No log available"
+            )}
+          </TableCell>
+        </TableRow>
+
         {outputs?.map((run) => {
           const fileName =
             run.data.images?.[0].filename ||
@@ -45,7 +98,7 @@ export async function RunOutputs({ run_id }: { run_id: string }) {
             <TableRow key={run.id}>
               <TableCell className="break-words">{fileName}</TableCell>
               <TableCell>
-                <OutputRender run_id={run_id} filename={fileName} />
+                <OutputRender run_id={run.run_id} filename={fileName} />
               </TableCell>
             </TableRow>
           );
