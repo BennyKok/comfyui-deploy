@@ -23,6 +23,33 @@ import * as React from "react";
 import { useState } from "react";
 import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
 
+type ContextType = [Partial<any>, React.Dispatch<React.SetStateAction<any>>];
+const AutoFormValueContext = React.createContext<ContextType | null>(null);
+
+function AutoFormValueProvider<Z extends ZodObject<any, any>>({
+  children,
+  value,
+}: {
+  children: React.ReactNode;
+  value: ContextType;
+}) {
+  return (
+    <AutoFormValueContext.Provider value={value}>
+      {children}
+    </AutoFormValueContext.Provider>
+  );
+}
+
+export function useAutoFormValueContext<Z extends ZodObject<any, any>>() {
+  const context = React.useContext(AutoFormValueContext);
+
+  // if (!context) {
+  //   throw new Error("useInsertModal must be used within a InsertModalProvider");
+  // }
+
+  return context;
+}
+
 export function InsertModal<
   K extends ZodRawShape,
   Y extends UnknownKeysParam,
@@ -41,65 +68,73 @@ export function InsertModal<
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const a = useState<Partial<z.infer<Z>>>({});
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {/* <DialogTrigger disabled={props.disabled}> */}
-      {props.tooltip ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="default"
-              className={props.disabled ? "opacity-50" : ""}
-              onClick={() => {
-                if (props.disabled) return;
-                setOpen(true);
-              }}
-            >
-              {props.buttonTitle ?? props.title}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{props.tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <Button
-          variant="default"
-          disabled={props.disabled}
-          onClick={() => {
-            setOpen(true);
-          }}
+    <AutoFormValueProvider value={a}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {/* <DialogTrigger disabled={props.disabled}> */}
+        {props.tooltip ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                className={props.disabled ? "opacity-50" : ""}
+                onClick={() => {
+                  if (props.disabled) return;
+                  setOpen(true);
+                }}
+              >
+                {props.buttonTitle ?? props.title}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{props.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="default"
+            disabled={props.disabled}
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            {props.title}
+          </Button>
+        )}
+        {/* </DialogTrigger> */}
+        <DialogContent
+          className={cn("sm:max-w-[425px]", props.dialogClassName)}
         >
-          {props.title}
-        </Button>
-      )}
-      {/* </DialogTrigger> */}
-      <DialogContent className={cn("sm:max-w-[425px]", props.dialogClassName)}>
-        <DialogHeader>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogDescription>{props.description}</DialogDescription>
-        </DialogHeader>
-        {/* <ScrollArea> */}
-        <AutoForm
-          fieldConfig={props.fieldConfig}
-          formSchema={props.formSchema}
-          onSubmit={async (data) => {
-            setIsLoading(true);
-            await callServerPromise(props.serverAction(data));
-            setIsLoading(false);
-            setOpen(false);
-          }}
-        >
-          <div className="flex justify-end">
-            <AutoFormSubmit>
-              Save Changes
-              {isLoading && <LoadingIcon />}
-            </AutoFormSubmit>
-          </div>
-        </AutoForm>
-        {/* </ScrollArea> */}
-      </DialogContent>
-    </Dialog>
+          <DialogHeader>
+            <DialogTitle>{props.title}</DialogTitle>
+            <DialogDescription>{props.description}</DialogDescription>
+          </DialogHeader>
+          {/* <ScrollArea> */}
+          <AutoForm
+            values={values}
+            onValuesChange={setValues}
+            fieldConfig={props.fieldConfig}
+            formSchema={props.formSchema}
+            onSubmit={async (data) => {
+              setIsLoading(true);
+              await callServerPromise(props.serverAction(data));
+              setIsLoading(false);
+              setOpen(false);
+            }}
+          >
+            <div className="flex justify-end">
+              <AutoFormSubmit>
+                Save Changes
+                {isLoading && <LoadingIcon />}
+              </AutoFormSubmit>
+            </div>
+          </AutoForm>
+          {/* </ScrollArea> */}
+        </DialogContent>
+      </Dialog>
+    </AutoFormValueProvider>
   );
 }
 
@@ -138,49 +173,53 @@ export function UpdateModal<
   }, [props.data]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {props.trigger ?? (
-        <DialogTrigger
-          className="appearance-none hover:cursor-pointer"
-          asChild
-          onClick={() => {
-            setOpen(true);
-          }}
+    <AutoFormValueProvider value={[values, setValues]}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {props.trigger ?? (
+          <DialogTrigger
+            className="appearance-none hover:cursor-pointer"
+            asChild
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            {props.trigger}
+          </DialogTrigger>
+        )}
+        <DialogContent
+          className={cn("sm:max-w-[425px]", props.dialogClassName)}
         >
-          {props.trigger}
-        </DialogTrigger>
-      )}
-      <DialogContent className={cn("sm:max-w-[425px]", props.dialogClassName)}>
-        <DialogHeader>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogDescription>{props.description}</DialogDescription>
-        </DialogHeader>
-        <AutoForm
-          values={values}
-          onValuesChange={setValues}
-          fieldConfig={props.fieldConfig}
-          formSchema={props.formSchema}
-          onSubmit={async (data) => {
-            setIsLoading(true);
-            await callServerPromise(
-              props.serverAction({
-                ...data,
-                id: props.data.id,
-              }),
-            );
-            setIsLoading(false);
-            setOpen(false);
-          }}
-        >
-          <div className="flex justify-end flex-wrap gap-2">
-            {props.extraButtons}
-            <AutoFormSubmit>
-              Save Changes
-              {isLoading && <LoadingIcon />}
-            </AutoFormSubmit>
-          </div>
-        </AutoForm>
-      </DialogContent>
-    </Dialog>
+          <DialogHeader>
+            <DialogTitle>{props.title}</DialogTitle>
+            <DialogDescription>{props.description}</DialogDescription>
+          </DialogHeader>
+          <AutoForm
+            values={values}
+            onValuesChange={setValues}
+            fieldConfig={props.fieldConfig}
+            formSchema={props.formSchema}
+            onSubmit={async (data) => {
+              setIsLoading(true);
+              await callServerPromise(
+                props.serverAction({
+                  ...data,
+                  id: props.data.id,
+                }),
+              );
+              setIsLoading(false);
+              setOpen(false);
+            }}
+          >
+            <div className="flex justify-end flex-wrap gap-2">
+              {props.extraButtons}
+              <AutoFormSubmit>
+                Save Changes
+                {isLoading && <LoadingIcon />}
+              </AutoFormSubmit>
+            </div>
+          </AutoForm>
+        </DialogContent>
+      </Dialog>
+    </AutoFormValueProvider>
   );
 }
