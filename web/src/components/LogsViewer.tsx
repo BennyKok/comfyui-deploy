@@ -9,7 +9,10 @@ export type LogsType = {
   timestamp: number;
 }[];
 
-export function LogsViewer({ logs }: { logs: LogsType }) {
+export function LogsViewer({
+  logs,
+  hideTimestamp,
+}: { logs: LogsType; hideTimestamp?: boolean }) {
   const container = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export function LogsViewer({ logs }: { logs: LogsType }) {
         }
         container.current = ref;
       }}
-      className="flex flex-col text-xs p-2 overflow-y-scroll whitespace-break-spaces"
+      className="h-full w-full flex flex-col text-xs p-2 overflow-y-scroll whitespace-break-spaces"
     >
       {logs.map((x, i) => (
         <div
@@ -48,10 +51,14 @@ export function LogsViewer({ logs }: { logs: LogsType }) {
             navigator.clipboard.writeText(x.logs);
           }}
         >
-          <span className="min-w-fit">
-            {new Date(x.timestamp).toLocaleString()}
-          </span>
-          <div className="h-full w-[1px] bg-stone-400 flex-shrink-0"></div>
+          {!hideTimestamp && (
+            <>
+              <span className="w-[150px] flex-shrink-0">
+                {new Date(x.timestamp * 1000).toLocaleString()}
+              </span>
+              <div className="h-full w-[1px] bg-stone-400 flex-shrink-0"></div>
+            </>
+          )}
           {/* Display timestamp */}
           <div>{x.logs}</div>
         </div>

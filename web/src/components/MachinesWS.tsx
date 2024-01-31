@@ -36,7 +36,7 @@ type State = {
     json: {
       event: string;
       data: any;
-    }
+    },
   ) => void;
 };
 
@@ -82,7 +82,7 @@ function MachineWS({
   const logs = useStore((x) =>
     x.logs
       .filter((p) => p.machine_id === machine.id)
-      .sort((a, b) => a.timestamp - b.timestamp)
+      .sort((a, b) => a.timestamp - b.timestamp),
   );
   const [sid, setSid] = useState("");
 
@@ -96,7 +96,7 @@ function MachineWS({
       // queryParams: {
       //   clientId: sid,
       // },
-    }
+    },
   );
 
   const connectionStatus = getConnectionStatus(readyState);
@@ -135,7 +135,9 @@ function MachineWS({
             You can view your run&apos;s outputs here
           </DialogDescription>
         </DialogHeader>
-        <LogsViewer logs={logs} />
+        <div className="h-[400px]">
+          <LogsViewer logs={logs} hideTimestamp />
+        </div>
       </DialogContent>
     </Dialog>
   );

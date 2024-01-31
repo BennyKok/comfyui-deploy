@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 
 export function MachineBuildLog({
@@ -41,7 +41,7 @@ export function MachineBuildLog({
       reconnectAttempts: 20,
       reconnectInterval: 1000,
       queryParams: query,
-    }
+    },
   );
 
   const connectionStatus = getConnectionStatus(readyState);
@@ -57,59 +57,70 @@ export function MachineBuildLog({
       setLogs((logs) => [...(logs ?? []), message.data]);
     } else if (message?.event === "FINISHED") {
       setFinished(true);
-      setStatus(message.data.status)
+      setStatus(message.data.status);
     }
   }, [lastMessage]);
 
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div>
       {connectionStatus}
-      <LogsViewer logs={logs} />
+      <LogsViewer logs={logs} hideTimestamp />
 
       <AlertDialog open={finished}>
         <AlertDialogContent>
-          {
-            status == "succuss" ? (
-              <>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Machine Built</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Your machine is built, you can now integrate your API, or directly run to check this machines.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogAction onClick={() => {
-                    router.push("/workflows")
-                  }}>See Workflows</AlertDialogAction>
-                  <AlertDialogAction onClick={() => {
-                    router.push("/machines")
-                  }}>See All Machines</AlertDialogAction>
-                </AlertDialogFooter></>
-            ) : (
-              <>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Machine Failed</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Something went wrong with the machine build, please check the log.
-                    Possible cause could be conflits with custom nodes, build got stuck, timeout, or too many custom nodes installed.
-                    Please attempt a rebuild or remove some of the custom nodes.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>See logs</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => {
-                    router.push("/machines")
-                  }}>Back to machines</AlertDialogAction>
-                </AlertDialogFooter></>
-            )
-          }
-
-
+          {status == "succuss" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Machine Built</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your machine is built, you can now integrate your API, or
+                  directly run to check this machines.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction
+                  onClick={() => {
+                    router.push("/workflows");
+                  }}
+                >
+                  See Workflows
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => {
+                    router.push("/machines");
+                  }}
+                >
+                  See All Machines
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Machine Failed</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Something went wrong with the machine build, please check the
+                  log. Possible cause could be conflits with custom nodes, build
+                  got stuck, timeout, or too many custom nodes installed. Please
+                  attempt a rebuild or remove some of the custom nodes.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>See logs</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    router.push("/machines");
+                  }}
+                >
+                  Back to machines
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }
