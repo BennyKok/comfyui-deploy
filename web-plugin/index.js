@@ -50,11 +50,22 @@ const ext = {
       })
         .then(async (res) => {
           const data = await res.json();
-          const { workflow, error } = data;
+          const { workflow, workflow_id, error } = data;
           if (error) {
             infoDialog.showMessage("Unable to load this workflow", error);
             return;
           }
+
+          // Adding a delay to wait for the intial graph to load
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          workflow?.nodes.forEach((x) => {
+            if (x?.type === "ComfyDeploy") {
+              x.widgets_values[1] = workflow_id;
+              // x.widgets_values[2] = workflow_version.version;
+            }
+          });
+
           /** @type {LGraph} */
           app.loadGraphData(workflow);
         })
@@ -682,16 +693,19 @@ export class ConfigDialog extends ComfyDialog {
     </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${data.endpoint
-      }">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
+          data.endpoint
+        }">
       </label>
       <label style="color: white;">
         API Key: ${data.displayName ?? ""}
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${data.apiKey
-      }">
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
+          data.apiKey
+        }">
         <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
-          ${data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
-      }
+          ${
+            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
+          }
         </button>
       </label>
       </div>
