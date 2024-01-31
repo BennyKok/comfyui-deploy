@@ -390,20 +390,25 @@ async def update_file_status(prompt_id, data, uploading, have_error=False, node_
             "prompt_id": prompt_id,
         })
 
+async def handle_upload(prompt_id, data, key, content_type_key, default_content_type):
+    items = data.get(key, [])
+    for item in items:
+        await upload_file(
+            prompt_id, 
+            item.get("filename"), 
+            subfolder=item.get("subfolder"), 
+            type=item.get("type"), 
+            content_type=item.get(content_type_key, default_content_type)
+        )
+
+
 # Upload files in the background
 async def upload_in_background(prompt_id, data, node_id=None, have_upload=True):
     try:
-        images = data.get('images', [])
-        for image in images:
-            await upload_file(prompt_id, image.get("filename"), subfolder=image.get("subfolder"), type=image.get("type"), content_type=image.get("content_type", "image/png"))
-
-        files = data.get('files', [])
-        for file in files:
-            await upload_file(prompt_id, file.get("filename"), subfolder=file.get("subfolder"), type=file.get("type"), content_type=file.get("content_type", "image/png"))
-
-        gifs = data.get('gifs', [])
-        for gif in gifs:
-            await upload_file(prompt_id, gif.get("filename"), subfolder=gif.get("subfolder"), type=gif.get("type"), content_type=gif.get("format", "image/gif"))
+        await handle_upload(prompt_id, data, 'images', "content_type", "image/png")
+        await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
+        # This will also be mp4
+        await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
             
         if have_upload:
             await update_file_status(prompt_id, data, False, node_id=node_id)
