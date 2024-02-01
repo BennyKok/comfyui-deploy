@@ -14,10 +14,18 @@ export function LogsViewer({
   logs,
   hideTimestamp,
   className,
-}: { logs: LogsType; hideTimestamp?: boolean; className?: string }) {
+  stickToBottom = true,
+}: {
+  logs: LogsType;
+  hideTimestamp?: boolean;
+  className?: string;
+  stickToBottom?: boolean;
+}) {
   const container = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!stickToBottom) return;
+
     // console.log(logs.length, container.current);
     if (container.current) {
       const scrollHeight = container.current.scrollHeight;
@@ -27,11 +35,12 @@ export function LogsViewer({
         behavior: "smooth",
       });
     }
-  }, [logs.length]);
+  }, [logs.length, stickToBottom]);
 
   return (
     <div
       ref={(ref) => {
+        if (!stickToBottom) return;
         if (!container.current && ref) {
           const scrollHeight = ref.scrollHeight;
 

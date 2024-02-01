@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import type { findAllRuns } from "@/server/findAllRuns";
 
-export async function RunInputs({
+export function RunInputs({
   run,
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];

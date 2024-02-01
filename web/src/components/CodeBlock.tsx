@@ -13,10 +13,7 @@ export async function CodeBlock(props: {
 
   return (
     <div className="relative w-full text-sm">
-      {/* max-w-[calc(32rem-1.5rem-1.5rem)] */}
-      {/* <div className=""> */}
       <p
-        // tabIndex={1}
         className="[&>pre]:p-4 rounded-lg max-h-96 overflow-auto w-full"
         style={{
           overflowWrap: "break-word",
@@ -28,7 +25,6 @@ export async function CodeBlock(props: {
           }),
         }}
       />
-      {/* </div> */}
       <CopyButton className="absolute right-2 top-2" text={props.code} />
     </div>
   );

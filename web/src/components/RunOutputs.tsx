@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Dialog,
   DialogClose,
@@ -9,7 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { OutputRender } from "./OutputRender";
-import { CodeBlock } from "@/components/CodeBlock";
 import {
   Table,
   TableBody,
@@ -24,11 +25,19 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { LogsViewer } from "@/components/LogsViewer";
 import { CopyButton } from "@/components/CopyButton";
+import useSWR from "swr";
+import { CodeBlockClient } from "@/components/CodeBlockClient";
 
-export async function RunOutputs({
+export function RunOutputs({
   run,
 }: { run: Awaited<ReturnType<typeof findAllRuns>>[0] }) {
-  const outputs = await getRunsOutput(run.id);
+  const { data, isValidating, error } = useSWR(
+    "run-outputs+" + run.id,
+    async () => {
+      return await getRunsOutput(run.id);
+    },
+  );
+
   return (
     <Table className="table-fixed">
       <TableHeader className="bg-background top-0 sticky">
@@ -52,7 +61,7 @@ export async function RunOutputs({
                   <DialogHeader>
                     <DialogTitle>Run Log</DialogTitle>
                   </DialogHeader>
-                  <LogsViewer logs={run.run_log} />
+                  <LogsViewer logs={run.run_log} stickToBottom={false} />
                   <DialogFooter>
                     <CopyButton
                       className="w-fit aspect-auto p-4"
@@ -74,7 +83,7 @@ export async function RunOutputs({
           </TableCell>
         </TableRow>
 
-        {outputs?.map((run) => {
+        {data?.map((run) => {
           const fileName =
             run.data.images?.[0].filename ||
             run.data.files?.[0].filename ||
@@ -85,7 +94,7 @@ export async function RunOutputs({
               <TableRow key={run.id}>
                 <TableCell>Output</TableCell>
                 <TableCell className="">
-                  <CodeBlock
+                  <CodeBlockClient
                     code={JSON.stringify(run.data, null, 2)}
                     lang="json"
                   />

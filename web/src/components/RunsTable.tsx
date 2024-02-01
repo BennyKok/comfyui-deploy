@@ -29,7 +29,7 @@ export function RunsTable(props: {
   const { data, error, isLoading, isValidating } = useSWR(
     "runs+" + page,
     async () => {
-      const data = await getAllRunstableContent({
+      const data = await findAllRunsWithCounts({
         workflow_id: props.workflow_id,
         limit: itemPerPage,
         offset: (page - 1) * itemPerPage,
@@ -68,7 +68,11 @@ export function RunsTable(props: {
               <TableHead className="text-right">Status</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>{data?.table}</TableBody>
+          <TableBody>
+            {data?.allRuns.map((run) => (
+              <RunDisplay run={run} key={run.id} />
+            ))}
+          </TableBody>
         </Table>
       </div>
 

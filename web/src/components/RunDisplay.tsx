@@ -1,12 +1,12 @@
+"use client";
+
 import { RunInputs } from "@/components/RunInputs";
 import { RunOutputs } from "@/components/RunOutputs";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -19,11 +19,8 @@ import {
 } from "@/components/ui/tooltip";
 import { getDuration, getRelativeTime } from "@/lib/getRelativeTime";
 import { type findAllRuns } from "@/server/findAllRuns";
-import { Suspense } from "react";
 import { LiveStatus } from "./LiveStatus";
-import { LogsType, LogsViewer } from "@/components/LogsViewer";
-import { Button } from "@/components/ui/button";
-import { Edit, ExternalLink } from "lucide-react";
+import { LoadingWrapper } from "@/components/LoadingWrapper";
 
 export function RunDisplay({
   run,
@@ -78,9 +75,9 @@ export function RunDisplay({
         </DialogHeader>
         <div className="max-h-96 overflow-y-scroll">
           <RunInputs run={run} />
-          <Suspense>
+          <LoadingWrapper tag="output">
             <RunOutputs run={run} />
-          </Suspense>
+          </LoadingWrapper>
         </div>
         {/* <div className="max-h-96 overflow-y-scroll">{view}</div> */}
       </DialogContent>
