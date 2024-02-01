@@ -1,5 +1,6 @@
 "use server";
 
+import { RunDisplay } from "@/components/RunDisplay";
 import { db } from "@/db/db";
 import { deploymentsTable, workflowRunsTable } from "@/db/schema";
 import { count, desc, eq, sql } from "drizzle-orm";
@@ -54,6 +55,15 @@ export async function findAllRuns({
       },
     },
   });
+}
+
+export async function getAllRunstableContent(props: RunsSearchTypes) {
+  const data = await findAllRunsWithCounts(props);
+
+  return {
+    table: data?.allRuns.map((run) => <RunDisplay run={run} key={run.id} />),
+    total: data?.total,
+  };
 }
 
 export async function findAllRunsWithCounts(props: RunsSearchTypes) {

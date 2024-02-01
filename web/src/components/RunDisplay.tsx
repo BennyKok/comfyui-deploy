@@ -25,7 +25,7 @@ import { LogsType, LogsViewer } from "@/components/LogsViewer";
 import { Button } from "@/components/ui/button";
 import { Edit, ExternalLink } from "lucide-react";
 
-export async function RunDisplay({
+export function RunDisplay({
   run,
 }: {
   run: Awaited<ReturnType<typeof findAllRuns>>[0];

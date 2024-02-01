@@ -1,5 +1,5 @@
 import { LoadingWrapper } from "@/components/LoadingWrapper";
-import { DeploymentsTable } from "@/components/RunsTable";
+import { DeploymentsTable } from "@/components/DeploymentsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function Page({
