@@ -31,6 +31,16 @@ const getOutputRoute = createRoute({
                   input_image: "https://somestatic.png",
                 },
               }),
+            run_log: (schema) =>
+              schema.run_log.openapi({
+                type: "object",
+                example: [
+                  {
+                    logs: "some logs",
+                    timestamp: 1706631877.3831277,
+                  },
+                ],
+              }),
           }),
         },
       },
@@ -81,7 +91,7 @@ export const registerGetOutputRoute = (app: App) => {
             code: 400,
             message: "Workflow not found",
           },
-          400
+          400,
         );
 
       return c.json(run, 200);
@@ -94,7 +104,7 @@ export const registerGetOutputRoute = (app: App) => {
         },
         {
           status: 500,
-        }
+        },
       );
     }
   });
