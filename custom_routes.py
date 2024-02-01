@@ -259,7 +259,6 @@ def update_run(prompt_id, status: Status):
             "run_id": prompt_id,
             "status": status.value,
         }
-        prompt_metadata[prompt_id]['status'] = status
         print(f"Status: {status.value}")
 
         try:
@@ -297,7 +296,9 @@ def update_run(prompt_id, status: Status):
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
             print(f"Error occurred while updating run: {e} {stack_trace}")
-
+        finally:
+            prompt_metadata[prompt_id]['status'] = status
+            
 
 async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output"):
     """
