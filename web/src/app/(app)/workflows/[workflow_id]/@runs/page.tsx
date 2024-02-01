@@ -13,12 +13,12 @@ export default async function Page({
   const workflow_id = params.workflow_id;
 
   return (
-    <Card className="w-full h-fit min-w-0">
-      <CardHeader className="relative">
+    <Card className="w-full h-fit min-w-0 relative">
+      <CardHeader>
         <CardTitle>Run</CardTitle>
-        <div className="absolute right-6 top-6">
+        {/* <div className="absolute right-6 top-6">
           <RouteRefresher interval={5000} autoRefresh={false} />
-        </div>
+        </div> */}
       </CardHeader>
 
       <CardContent>

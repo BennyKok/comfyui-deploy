@@ -16,6 +16,7 @@ import {
 import { PaginationControl } from "./PaginationControl";
 import { RunDisplay } from "./RunDisplay";
 import useSWR from "swr";
+import { LoadingIcon } from "@/components/LoadingIcon";
 
 const itemPerPage = 6;
 const pageParser = parseAsInteger.withDefault(1);
@@ -25,7 +26,7 @@ export function RunsTable(props: {
   searchParams: { [key: string]: any };
 }) {
   const page = pageParser.parse(props.searchParams?.page ?? undefined) ?? 1;
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, isValidating } = useSWR(
     "runs+" + page,
     async () => {
       const data = await getAllRunstableContent({
@@ -45,6 +46,11 @@ export function RunsTable(props: {
 
   return (
     <div>
+      {isValidating ? (
+        <div className="absolute right-8 top-8">
+          <LoadingIcon />
+        </div>
+      ) : null}
       <div className="overflow-auto h-fit w-full">
         <Table className="">
           {/* {data?.allRuns.length === 0 && (
