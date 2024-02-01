@@ -275,6 +275,9 @@ def update_run(prompt_id, status: Status):
                         log_data = log_file.read()
                         # Update the last read line number
                         last_read_line_number += log_data.count('\n')
+                        print("last_read_line_number", last_read_line_number)
+                        print("log_data", log_data)
+                        print("log_data.count(n)", log_data.count('\n'))
 
                         body = {
                             "run_id": prompt_id,
