@@ -53,9 +53,8 @@ import {
   Plus,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
 import useSWR from "swr";
-import { z } from "zod";
+import { getBranchInfo } from "./getBranchInfo";
 
 export function SnapshotPickerView({
   field,
@@ -131,7 +130,7 @@ export function SnapshotPickerView({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
-                          disabled={key.endsWith("comfyui-deploy.git")}
+                          disabled={key.endsWith("comfyui-deploy")}
                           // className="opacity-50"
                           onClick={() => {
                             const newNodeList = {
@@ -147,6 +146,29 @@ export function SnapshotPickerView({
                           }}
                         >
                           Delete
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          // className="opacity-50"
+                          onClick={async () => {
+                            const newNodeList = {
+                              ...field.value.git_custom_nodes,
+                            };
+
+                            const branchInfo = await getBranchInfo(key);
+
+                            if (!branchInfo) return;
+
+                            newNodeList[key].hash = branchInfo?.commit.sha;
+
+                            const nodeList = newNodeList;
+                            const newValue = {
+                              ...field.value,
+                              git_custom_nodes: nodeList,
+                            };
+                            field.onChange(newValue);
+                          }}
+                        >
+                          Update
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -268,24 +290,6 @@ type CustomNodeList = {
   }[];
 };
 
-const RepoSchema = z.object({
-  default_branch: z.string(),
-});
-
-const BranchInfoSchema = z.object({
-  commit: z.object({
-    sha: z.string(),
-  }),
-});
-
-function extractRepoName(repoUrl: string) {
-  const url = new URL(repoUrl);
-  const pathParts = url.pathname.split("/");
-  const repoName = pathParts[2].replace(".git", "");
-  const author = pathParts[1];
-  return `${author}/${repoName}`;
-}
-
 function CustomNodesSelector({
   field,
 }: Pick<AutoFormInputComponentProps, "field">) {
@@ -362,43 +366,7 @@ function CustomNodesSelector({
                         delete newNodeList[currentValue];
                         nodeList = newNodeList;
                       } else {
-                        const repoName = extractRepoName(currentValue);
-                        const id = toast.loading(`Fetching repo info...`);
-                        const repo = await fetch(
-                          `https://api.github.com/repos/${repoName}`,
-                        )
-                          .then((x) => x.json())
-                          .then((x) => {
-                            console.log(x);
-                            return x;
-                          })
-                          .then((x) => RepoSchema.parse(x))
-                          .catch((e) => {
-                            console.error(e);
-                            toast.dismiss(id);
-                            toast.error(
-                              `Failed to fetch repo info ${e.message}`,
-                            );
-                            return null;
-                          });
-
-                        if (!repo) return;
-                        const branch = repo.default_branch;
-                        const branchInfo = await fetch(
-                          `https://api.github.com/repos/${repoName}/branches/${branch}`,
-                        )
-                          .then((x) => x.json())
-                          .then((x) => BranchInfoSchema.parse(x))
-                          .catch((e) => {
-                            console.error(e);
-                            toast.dismiss(id);
-                            toast.error(
-                              `Failed to fetch branch info ${e.message}`,
-                            );
-                            return null;
-                          });
-
-                        toast.dismiss(id);
+                        const branchInfo = await getBranchInfo(currentValue);
 
                         if (!branchInfo) return;
 
