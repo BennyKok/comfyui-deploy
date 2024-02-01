@@ -7,7 +7,7 @@ import { toast } from "sonner";
 export type LogsType = {
   machine_id?: string;
   logs: string;
-  timestamp: number;
+  timestamp?: number;
 }[];
 
 export function LogsViewer({
@@ -65,7 +65,7 @@ export function LogsViewer({
             navigator.clipboard.writeText(x.logs);
           }}
         >
-          {!hideTimestamp && (
+          {!hideTimestamp && x.timestamp != undefined && (
             <>
               <span className="w-[150px] flex-shrink-0">
                 {new Date(x.timestamp * 1000).toLocaleString()}
