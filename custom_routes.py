@@ -239,7 +239,12 @@ class Status(Enum):
     FAILED = "failed"
     UPLOADING = "uploading"
 
+# Global variable to keep track of the last read line number
+last_read_line_number = 0
+
 def update_run(prompt_id, status: Status):
+    global last_read_line_number
+
     if prompt_id not in prompt_metadata:
         return
 
@@ -259,6 +264,32 @@ def update_run(prompt_id, status: Status):
 
         try:
             requests.post(status_endpoint, json=body)
+
+            if status == Status.SUCCESS or status == Status.FAILED:
+                try:
+                    with open(comfyui_file_path, 'r') as log_file:
+                        # log_data = log_file.read()
+                        # Move to the last read line
+                        for _ in range(last_read_line_number):
+                            next(log_file)
+                        log_data = log_file.read()
+                        # Update the last read line number
+                        last_read_line_number += log_data.count('\n')
+
+                        body = {
+                            "run_id": prompt_id,
+                            "log_data": [
+                                {
+                                    "logs": log_data,
+                                    # "timestamp": time.time(),
+                                }
+                            ]
+                        }
+                        requests.post(status_endpoint, json=body)
+                except Exception as log_error:
+                    print(f"Error reading log file: {log_error}")
+                
+
         except Exception as e:
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
@@ -449,6 +480,7 @@ prompt_server.send_json = send_json_override.__get__(prompt_server, server.Promp
 root_path = os.path.dirname(os.path.abspath(__file__))
 two_dirs_up = os.path.dirname(os.path.dirname(root_path))
 log_file_path = os.path.join(two_dirs_up, 'comfy-deploy.log')
+comfyui_file_path = os.path.join(two_dirs_up, 'comfyui.log')
 
 last_read_line = 0
 
