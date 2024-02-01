@@ -27,6 +27,7 @@ api = None
 api_task = None
 prompt_metadata = {}
 cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
+cd_enable_run_log = os.environ.get('CD_ENABLE_RUN_LOG', 'false').lower() == 'true'
 
 def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
@@ -259,22 +260,28 @@ def update_run(prompt_id, status: Status):
             "run_id": prompt_id,
             "status": status.value,
         }
-        prompt_metadata[prompt_id]['status'] = status
         print(f"Status: {status.value}")
 
         try:
             requests.post(status_endpoint, json=body)
 
-            if status == Status.SUCCESS or status == Status.FAILED:
+            if cd_enable_run_log and (status == Status.SUCCESS or status == Status.FAILED):
                 try:
                     with open(comfyui_file_path, 'r') as log_file:
                         # log_data = log_file.read()
                         # Move to the last read line
+                        all_log_data = log_file.read()  # Read all log data
+                        print("All log data before skipping:", all_log_data)  # Log all data before skipping
+                        log_file.seek(0)  # Reset file pointer to the beginning
+                        
                         for _ in range(last_read_line_number):
                             next(log_file)
                         log_data = log_file.read()
                         # Update the last read line number
                         last_read_line_number += log_data.count('\n')
+                        print("last_read_line_number", last_read_line_number)
+                        print("log_data", log_data)
+                        print("log_data.count(n)", log_data.count('\n'))
 
                         body = {
                             "run_id": prompt_id,
@@ -294,7 +301,9 @@ def update_run(prompt_id, status: Status):
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
             print(f"Error occurred while updating run: {e} {stack_trace}")
-
+        finally:
+            prompt_metadata[prompt_id]['status'] = status
+            
 
 async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output"):
     """
