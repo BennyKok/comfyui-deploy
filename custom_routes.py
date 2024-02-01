@@ -269,6 +269,10 @@ def update_run(prompt_id, status: Status):
                     with open(comfyui_file_path, 'r') as log_file:
                         # log_data = log_file.read()
                         # Move to the last read line
+                        all_log_data = log_file.read()  # Read all log data
+                        print("All log data before skipping:", all_log_data)  # Log all data before skipping
+                        log_file.seek(0)  # Reset file pointer to the beginning
+                        
                         for _ in range(last_read_line_number):
                             next(log_file)
                         log_data = log_file.read()
