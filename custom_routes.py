@@ -27,6 +27,7 @@ api = None
 api_task = None
 prompt_metadata = {}
 cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
+cd_enable_run_log = os.environ.get('CD_ENABLE_RUN_LOG', 'false').lower() == 'true'
 
 def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
@@ -264,7 +265,7 @@ def update_run(prompt_id, status: Status):
         try:
             requests.post(status_endpoint, json=body)
 
-            if status == Status.SUCCESS or status == Status.FAILED:
+            if cd_enable_run_log and (status == Status.SUCCESS or status == Status.FAILED):
                 try:
                     with open(comfyui_file_path, 'r') as log_file:
                         # log_data = log_file.read()
