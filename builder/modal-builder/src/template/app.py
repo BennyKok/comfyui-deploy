@@ -38,7 +38,9 @@ if not deploy_test:
     # dockerfile_image = Image.from_dockerfile(f"{current_directory}/Dockerfile", context_mount=Mount.from_local_dir(f"{current_directory}/data", remote_path="/data"))
 
     dockerfile_image = (
-        modal.Image.debian_slim()
+        modal.Image.debian_slim(
+            python_version="3.11.1"
+        )
         .apt_install("git", "wget")
         .pip_install(
             "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
@@ -55,8 +57,8 @@ if not deploy_test:
             "cd /comfyui/custom_nodes/ComfyUI-Manager && pip install -r requirements.txt",
             "cd /comfyui/custom_nodes/ComfyUI-Manager && mkdir startup-scripts",
         )
-        .run_commands(f"cat /comfyui/server.py")
-        .run_commands(f"ls /comfyui/app")
+        # .run_commands(f"cat /comfyui/server.py")
+        # .run_commands(f"ls /comfyui/app")
         # .run_commands(
         #     # Install comfy deploy
         #     "cd /comfyui/custom_nodes && git clone https://github.com/BennyKok/comfyui-deploy.git",
@@ -256,7 +258,7 @@ class ComfyDeployRunner:
             signal.signal(signal.SIGALRM, timeout_handler)
 
             try:
-                signal.alarm(run_timeout)  # 5 seconds timeout
+                signal.alarm(run_timeout)
 
                 ok = await check_server(
                     f"http://{COMFY_HOST}",
@@ -294,7 +296,8 @@ class ComfyDeployRunner:
                 status = ""
                 try:
                     print("getting request")
-                    while retries < COMFY_POLLING_MAX_RETRIES:
+                    # while retries < COMFY_POLLING_MAX_RETRIES:
+                    while True:
                         status_result = await check_status(prompt_id=prompt_id)
                         if 'status' in status_result and (status_result['status'] == 'success' or status_result['status'] == 'failed'):
                             status = status_result['status']
