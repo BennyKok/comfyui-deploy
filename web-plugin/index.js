@@ -180,6 +180,7 @@ function showError(title, message) {
 }
 
 function createDynamicUIHtml(data) {
+  console.log(data);
   let html =
     '<div style="max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
   const bgcolor = "var(--comfy-input-bg)";
@@ -212,33 +213,32 @@ function createDynamicUIHtml(data) {
   html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
   html +=
     '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Models</h2>';
-  const modelSections = ["checkpoints", "ipadapter", "clip_vision"];
-  modelSections.forEach((section) => {
+
+  Object.entries(data.models).forEach(([section, items]) => {
     html += `
-          <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-              <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-                section.charAt(0).toUpperCase() + section.slice(1)
-              }</h3>
-      `;
-    data.models[section].forEach((item) => {
+    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+          section.charAt(0).toUpperCase() + section.slice(1)
+        }</h3>`;
+    items.forEach((item) => {
       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
     });
     html += "</div>";
   });
   html += "</div>";
 
-  // Files
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Files</h2>';
-  html += `
-      <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-          <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">Images</h3>
-  `;
-  data.files.images.forEach((image) => {
-    html += `<p style="font-size: 14px; color: ${textColor};">${image.name}</p>`;
+  Object.entries(data.files).forEach(([section, items]) => {
+    html += `
+    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+          section.charAt(0).toUpperCase() + section.slice(1)
+        }</h3>`;
+    items.forEach((item) => {
+      html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
+    });
+    html += "</div>";
   });
-  html += "</div></div>";
+  html += "</div>";
 
   html += "</div>";
   return html;
