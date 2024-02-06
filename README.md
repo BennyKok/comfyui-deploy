@@ -78,7 +78,7 @@ Major areas
 6. Replace `JWT_SECRET` with `openssl rand -hex 32`
 7. Get a local clerk dev key for `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
 8. Keep a terminal live for `bun run db-dev`
-9. Create local data with `bun run migrate-local`
+9. Execute the local migration to create the initial data `bun run migrate-local`
 10. Finally start the next server with `bun dev`
 
 **Schema Changes**
