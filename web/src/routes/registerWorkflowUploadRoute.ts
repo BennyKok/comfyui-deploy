@@ -113,7 +113,7 @@ export const registerWorkflowUploadRoute = (app: App) => {
         workflow_id = _workflow_id;
         version = _version;
       } else if (workflow_id) {
-        const workflow = await db
+        const _workflow = await db
           .select()
           .from(workflowTable)
           .where(
@@ -126,7 +126,7 @@ export const registerWorkflowUploadRoute = (app: App) => {
             ),
           );
 
-        if (workflow.length === 0) {
+        if (_workflow.length === 0) {
           return c.json(
             {
               error: "Invalid workflow_id",
