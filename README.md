@@ -75,10 +75,11 @@ Major areas
 3. `bun i`
 4. Start docker
 5. `cp .env.example .env.local`
-6. Repace `JWT_SECRET` with `openssl rand -hex 32`
+6. Replace `JWT_SECRET` with `openssl rand -hex 32`
 7. Get a local clerk dev key for `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
 8. Keep a terminal live for `bun run db-dev`
-9. Finally start the next server with `bun dev`
+9. Create local data with `bun run migrate-local`
+10. Finally start the next server with `bun dev`
 
 **Schema Changes**
 
