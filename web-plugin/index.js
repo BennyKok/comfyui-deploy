@@ -1,7 +1,7 @@
 import { app } from "./app.js";
 import { api } from "./api.js";
 import { ComfyWidgets, LGraphNode } from "./widgets.js";
-import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.8";
+import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.9";
 
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
@@ -226,6 +226,11 @@ function createDynamicUIHtml(data) {
     html += "</div>";
   });
   html += "</div>";
+
+  // Models
+  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
+  html +=
+    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Files</h2>';
 
   Object.entries(data.files).forEach(([section, items]) => {
     html += `
