@@ -358,12 +358,14 @@ async def send_json_override(self, event, data, sid=None):
 
     if event == 'executing' and data.get('node') is not None:
         node = data.get('node')
-        if 'last_updated_node' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id]['last_updated_node'] == node:
-            return
-        prompt_metadata[prompt_id]['last_updated_node'] = node
-        class_type = prompt_metadata[prompt_id]['workflow_api'][node]['class_type']
-        print("updating run live status", class_type)
-        await update_run_live_status(prompt_id, "Executing " + class_type)
+        
+        if 'prompt_id' in prompt_metadata:
+            if 'last_updated_node' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id]['last_updated_node'] == node:
+                return
+            prompt_metadata[prompt_id]['last_updated_node'] = node
+            class_type = prompt_metadata[prompt_id]['workflow_api'][node]['class_type']
+            print("updating run live status", class_type)
+            await update_run_live_status(prompt_id, "Executing " + class_type)
 
     if event == 'execution_error':
         # Careful this might not be fully awaited.
