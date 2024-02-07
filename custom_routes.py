@@ -513,7 +513,9 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
             "Content-Length": str(len(data)),
         }
         response = requests.put(ok.get("url"), headers=headers, data=data)
-        print("upload file response", response.status_code)
+        async with aiohttp.ClientSession() as session:
+            async with session.put(ok.get("url"), headers=headers, data=data) as response:
+                print("upload file response", response.status)
 
 def have_pending_upload(prompt_id):
     if 'prompt_id' in prompt_metadata and 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:
