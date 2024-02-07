@@ -118,6 +118,8 @@ async def comfy_deploy_run(request):
                 "stack_trace": stack_trace
             }
         })
+         # When there are critical errors, the prompt is actually not run
+        await update_run(prompt_id, Status.FAILED)
         return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
 
     status = 200
