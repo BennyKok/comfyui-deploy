@@ -91,6 +91,11 @@ export const createRun = withServerPromise(
           if (node.inputs["input_id"] === key) {
             node.inputs["input_id"] = inputs[key];
           }
+
+          // Fix for external text default value
+          if (node.class_type == "ComfyUIDeployExternalText") {
+            node.inputs["default_value"] = inputs[key];
+          }
         });
       }
     }
