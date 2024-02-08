@@ -1,7 +1,7 @@
 import { app } from "./app.js";
 import { api } from "./api.js";
 import { ComfyWidgets, LGraphNode } from "./widgets.js";
-import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.9";
+import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.14";
 
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
@@ -184,12 +184,28 @@ function createDynamicUIHtml(data) {
   let html =
     '<div style="max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
   const bgcolor = "var(--comfy-input-bg)";
+  const evenBg = "var(--border-color)";
   const textColor = "var(--input-text)";
 
   // Custom Nodes
   html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
   html +=
     '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Custom Nodes</h2>';
+
+  if (data.missing_nodes?.length > 0) {
+    html += `
+      <div style="border-bottom: 1px solid #e2e8f0; padding: 4px 12px; background-color: ${evenBg}">
+          <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
+          <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
+          ${data.missing_nodes
+            .map((node) => {
+              return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
+            })
+            .join("")}
+      </div>
+  `;
+  }
+
   Object.values(data.custom_nodes).forEach((node) => {
     html += `
           <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
@@ -346,10 +362,10 @@ function addButton() {
         "Generating dependency graph",
         "Please wait...",
       );
-      deps = await generateDependencyGraph(
-        prompt.output,
-        snapshot,
-        async (file) => {
+      deps = await generateDependencyGraph({
+        workflow_api: prompt.output,
+        snapshot: snapshot,
+        computeFileHash: async (file) => {
           console.log(file);
           loadingDialog.showLoading("Generating hash", file);
           const hash = await fetch(
@@ -361,7 +377,7 @@ function addButton() {
           console.log(hash);
           return hash.file_hash;
         },
-        async (file, hash, prevhash) => {
+        handleFileUpload: async (file, hash, prevhash) => {
           console.log("Uploading ", file);
           loadingDialog.showLoading("Uploading file", file);
           try {
@@ -388,8 +404,8 @@ function addButton() {
             return undefined;
           }
         },
-        existing_workflow.dependencies,
-      );
+        existingDependencies: existing_workflow.dependencies,
+      });
 
       loadingDialog.close();
 
