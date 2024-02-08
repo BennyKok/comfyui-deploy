@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
-export function NavbarMenu({ className }: { className?: string }) {
+export function NavbarMenu({ className }: { className?: string; }) {
   const _isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDesktop, setIsDesktop] = useState(true);
   useEffect(() => {
@@ -34,6 +34,10 @@ export function NavbarMenu({ className }: { className?: string }) {
       name: "API Keys",
       path: "/api-keys",
     },
+    {
+      name: "Examples",
+      path: "/examples"
+    }
   ];
 
   return (
@@ -42,9 +46,9 @@ export function NavbarMenu({ className }: { className?: string }) {
       {isDesktop && (
         <Tabs
           defaultValue={pathname}
-          className="w-[300px] flex pointer-events-auto"
+          className="w-fit flex pointer-events-auto"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="w-full">
             {pages.map((page) => (
               <TabsTrigger
                 key={page.name}
