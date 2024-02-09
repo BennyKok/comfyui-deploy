@@ -22,7 +22,7 @@ const exampleWorkflows: exampleWorkflow[] = [
   {
     title: "Txt2Img SDXL",
     description: "The basic workflow, type a prompt and generate images based on that.",
-    previewURL: '',
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-txt2img-sdxl',
     image: {
       src: '/example-workflows/txt2img.webp',
       alt: 'IPAdapter workflow',
