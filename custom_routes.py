@@ -118,6 +118,8 @@ async def comfy_deploy_run(request):
                 "stack_trace": stack_trace
             }
         })
+         # When there are critical errors, the prompt is actually not run
+        await update_run(prompt_id, Status.FAILED)
         return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
 
     status = 200
@@ -358,12 +360,14 @@ async def send_json_override(self, event, data, sid=None):
 
     if event == 'executing' and data.get('node') is not None:
         node = data.get('node')
-        if 'last_updated_node' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id]['last_updated_node'] == node:
-            return
-        prompt_metadata[prompt_id]['last_updated_node'] = node
-        class_type = prompt_metadata[prompt_id]['workflow_api'][node]['class_type']
-        print("updating run live status", class_type)
-        await update_run_live_status(prompt_id, "Executing " + class_type)
+        
+        if 'prompt_id' in prompt_metadata:
+            if 'last_updated_node' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id]['last_updated_node'] == node:
+                return
+            prompt_metadata[prompt_id]['last_updated_node'] = node
+            class_type = prompt_metadata[prompt_id]['workflow_api'][node]['class_type']
+            print("updating run live status", class_type)
+            await update_run_live_status(prompt_id, "Executing " + class_type)
 
     if event == 'execution_error':
         # Careful this might not be fully awaited.
@@ -511,7 +515,9 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
             "Content-Length": str(len(data)),
         }
         response = requests.put(ok.get("url"), headers=headers, data=data)
-        print("upload file response", response.status_code)
+        async with aiohttp.ClientSession() as session:
+            async with session.put(ok.get("url"), headers=headers, data=data) as response:
+                print("upload file response", response.status)
 
 def have_pending_upload(prompt_id):
     if 'prompt_id' in prompt_metadata and 'uploading_nodes' in prompt_metadata[prompt_id] and len(prompt_metadata[prompt_id]['uploading_nodes']) > 0:

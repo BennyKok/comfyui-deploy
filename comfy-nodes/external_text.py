@@ -29,9 +29,7 @@ class ComfyUIDeployExternalText:
     CATEGORY = "text"
 
     def run(self, input_id, default_value=None):
-        if not input_id or len(input_id.strip()) == 0:
-            return [default_value]
-        return [input_id]
+        return [default_value]
 
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalText": ComfyUIDeployExternalText}
