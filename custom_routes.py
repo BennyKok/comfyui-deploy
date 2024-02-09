@@ -376,6 +376,16 @@ async def send_json_override(self, event, data, sid=None):
             print("updating run live status", class_type)
             await update_run_live_status(prompt_id, "Executing " + class_type, calculated_progress)
 
+    if event == 'execution_cached' and data.get('nodes') is not None:
+        if prompt_id in prompt_metadata:
+            if 'progress' not in prompt_metadata[prompt_id]:
+                prompt_metadata[prompt_id]["progress"] = set()
+            
+            if 'nodes' in data:
+                for node in data.get('nodes', []):
+                    prompt_metadata[prompt_id]["progress"].add(node)
+            # prompt_metadata[prompt_id]["progress"].update(data.get('nodes'))
+
     if event == 'execution_error':
         # Careful this might not be fully awaited.
         await update_run_with_output(prompt_id, data)
