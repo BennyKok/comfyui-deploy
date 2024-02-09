@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Page() {
   return <Examples />;
@@ -19,30 +20,39 @@ type exampleWorkflow = {
 
 const exampleWorkflows: exampleWorkflow[] = [
   {
-    title: "txt2img",
+    title: "Txt2Img SDXL",
     description: "The basic workflow, type a prompt and generate images based on that.",
     previewURL: '',
     image: {
-      src: '/example-workflows/IPAdapter.jpg',
+      src: '/example-workflows/txt2img.webp',
       alt: 'IPAdapter workflow',
     }
   },
   {
-    title: "IPAdapter [SDXL]",
+    title: "Txt2Img LCM SDXL",
+    description: "Images in a couple of seconds, increase the speed of each generation using LCM Lora.",
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-lcm-sdxl',
+    image: {
+      src: '/example-workflows/txt2img-lcm.webp',
+      alt: 'txt2img LCM SDXL',
+    }
+  },
+  {
+    title: "IPAdapter SDXL",
     description: "Load images and use them as reference for new generations.",
-    previewURL: '',
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-ip-adapter-sdxl',
     image: {
-      src: '/example-workflows/img2img.jpg',
+      src: '/example-workflows/ipadapter.webp',
       alt: 'IPAdapter workflow',
     }
   },
   {
-    title: "img2img inpainting",
-    description: "Use an image as base and modify certain areas that you select.",
-    previewURL: '',
+    title: "Upscale and Add Detail SDXL",
+    description: "Upscale and Add Details to your creations",
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-upscale-and-add-detail-sdxl',
     image: {
-      src: '/example-workflows/text2img.jpg',
-      alt: 'img2img inpainting workflow',
+      src: '/example-workflows/upscale.webp',
+      alt: 'Upscale and Add Detail SDXL',
     }
   }
 ];
@@ -57,7 +67,7 @@ async function Examples() {
         </h1>
         <p className="max-w-[560px] text-center text-lg text-muted-foreground">Text to Image, Image to Image, IPAdapter, and more. Here are some examples that you can use to deploy your workflow.</p>
       </section>
-      <section className="flex gap-4">
+      <section className="flex justify-center flex-wrap gap-4">
         {exampleWorkflows.map(workflow => {
           return <Card className="w-[350px]">
             <CardHeader>
@@ -67,9 +77,11 @@ async function Examples() {
             <CardContent>
               <Image src={workflow.image.src} alt={workflow.image.alt} width={350} height={230} />
             </CardContent>
-            <CardFooter className="flex justify-between gap-2">
-              <Button variant="outline">View</Button>
-              <Button>Deploy</Button>
+            <CardFooter className="flex justify-end gap-2">
+              <Button asChild>
+                <Link href={workflow.previewURL}>View Workflow</Link>
+              </Button>
+              {/* <Button>Deploy</Button> */}
             </CardFooter>
           </Card>;
         })}
