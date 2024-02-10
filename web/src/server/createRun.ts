@@ -90,12 +90,12 @@ export const createRun = withServerPromise(
         Object.entries(workflow_api).forEach(([_, node]) => {
           if (node.inputs["input_id"] === key) {
             node.inputs["input_id"] = inputs[key];
+            // Fix for external text default value
+            if (node.class_type == "ComfyUIDeployExternalText") {
+              node.inputs["default_value"] = inputs[key];
+            }
           }
 
-          // Fix for external text default value
-          if (node.class_type == "ComfyUIDeployExternalText") {
-            node.inputs["default_value"] = inputs[key];
-          }
         });
       }
     }
