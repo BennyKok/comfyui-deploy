@@ -1,7 +1,7 @@
 import { app } from "./app.js";
 import { api } from "./api.js";
 import { ComfyWidgets, LGraphNode } from "./widgets.js";
-import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.14";
+import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.15";
 
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
@@ -182,7 +182,7 @@ function showError(title, message) {
 function createDynamicUIHtml(data) {
   console.log(data);
   let html =
-    '<div style="max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
+    '<div style="min-width: 600px; max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
   const bgcolor = "var(--comfy-input-bg)";
   const evenBg = "var(--border-color)";
   const textColor = "var(--input-text)";
@@ -284,8 +284,12 @@ function addButton() {
     }
 
     const ok = await confirmDialog.confirm(
-      "Confirm deployment -> " + displayName,
-      `A new version will be deployed, are you conform? <br><br><input id="include-deps" type="checkbox" checked>Include dependence</input>`,
+      "Confirm deployment -> " +
+        displayName +
+        "<br><br><small><div style='font-weight: normal;'>" +
+        endpoint +
+        "<div><br>",
+      `A new version will be deployed, are you confirm? <br><br><input id="include-deps" type="checkbox" checked>Include dependence</input>`,
     );
     if (!ok) return;
 
