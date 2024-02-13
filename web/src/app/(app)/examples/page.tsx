@@ -48,11 +48,38 @@ const exampleWorkflows: exampleWorkflow[] = [
   },
   {
     title: "Upscale and Add Detail SDXL",
-    description: "Upscale and Add Details to your creations",
+    description: "Upscale and Add Details to your creations.",
     previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-upscale-and-add-detail-sdxl',
     image: {
       src: '/example-workflows/upscale.webp',
       alt: 'Upscale and Add Detail SDXL',
+    }
+  },
+  {
+    title: "Txt2Img SDXL Turbo",
+    description: "Try SDXL turbo and generate images since 1 step in seconds.",
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-txt2img-sdxl-turbo',
+    image: {
+      src: '/example-workflows/txt2img-sdxl-turbo.webp',
+      alt: 'Txt2Img SDXL Turbo',
+    }
+  },
+  {
+    title: "Img2Img SDXL Controlnet",
+    description: "This workflow uses canny. Generate lines of you original image and create variations.",
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-img2-img-sdxl-controlnet',
+    image: {
+      src: '/example-workflows/txt2img-controlnet.webp',
+      alt: 'Img2Img SDXL Controlnet',
+    }
+  },
+  {
+    title: "Automatic Inpainting (SEG)",
+    description: "Type what do you want to select and change that area with your prompt.",
+    previewURL: 'https://www.comfydeploy.com/share/comfy-deploy-example-automatic-inpainting-clip-seg',
+    image: {
+      src: '/example-workflows/automatic-inpainting-seg.webp',
+      alt: 'Img2Img SDXL Controlnet',
     }
   }
 ];
@@ -67,7 +94,7 @@ async function Examples() {
         </h1>
         <p className="max-w-[560px] text-center text-lg text-muted-foreground">Text to Image, Image to Image, IPAdapter, and more. Here are some examples that you can use to deploy your workflow.</p>
       </section>
-      <section className="flex justify-center flex-wrap gap-4">
+      <section className="flex justify-center flex-wrap gap-5">
         {exampleWorkflows.map(workflow => {
           return <Card className="w-[350px]">
             <CardHeader>
