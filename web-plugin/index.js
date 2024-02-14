@@ -1,7 +1,7 @@
 import { app } from "./app.js";
 import { api } from "./api.js";
 import { ComfyWidgets, LGraphNode } from "./widgets.js";
-import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.16";
+import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.19";
 
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
