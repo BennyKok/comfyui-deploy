@@ -328,7 +328,7 @@ export function RunWorkflowButton({
             className="px-1"
           >
             <div className="flex justify-end">
-              <AutoFormSubmit>
+              <AutoFormSubmit disabled={isLoading}>
                 Run
                 {isLoading ? <LoadingIcon /> : <Play size={14} />}
               </AutoFormSubmit>
