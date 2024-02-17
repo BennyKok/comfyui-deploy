@@ -60,6 +60,7 @@ import { callServerPromise } from "./callServerPromise";
 import fetcher from "./fetcher";
 import { ButtonAction } from "@/components/ButtonActionLoader";
 import { editWorkflowOnMachine } from "@/server/editWorkflowOnMachine";
+import { VisualizeImagesGrid } from "@/components/VisualizeImagesGrid";
 
 export function VersionSelect({
   workflow,
@@ -169,19 +170,21 @@ export function useSelectedMachine(
 }
 
 type PublicRunStore = {
-  image: string;
+  image: {
+    url: string;
+  }[] | null;
   loading: boolean;
   runId: string;
   status: string;
 
-  setImage: (image: string) => void;
+  setImage: (image: { url: string; }[]) => void;
   setLoading: (loading: boolean) => void;
   setRunId: (runId: string) => void;
   setStatus: (status: string) => void;
 };
 
 export const publicRunStore = create<PublicRunStore>((set) => ({
-  image: "",
+  image: null,
   loading: false,
   runId: "",
   status: "",
@@ -205,7 +208,10 @@ export function PublicRunOutputs(props: {
         console.log(res?.status);
         if (res) setStatus(res.status);
         if (res && res.status === "success") {
-          setImage(res.outputs[0]?.data.images[0].url);
+          const imageURLs = res.outputs[0]?.data.images.map((item: { url: string; }) => {
+            return { url: item.url };
+          });
+          setImage(imageURLs);
           setLoading(false);
           clearInterval(interval);
         }
@@ -214,30 +220,25 @@ export function PublicRunOutputs(props: {
     return () => clearInterval(interval);
   }, [runId]);
 
-  return (
-    <div className="border border-gray-200 w-full square h-[400px] rounded-lg relative">
-      {!loading && !image && props.preview && props.preview.length > 0 && (
-        <>
-          <img
-            className="w-full h-full object-contain"
-            src={props.preview[0]?.url}
-            alt="Generated image"
-          />
-        </>
-      )}
-      {!loading && image && (
-        <img
-          className="w-full h-full object-contain"
-          src={image}
-          alt="Generated image"
-        />
-      )}
-      {loading && (
+  if (loading) {
+    return (
+      <div className="border border-gray-200 w-full h-[400px] square rounded-lg relative p-4 ">
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2">
           {status} <LoadingIcon />
         </div>
+        <Skeleton className="w-full h-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-gray-200 w-full min-h-[400px] square rounded-lg relative p-4 ">
+      {!image && props.preview && props.preview.length > 0 &&
+        <VisualizeImagesGrid images={props.preview} />
+      }
+      {image && (
+        <VisualizeImagesGrid images={image} />
       )}
-      {loading && <Skeleton className="w-full h-full" />}
     </div>
   );
 }
