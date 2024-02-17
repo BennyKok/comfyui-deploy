@@ -62,10 +62,10 @@ export async function createDeployments(
 
     const userName = workflow.org_id
       ? await clerkClient.organizations
-          .getOrganization({
-            organizationId: workflow.org_id,
-          })
-          .then((x) => x.name)
+        .getOrganization({
+          organizationId: workflow.org_id,
+        })
+        .then((x) => x.name)
       : workflow.user.name;
 
     await db.insert(deploymentsTable).values({
@@ -75,7 +75,8 @@ export async function createDeployments(
       machine_id,
       environment,
       org_id: orgId,
-      share_slug: slugify(`${userName} ${workflow.name}`),
+      // only create share slug if this is public share
+      share_slug: environment == "public-share" ? slugify(`${userName} ${workflow.name}`) : null
     });
   }
   revalidatePath(`/${workflow_id}`);
@@ -247,9 +248,9 @@ export async function findUserShareDeployment(share_id: string) {
         orgId
           ? eq(deploymentsTable.org_id, orgId)
           : and(
-              eq(deploymentsTable.user_id, userId),
-              isNull(deploymentsTable.org_id),
-            ),
+            eq(deploymentsTable.user_id, userId),
+            isNull(deploymentsTable.org_id),
+          ),
       ),
     );
 

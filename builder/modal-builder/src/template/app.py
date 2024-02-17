@@ -36,6 +36,9 @@ if not deploy_test:
 
     dockerfile_image = (
         modal.Image.debian_slim()
+        .env({
+            "CIVITAI_TOKEN": config["civitai_token"],
+        })
         .apt_install("git", "wget")
         .pip_install(
             "git+https://github.com/modal-labs/asgiproxy.git", "httpx", "tqdm"
@@ -231,7 +234,8 @@ def run(input: Input):
 async def bar(request_input: RequestInput):
     # print(request_input)
     if not deploy_test:
-        return run.remote(request_input.input)
+        run.spawn(request_input.input)
+        return {"status": "success"}
     # pass
 
 

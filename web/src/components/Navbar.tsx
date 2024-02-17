@@ -29,6 +29,7 @@ export function Navbar() {
   const { organization } = useOrganization();
   const _isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDesktop, setIsDesktop] = useState(true);
+  const [isSheetOpen, setSheetOpen] = useState(false);
   useEffect(() => {
     setIsDesktop(_isDesktop);
   }, [_isDesktop]);
@@ -36,7 +37,7 @@ export function Navbar() {
     <>
       <div className="flex flex-row items-center gap-4">
         {!isDesktop && (
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={(open) => setSheetOpen(open)}>
             <SheetTrigger asChild>
               <button className="flex items-center justify-center w-8 h-8 p-2">
                 <Menu />
@@ -47,7 +48,10 @@ export function Navbar() {
                 <SheetTitle className="text-start">Comfy Deploy</SheetTitle>
               </SheetHeader>
               <div className="grid h-full grid-rows-[1fr_auto]">
-                <NavbarMenu className=" h-full" />
+                <NavbarMenu
+                  className=" h-full"
+                  closeSheet={() => setSheetOpen(false)}
+                />
                 {/* <OrganizationSwitcher
                   appearance={{
                     elements: {

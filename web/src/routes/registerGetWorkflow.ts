@@ -1,8 +1,9 @@
-import { workflowVersionSchema } from "@/db/schema";
+import { workflowVersionSchema, workflowVersionTable } from "@/db/schema";
 import type { App } from "@/routes/app";
 import { authError } from "@/routes/authError";
 import { getWorkflowVersion } from "@/server/crudWorkflow";
 import { z, createRoute } from "@hono/zod-openapi";
+import { createSelectSchema } from "drizzle-zod";
 
 const route = createRoute({
   method: "get",
@@ -19,7 +20,20 @@ const route = createRoute({
     200: {
       content: {
         "application/json": {
-          schema: workflowVersionSchema,
+          schema: createSelectSchema(workflowVersionTable, {
+            workflow_api: (schema) =>
+              schema.workflow_api.openapi({
+                type: "object",
+              }),
+            workflow: (schema) =>
+              schema.workflow.openapi({
+                type: "object",
+              }),
+            snapshot: (schema) =>
+              schema.snapshot.openapi({
+                type: "object",
+              }),
+          }),
         },
       },
       description: "Retrieve the output",

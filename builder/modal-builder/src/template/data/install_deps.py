@@ -49,6 +49,12 @@ with open('models.json') as f:
     models = json.load(f)
 
 for model in models:
+    import os
+    if "civitai.com/api" in model['url'] and not "token=" in model['url']:
+        if "?" in model['url']:
+            model['url'] += "&token=" + os.environ.get('CIVITAI_TOKEN', '')
+        else:
+            model['url'] += "?token=" + os.environ.get('CIVITAI_TOKEN', '')
     response = requests.request("POST", f"{root_url}/model/install", json=model, headers=headers)
     print(response.text)
 

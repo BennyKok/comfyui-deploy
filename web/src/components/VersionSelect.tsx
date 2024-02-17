@@ -124,14 +124,48 @@ export function MachineSelect({
   );
 }
 
+type SelectedMachineStore = {
+  selectedMachine: string | undefined;
+  setSelectedMachine: (machine: string) => void;
+};
+
+export const selectedMachineStore = create<SelectedMachineStore>((set) => ({
+  selectedMachine: undefined,
+  setSelectedMachine: (machine) => set(() => ({ selectedMachine: machine })),
+}));
+
 export function useSelectedMachine(
   machines: Awaited<ReturnType<typeof getMachines>>,
-) {
-  const a = useQueryState("machine", {
-    defaultValue: machines?.[0]?.id ?? "",
-  });
+): [string, (v: string) => void] {
+  const { selectedMachine, setSelectedMachine } = selectedMachineStore();
+  return [selectedMachine ?? machines?.[0]?.id ?? "", setSelectedMachine];
 
-  return a;
+  // const searchParams = useSearchParams();
+  // const pathname = usePathname();
+  // const router = useRouter();
+
+  // const createQueryString = useCallback(
+  //   (name: string, value: string) => {
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set(name, value);
+
+  //     return params.toString();
+  //   },
+  //   [searchParams],
+  // );
+
+  // return [
+  //   searchParams.get("machine") ?? machines?.[0]?.id ?? "",
+  //   (v: string) => {
+  //     // window.history.pushState(
+  //     //   "new url",
+  //     //   "",
+  //     //   pathname + "?" + createQueryString("machine", v),
+  //     // );
+  //     // router.push(pathname + "?" + createQueryString("machine", v));
+  //     router.replace(pathname + "?" + createQueryString("machine", v));
+  //   },
+  // ];
 }
 
 type PublicRunStore = {
@@ -294,7 +328,7 @@ export function RunWorkflowButton({
             className="px-1"
           >
             <div className="flex justify-end">
-              <AutoFormSubmit>
+              <AutoFormSubmit disabled={isLoading}>
                 Run
                 {isLoading ? <LoadingIcon /> : <Play size={14} />}
               </AutoFormSubmit>

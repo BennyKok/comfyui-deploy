@@ -4,6 +4,7 @@
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "postCreateCommand": "cd web && bun install && bun run migrate-local",
+  "remoteUser": "root",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,6 +14,7 @@
         "stivo.tailwind-fold",
         "streetsidesoftware.code-spell-checker",
         "GitHub.copilot",
+        "ms-azuretools.vscode-docker"
       ]
     }
   }
