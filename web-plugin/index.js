@@ -450,6 +450,16 @@ function addButton() {
         existingDependencies: existing_workflow.dependencies,
       });
 
+      if (
+        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] ||
+        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
+      )
+        deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
+          url: "https://github.com/BennyKok/comfyui-deploy",
+          install_type: "git-clone",
+          name: "ComfyUI Deploy",
+        };
+
       loadingDialog.close();
 
       const depsOk = await confirmDialog.confirm(
