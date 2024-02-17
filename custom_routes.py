@@ -24,6 +24,8 @@ from urllib.parse import quote
 import threading
 import hashlib
 import aiohttp
+import aiofiles
+import concurrent.futures
 
 api = None
 api_task = None
@@ -163,14 +165,73 @@ def get_comfyui_path_from_file_path(file_path):
     return file_path
 
 # Form ComfyUI Manager
-def compute_sha256_checksum(filepath):
+async def compute_sha256_checksum(filepath):
+    print("computing sha256 checksum")
+    chunk_size = 1024 * 256  # Example: 256KB
     filepath = get_comfyui_path_from_file_path(filepath)
-    """Compute the SHA256 checksum of a file, in chunks"""
+    """Compute the SHA256 checksum of a file, in chunks, asynchronously"""
     sha256 = hashlib.sha256()
-    with open(filepath, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
+    async with aiofiles.open(filepath, 'rb') as f:
+        while True:
+            chunk = await f.read(chunk_size)
+            if not chunk:
+                break
             sha256.update(chunk)
     return sha256.hexdigest()
+
+# def hash_chunk(start_end, filepath):
+#     """Hash a specific chunk of the file."""
+#     start, end = start_end
+#     sha256 = hashlib.sha256()
+#     with open(filepath, 'rb') as f:
+#         f.seek(start)
+#         chunk = f.read(end - start)
+#         sha256.update(chunk)
+#     return sha256.digest()  # Return the digest of the chunk
+
+# async def compute_sha256_checksum(filepath):
+#     file_size = os.path.getsize(filepath)
+#     parts = 1  # Or any other division based on file size or desired concurrency
+#     part_size = file_size // parts
+#     start_end_ranges = [(i * part_size, min((i + 1) * part_size, file_size)) for i in range(parts)]
+    
+#     print(start_end_ranges, file_size)
+
+#     loop = asyncio.get_running_loop()
+
+#     # Use ThreadPoolExecutor to process chunks in parallel
+#     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+#         futures = [loop.run_in_executor(executor, hash_chunk, start_end, filepath) for start_end in start_end_ranges]
+#         chunk_hashes = await asyncio.gather(*futures)
+
+#     # Combine the hashes sequentially
+#     final_sha256 = hashlib.sha256()
+#     for chunk_hash in chunk_hashes:
+#         final_sha256.update(chunk_hash)
+
+#     return final_sha256.hexdigest()
+
+# def hash_chunk(filepath):
+#     chunk_size = 1024 * 256  # 256KB per chunk
+#     sha256 = hashlib.sha256()
+#     with open(filepath, 'rb') as f:
+#         while True:
+#             chunk = f.read(chunk_size)
+#             if not chunk:
+#                 break  # End of file
+#             sha256.update(chunk)
+#     return sha256.hexdigest()
+
+# async def compute_sha256_checksum(filepath):
+#     print("computing sha256 checksum")
+#     filepath = get_comfyui_path_from_file_path(filepath)
+    
+#     loop = asyncio.get_running_loop()
+    
+#     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+#         task = loop.run_in_executor(executor, hash_chunk, filepath)
+    
+#     return await task
 
 # This is start uploading the files to Comfy Deploy
 @server.PromptServer.instance.routes.post('/comfyui-deploy/upload-file')
@@ -269,9 +330,13 @@ async def get_file_hash(request):
         base = folder_paths.base_path
         file_path = os.path.join(base, file_path)
         # print("file_path", file_path)
-        file_hash = compute_sha256_checksum(
+        start_time = time.time()  # Capture the start time
+        file_hash = await compute_sha256_checksum(
             file_path
         )
+        end_time = time.time()  # Capture the end time after the code execution
+        elapsed_time = end_time - start_time  # Calculate the elapsed time
+        print(f"Execution time: {elapsed_time} seconds")
         return web.json_response({
             "file_hash": file_hash
         })
