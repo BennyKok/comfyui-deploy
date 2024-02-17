@@ -450,13 +450,18 @@ function addButton() {
         existingDependencies: existing_workflow.dependencies,
       });
 
+      // Need to find a way to include this if this is not included in comfyui-json level
       if (
-        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] ||
+        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] &&
         !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
       )
         deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
           url: "https://github.com/BennyKok/comfyui-deploy",
           install_type: "git-clone",
+          hash:
+            snapshot?.git_custom_nodes?.[
+              "https://github.com/BennyKok/comfyui-deploy"
+            ]?.hash ?? "HEAD",
           name: "ComfyUI Deploy",
         };
 
