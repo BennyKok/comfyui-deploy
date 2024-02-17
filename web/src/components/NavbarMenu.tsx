@@ -5,7 +5,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -24,8 +23,6 @@ export function NavbarMenu({
 
   const pathnames = usePathname();
   const pathname = `/${pathnames.split("/")[1]}`;
-
-  const router = useRouter();
 
   const pages = [
     {
@@ -59,11 +56,8 @@ export function NavbarMenu({
               <TabsTrigger
                 key={page.name}
                 value={page.path}
-                onClick={() => {
-                  router.push(page.path);
-                }}
               >
-                {page.name}
+                <Link href={page.path}>{page.name}</Link>
               </TabsTrigger>
             ))}
           </TabsList>
