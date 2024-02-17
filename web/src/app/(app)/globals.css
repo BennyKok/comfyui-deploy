@@ -80,7 +80,9 @@
   /* @apply rounded-lg p-2 overflow-x-scroll */
   @apply  p-2 max-w-full overflow-auto w-full
 }
- 
+.vsc-controller{
+  position: absolute;
+}
 @layer base {
   * {
     @apply border-border;
