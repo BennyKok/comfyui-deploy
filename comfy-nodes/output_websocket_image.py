@@ -37,7 +37,6 @@ class ComfyDeployWebscoketImageOutput:
     CATEGORY = "output"
 
     def run(self, output_id, images, client_id):
-        results = []
         prompt_server = PromptServer.instance
         loop = prompt_server.loop
         
@@ -51,12 +50,8 @@ class ComfyDeployWebscoketImageOutput:
 
             schedule_coroutine_blocking(send_image, ["PNG", image, None], client_id)
             print("Image sent")
-            # loop.run_until_complete(send_image(["PNG", image, None], client_id))
-            results.append(
-                {"source": "websocket", "content-type": "image/png", "type": "output"}
-            )
 
-        return {"ui": {"images": results}}
+        return {"ui": {}}
         
 
 
