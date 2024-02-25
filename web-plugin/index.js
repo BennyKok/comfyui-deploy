@@ -59,8 +59,8 @@ const ext = {
             return;
           }
 
-          // Adding a delay to wait for the intial graph to load
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // // Adding a delay to wait for the intial graph to load
+          // await new Promise((resolve) => setTimeout(resolve, 2000));
 
           workflow?.nodes.forEach((x) => {
             if (x?.type === "ComfyDeploy") {
@@ -285,12 +285,37 @@ function addButton() {
       return;
     }
 
+    let deployMeta = graph.findNodesByType("ComfyDeploy");
+
+    if (deployMeta.length == 0) {
+      const text = await inputDialog.input(
+        "Create your deployment",
+        "Workflow name",
+      );
+      if (!text) return;
+      console.log(text);
+      app.graph.beforeChange();
+      var node = LiteGraph.createNode("ComfyDeploy");
+      node.configure({
+        widgets_values: [text],
+      });
+      node.pos = [0, 0];
+      app.graph.add(node);
+      app.graph.afterChange();
+      deployMeta = [node];
+    }
+
+    const deployMetaNode = deployMeta[0];
+
+    const workflow_name = deployMetaNode.widgets[0].value;
+    const workflow_id = deployMetaNode.widgets[1].value;
+
     const ok = await confirmDialog.confirm(
       `Confirm deployment`,
       `
       <div>
 
-      A new version will be deployed, do you confirm? 
+      A new version of <button style="font-size: 18px;">${workflow_name}</button> will be deployed, do you confirm? 
       <br><br>
 
       <button style="font-size: 18px;">${displayName}</button>
@@ -331,31 +356,6 @@ function addButton() {
     }
 
     const title = deploy.querySelector("#button-title");
-
-    let deployMeta = graph.findNodesByType("ComfyDeploy");
-
-    if (deployMeta.length == 0) {
-      const text = await inputDialog.input(
-        "Create your deployment",
-        "Workflow name",
-      );
-      if (!text) return;
-      console.log(text);
-      app.graph.beforeChange();
-      var node = LiteGraph.createNode("ComfyDeploy");
-      node.configure({
-        widgets_values: [text],
-      });
-      node.pos = [0, 0];
-      app.graph.add(node);
-      app.graph.afterChange();
-      deployMeta = [node];
-    }
-
-    const deployMetaNode = deployMeta[0];
-
-    const workflow_name = deployMetaNode.widgets[0].value;
-    const workflow_id = deployMetaNode.widgets[1].value;
 
     const prompt = await app.graphToPrompt();
     let deps = undefined;
@@ -474,7 +474,7 @@ function addButton() {
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
         <iframe 
         style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
-        src="${endpoint}/dependency-graph?deps=${encodeURIComponent(
+        src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
           JSON.stringify(deps),
         )}" />`,
         // createDynamicUIHtml(deps),
@@ -942,7 +942,9 @@ export class ConfigDialog extends ComfyDialog {
         }">
       </label>
       <label style="color: white;">
-        API Key: ${data.displayName ?? ""}
+        API Key: User / Org <button style="font-size: 18px;">${
+          data.displayName ?? ""
+        }</button>
         <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
           data.apiKey
         }">
@@ -957,6 +959,9 @@ export class ConfigDialog extends ComfyDialog {
 
     const button = this.container.querySelector("#loginButton");
     button.onclick = () => {
+      this.save();
+      data = getData();
+
       const uuid =
         Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15);
