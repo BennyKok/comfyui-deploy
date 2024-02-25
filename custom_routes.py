@@ -456,7 +456,7 @@ async def comfy_deploy_check_ws_status(request):
     client_id = request.rel_url.query.get('client_id', None)
     if client_id in streaming_prompt_metadata:
         remaining_queue = 0  # Initialize remaining queue count
-        for prompt_id in streaming_prompt_metadata[client_id].running_prompt_ids[client_id]:
+        for prompt_id in streaming_prompt_metadata[client_id].running_prompt_ids:
             prompt_status = prompt_metadata[prompt_id].status
             if prompt_status not in [Status.FAILED, Status.SUCCESS]:
                 remaining_queue += 1  # Increment for each prompt still running
