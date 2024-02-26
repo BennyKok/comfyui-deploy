@@ -600,6 +600,7 @@ def update_run(prompt_id: str, status: Status):
     # if prompt_metadata[prompt_id].start_time is None and status == Status.RUNNING:
     # if its realtime prompt we need to skip that.
     if prompt_metadata[prompt_id].is_realtime is True:
+        prompt_metadata[prompt_id].status = status
         return
 
     if (prompt_metadata[prompt_id].status != status):
@@ -649,7 +650,6 @@ def update_run(prompt_id: str, status: Status):
                 except Exception as log_error:
                     print(f"Error reading log file: {log_error}")
                 
-
         except Exception as e:
             error_type = type(e).__name__
             stack_trace = traceback.format_exc().strip()
