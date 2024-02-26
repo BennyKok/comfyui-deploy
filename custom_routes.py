@@ -143,7 +143,7 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
             
     prompt = {
         "prompt": workflow_api,
-        "client_id": "comfy_deploy_instance", #api.client_id
+        "client_id": sid, #"comfy_deploy_instance", #api.client_id
         "prompt_id": prompt_id
     }
     
@@ -491,10 +491,14 @@ send_json = prompt_server.send_json
 async def send_json_override(self, event, data, sid=None):
     # print("INTERNAL:", event, data, sid)
     prompt_id = data.get('prompt_id')
+    
+    target_sid = sid
+    if target_sid == "comfy_deploy_instance":
+        target_sid = None
 
     # now we send everything
     await asyncio.wait([
-        asyncio.create_task(send(event, data, sid=sid)),
+        asyncio.create_task(send(event, data, sid=target_sid)),
         asyncio.create_task(self.send_json_original(event, data, sid))
     ])
 
