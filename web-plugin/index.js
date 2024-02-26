@@ -880,7 +880,10 @@ export class ConfigDialog extends ComfyDialog {
             justifyContent: "flex-end",
             width: "100%",
           },
-          onclick: () => this.save(),
+          onclick: () => {
+            this.save();
+            this.close();
+          },
         },
         [
           $el("button", {
@@ -891,7 +894,10 @@ export class ConfigDialog extends ComfyDialog {
           $el("button", {
             type: "button",
             textContent: "Save",
-            onclick: () => this.save(),
+            onclick: () => {
+              this.save();
+              this.close();
+            },
           }),
         ],
       ),
@@ -905,20 +911,26 @@ export class ConfigDialog extends ComfyDialog {
   }
 
   save(api_key, displayName) {
-    if (!displayName) displayName = getData().displayName;
-
     const deployOption = this.container.querySelector("#deployOption").value;
     localStorage.setItem("comfy_deploy_env", deployOption);
 
     const endpoint = this.container.querySelector("#endpoint").value;
     const apiKey = api_key ?? this.container.querySelector("#apiKey").value;
+
+    if (!displayName) {
+      if (apiKey != getData().apiKey) {
+        displayName = "Custom";
+      } else {
+        displayName = getData().displayName;
+      }
+    }
+
     saveData({
       endpoint,
       apiKey,
       displayName,
       environment: deployOption,
     });
-    this.close();
   }
 
   show() {
@@ -941,7 +953,7 @@ export class ConfigDialog extends ComfyDialog {
           data.endpoint
         }">
       </label>
-      <label style="color: white;">
+      <div style="color: white;">
         API Key: User / Org <button style="font-size: 18px;">${
           data.displayName ?? ""
         }</button>
@@ -953,14 +965,14 @@ export class ConfigDialog extends ComfyDialog {
             data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
           }
         </button>
-      </label>
+      </div>
       </div>
     `;
 
     const button = this.container.querySelector("#loginButton");
     button.onclick = () => {
       this.save();
-      data = getData();
+      const data = getData();
 
       const uuid =
         Math.random().toString(36).substring(2, 15) +
@@ -978,17 +990,20 @@ export class ConfigDialog extends ComfyDialog {
       this.poll = setInterval(() => {
         fetch(data.endpoint + "/api/auth-response/" + uuid)
           .then((response) => response.json())
-          .then((json) => {
+          .then(async (json) => {
             if (json.api_key) {
               this.save(json.api_key, json.name);
+              this.close();
               this.container.querySelector("#apiKey").value = json.api_key;
-              infoDialog.show();
+              // infoDialog.show();
               clearInterval(this.poll);
               clearTimeout(this.timeout);
-              infoDialog.showMessage(
+              // Refresh dialog
+              const a = await confirmDialog.confirm(
                 "Authenticated",
-                "You will be able to upload workflow to " + json.name,
+                `<div>You will be able to upload workflow to <button style="font-size: 18px; width: fit;">${json.name}</button></div>`,
               );
+              configDialog.show();
             }
           })
           .catch((error) => {
