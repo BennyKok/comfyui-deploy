@@ -552,7 +552,7 @@ async def update_run_live_status(prompt_id, live_status, calculated_progress: fl
     if prompt_id not in prompt_metadata:
         return
     
-    if prompt_metadata[prompt_id].is_realtime:
+    if prompt_metadata[prompt_id].is_realtime is True:
         return
     
     print("progress", calculated_progress)
@@ -575,8 +575,9 @@ def update_run(prompt_id: str, status: Status):
     if prompt_id not in prompt_metadata:
         return
     
+    # if prompt_metadata[prompt_id].start_time is None and status == Status.RUNNING:
     # if its realtime prompt we need to skip that.
-    if prompt_metadata[prompt_id].is_realtime:
+    if prompt_metadata[prompt_id].is_realtime is True:
         return
 
     if (prompt_metadata[prompt_id].status != status):
@@ -716,7 +717,7 @@ def is_prompt_done(prompt_id: str):
     Returns:
         bool: True if the prompt is marked as done, False otherwise.
     """
-    if prompt_id in prompt_metadata and prompt_metadata[prompt_id].done:
+    if prompt_id in prompt_metadata and prompt_metadata[prompt_id].done is True:
         return True
 
     return False
@@ -805,7 +806,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
     if prompt_id not in prompt_metadata:
         return
         
-    if prompt_metadata[prompt_id].is_realtime:
+    if prompt_metadata[prompt_id].is_realtime is True:
         return
     
     status_endpoint = prompt_metadata[prompt_id].status_endpoint
