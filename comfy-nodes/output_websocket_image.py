@@ -17,6 +17,8 @@ class ComfyDeployWebscoketImageOutput:
                     {"multiline": False, "default": "output_id"},
                 ),
                 "images": ("IMAGE", ),
+                "file_type": (["WEBP", "PNG", "JPEG"], ),
+                "quality": ("INT", {"default": 80, "min": 1, "max": 100, "step": 1}),
             },
             "optional": {
                     "client_id": (
@@ -36,7 +38,7 @@ class ComfyDeployWebscoketImageOutput:
 
     CATEGORY = "output"
 
-    def run(self, output_id, images, client_id):
+    def run(self, output_id, images, file_type, quality, client_id):
         prompt_server = PromptServer.instance
         loop = prompt_server.loop
         
@@ -48,7 +50,7 @@ class ComfyDeployWebscoketImageOutput:
             array = 255.0 * tensor.cpu().numpy()
             image = Image.fromarray(np.clip(array, 0, 255).astype(np.uint8))
 
-            schedule_coroutine_blocking(send_image, ["PNG", image, None], client_id)
+            schedule_coroutine_blocking(send_image, [file_type, image, None, quality], client_id)
             print("Image sent")
 
         return {"ui": {}}

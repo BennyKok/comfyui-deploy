@@ -15,6 +15,7 @@ async def send_image(image_data, sid=None):
     image_type = image_data[0]
     image = image_data[1]
     max_size = image_data[2]
+    quality = image_data[3]
     if max_size is not None:
         if hasattr(Image, 'Resampling'):
             resampling = Image.Resampling.BILINEAR
@@ -27,11 +28,13 @@ async def send_image(image_data, sid=None):
         type_num = 1
     elif image_type == "PNG":
         type_num = 2
+    elif image_type == "WEBP":
+        type_num = 3
 
     bytesIO = BytesIO()
     header = struct.pack(">I", type_num)
     bytesIO.write(header)
-    image.save(bytesIO, format=image_type, quality=95, compress_level=1)
+    image.save(bytesIO, format=image_type, quality=quality, compress_level=1)
     preview_bytes = bytesIO.getvalue()
     await send_bytes(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=sid)
         
