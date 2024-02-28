@@ -16,7 +16,7 @@ class ComfyUIDeployExternalNumber:
             "optional": {
                 "default_value": (
                     "FLOAT",
-                    {"multiline": True, "display": "number", "default": 0},
+                    {"multiline": True, "display": "number", "default": 0, "step": 0.01},
                 ),
             }
         }
