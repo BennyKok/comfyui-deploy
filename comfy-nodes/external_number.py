@@ -29,9 +29,12 @@ class ComfyUIDeployExternalNumber:
     CATEGORY = "number"
 
     def run(self, input_id, default_value=None):
-        if not input_id or not input_id.strip().isdigit():
+        try:
+            float_value = float(input_id)
+            print("my number", float_value)
+            return [float_value]
+        except ValueError:
             return [default_value]
-        return [int(input_id)]
 
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalNumber": ComfyUIDeployExternalNumber}
