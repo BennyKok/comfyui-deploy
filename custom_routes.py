@@ -372,6 +372,16 @@ async def get_file_hash(request):
         return web.json_response({
             "error": str(e)
         }, status=500)
+        
+async def update_realtime_run_status(realtime_id: str, status_endpoint: str, status: Status):
+    body = {
+        "run_id": realtime_id,
+        "status": status.value,
+    }
+    # requests.post(status_endpoint, json=body)
+    async with aiohttp.ClientSession() as session:
+        async with session.post(status_endpoint, json=body) as response:
+            pass
 
 @server.PromptServer.instance.routes.get('/comfyui-deploy/ws')
 async def websocket_handler(request):
@@ -388,6 +398,8 @@ async def websocket_handler(request):
     
     auth_token = request.rel_url.query.get('token', None)
     get_workflow_endpoint_url = request.rel_url.query.get('workflow_endpoint', None)
+    realtime_id = request.rel_url.query.get('realtime_id', None)
+    status_endpoint = request.rel_url.query.get('status_endpoint', None)
     
     if auth_token is not None and get_workflow_endpoint_url is not None:
         async with aiohttp.ClientSession() as session:
@@ -397,15 +409,16 @@ async def websocket_handler(request):
                     workflow = await response.json()
                    
                     print("Loaded workflow version ",workflow["version"])
-                   
+                    
                     streaming_prompt_metadata[sid] = StreamingPrompt(
                         workflow_api=workflow["workflow_api"], 
                         auth_token=auth_token,
                         inputs={},
-                        status_endpoint=request.rel_url.query.get('status_endpoint', None),
+                        status_endpoint=status_endpoint,
                         file_upload_endpoint=request.rel_url.query.get('file_upload_endpoint', None),
                     )
                     
+                    await update_realtime_run_status(realtime_id, status_endpoint, Status.RUNNING)
                     # await send("workflow_api", workflow_api, sid)
                 else:
                     error_message = await response.text()
@@ -441,6 +454,9 @@ async def websocket_handler(request):
                 print('ws connection closed with exception %s' % ws.exception())
     finally:
         sockets.pop(sid, None)
+        
+        if realtime_id is not None:
+            await update_realtime_run_status(realtime_id, status_endpoint, Status.SUCCESS)
     return ws
 
 @server.PromptServer.instance.routes.get('/comfyui-deploy/check-status')
