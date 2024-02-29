@@ -10,8 +10,15 @@ sockets = dict()
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
     UNENCODED_PREVIEW_IMAGE = 2
+    
+max_output_id_length = 24
 
-async def send_image(image_data, sid=None):
+async def send_image(image_data, sid=None, output_id:str = None):
+    max_length = max_output_id_length
+    output_id = output_id[:max_length]
+    padded_output_id = output_id.ljust(max_length, '\x00')
+    encoded_output_id = padded_output_id.encode('ascii', 'replace')
+    
     image_type = image_data[0]
     image = image_data[1]
     max_size = image_data[2]
@@ -33,7 +40,15 @@ async def send_image(image_data, sid=None):
 
     bytesIO = BytesIO()
     header = struct.pack(">I", type_num)
+    # 4 bytes for the type
     bytesIO.write(header)
+    # 10 bytes for the output_id
+    position_before = bytesIO.tell()
+    bytesIO.write(encoded_output_id)
+    position_after = bytesIO.tell()
+    bytes_written = position_after - position_before
+    print(f"Bytes written: {bytes_written}")
+    
     image.save(bytesIO, format=image_type, quality=quality, compress_level=1)
     preview_bytes = bytesIO.getvalue()
     await send_bytes(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=sid)

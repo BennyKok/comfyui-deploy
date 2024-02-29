@@ -5,7 +5,7 @@ import torch
 from server import PromptServer, BinaryEventTypes
 import asyncio
 
-from globals import send_image
+from globals import send_image, max_output_id_length
 
 class ComfyDeployWebscoketImageOutput:
     @classmethod
@@ -37,6 +37,16 @@ class ComfyDeployWebscoketImageOutput:
     FUNCTION = "run"
 
     CATEGORY = "output"
+    
+    @classmethod
+    def VALIDATE_INPUTS(s, output_id):
+        try:
+            if len(output_id.encode('ascii')) > max_output_id_length:
+                raise ValueError(f"output_id size is greater than {max_output_id_length} bytes")
+        except UnicodeEncodeError:
+            raise ValueError("output_id is not ASCII encodable")
+
+        return True
 
     def run(self, output_id, images, file_type, quality, client_id):
         prompt_server = PromptServer.instance
@@ -50,7 +60,7 @@ class ComfyDeployWebscoketImageOutput:
             array = 255.0 * tensor.cpu().numpy()
             image = Image.fromarray(np.clip(array, 0, 255).astype(np.uint8))
 
-            schedule_coroutine_blocking(send_image, [file_type, image, None, quality], client_id)
+            schedule_coroutine_blocking(send_image, [file_type, image, None, quality], client_id, output_id)
             print("Image sent")
 
         return {"ui": {}}
