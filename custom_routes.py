@@ -112,14 +112,28 @@ def randomSeed(num_digits=15):
     range_end = (10**num_digits) - 1
     return random.randint(range_start, range_end)
 
+def apply_random_seed_to_workflow(workflow_api):
+    """
+    Applies a random seed to each element in the workflow_api that has a 'seed' input.
+
+    Args:
+        workflow_api (dict): The workflow API dictionary to modify.
+    """
+    for key in workflow_api:
+        if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
+            if isinstance(workflow_api[key]['inputs']['seed'], list):
+                continue
+            if workflow_api[key]['class_type'] == "PromptExpansion":
+                workflow_api[key]['inputs']['seed'] = randomSeed(8);
+                continue
+            workflow_api[key]['inputs']['seed'] = randomSeed();
+
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
     workflow_api = copy.deepcopy(inputs.workflow_api)
     
     # Random seed
-    for key in workflow_api:
-        if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
-            workflow_api[key]['inputs']['seed'] = randomSeed()
+    apply_random_seed_to_workflow(workflow_api)
             
     print("getting inputs" , inputs.inputs)
             
@@ -173,9 +187,10 @@ async def comfy_deploy_run(request):
     # The prompt id generated from comfy deploy, can be None
     prompt_id = data.get("prompt_id")
 
-    for key in workflow_api:
-        if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
-            workflow_api[key]['inputs']['seed'] = randomSeed()
+    apply_random_seed_to_workflow(workflow_api)
+    # for key in workflow_api:
+    #     if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
+    #         workflow_api[key]['inputs']['seed'] = randomSeed()
 
     prompt = {
         "prompt": workflow_api,
