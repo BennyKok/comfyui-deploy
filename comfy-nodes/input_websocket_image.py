@@ -44,7 +44,7 @@ class ComfyDeployWebscoketImageInput:
 
         return True
 
-    def run(self, input_id, default_value, seed, client_id):
+    def run(self, input_id, seed, default_value=None ,client_id=None):
         # print(streaming_prompt_metadata[client_id].inputs)
         if client_id in streaming_prompt_metadata and input_id in streaming_prompt_metadata[client_id].inputs:
             if isinstance(streaming_prompt_metadata[client_id].inputs[input_id], Image.Image):
