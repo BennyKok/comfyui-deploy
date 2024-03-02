@@ -2,10 +2,26 @@ import struct
 
 import aiohttp
 
+from typing import List, Union, Any, Optional
 from PIL import Image, ImageOps
 from io import BytesIO
 
+from pydantic import BaseModel as PydanticBaseModel
+
+class BaseModel(PydanticBaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+class StreamingPrompt(BaseModel):
+    workflow_api: Any
+    auth_token: str
+    inputs: dict[str, Union[str, bytes, Image.Image]]
+    running_prompt_ids: set[str] = set()
+    status_endpoint: str
+    file_upload_endpoint: str
+
 sockets = dict()
+streaming_prompt_metadata: dict[str, StreamingPrompt] = {}
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
