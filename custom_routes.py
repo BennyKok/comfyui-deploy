@@ -51,14 +51,15 @@ prompt_metadata: dict[str, SimplePrompt] = {}
 cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
 cd_enable_run_log = os.environ.get('CD_ENABLE_RUN_LOG', 'false').lower() == 'true'
 
-async def clear_current_prompt(sid):
+def clear_current_prompt(sid):
     prompt_server = server.PromptServer.instance
     to_delete = list(streaming_prompt_metadata[sid].running_prompt_ids)  # Convert set to list
     
+    print("clearning out prompt: ", to_delete)
     for id_to_delete in to_delete:
-        print("clearning out prompt: ", id_to_delete)
         delete_func = lambda a: a[1] == id_to_delete
         prompt_server.prompt_queue.delete_queue_item(delete_func)
+        print("deleted prompt: ", id_to_delete, prompt_server.prompt_queue.get_tasks_remaining())
         
     streaming_prompt_metadata[sid].running_prompt_ids.clear()
 
