@@ -1,6 +1,7 @@
 "use client";
 
 import { NavbarMenu } from "@/components/NavbarMenu";
+import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -22,6 +23,7 @@ import {
 } from "@clerk/nextjs";
 import { Github, Menu } from "lucide-react";
 import meta from "next-gen/config";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
@@ -30,6 +32,7 @@ export function Navbar() {
   const _isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDesktop, setIsDesktop] = useState(true);
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const t = useTranslations("Navbar")
   useEffect(() => {
     setIsDesktop(_isDesktop);
   }, [_isDesktop]);
@@ -94,8 +97,9 @@ export function Navbar() {
           variant="link"
           className="rounded-full aspect-square p-2 mr-4"
         >
-          <a href="/docs">Docs</a>
+          <a href="/docs">{t("Docs")}</a>
         </Button>
+        <LocaleSwitcher />
         <UserButton />
         <Button
           asChild

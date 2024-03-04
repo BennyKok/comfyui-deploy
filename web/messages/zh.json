@@ -1,0 +1,63 @@
+{
+    "NavbarMenu": {
+        "Workflows": "工作流",
+        "Machines": "机器",
+        "API Keys": "API密钥",
+        "Examples": "例子"
+    },
+    "Navbar": {
+        "Docs": "文档"
+    },
+    "LoadingWrapper": {
+        "Fetching": "获取"
+    },
+    "WorkflowList": {
+        "Filter workflows": "过滤工作流...",
+        "No results": "无结果",
+        "row(s) selected": "行被选中",
+        "of": "行中的",
+        "Previous": "上一页",
+        "Next": "下一页"
+    },
+    "MachineList": {
+        "Filter machines": "过滤机器...",
+        "No results": "无结果",
+        "row(s) selected": "行被选中",
+        "of": "行中的",
+        "Previous": "上一页",
+        "Next": "下一页",
+        "New Machine": "新建机器",
+        "Custom Machine": "自定义机器",
+        "Add custom ComfyUI machines to your account": "将自定义的ComfyUI机器添加到账户"
+    },
+    "APIKeyList": {
+        "Filter keys": "过滤API密钥...",
+        "No results": "无结果",
+        "row(s) selected": "行被选中",
+        "of": "行中的",
+        "Previous": "上一页",
+        "Next": "下一页",
+        "Create API Key": "创建API密钥",
+        "My API Key": "我的API密钥",
+        "Create API Key for workflow upload": "创建用于上传工作流的API密钥",
+        "Name": "名称"
+    },
+    "InsertModal": {
+        "Save Changes": "保存更改"
+    },
+    "Main": {
+        "Open Source on Github": "✨ Github上的开源项目",
+        "Stable Diffusion from your terminal to the world": "Stable Diffusion从你的终端连接世界",
+        "From your comfyui workflow to production ready API, flexibility at the speed of thought": "从comfyui工作流到生产API，跟随你思考的脚步",
+        "Get Started": "开始了解"
+    },
+    "Examples": {
+        "Check out some examples": "查看一些例子",
+        "View Workflow": "查看工作流",
+        "Text to Image": "文本生成图片，图片生成图片, IPAdapter和更多. 这里有一些例子可以用来部署工作流。"
+    },
+    "LocaleSwitcher": {
+        "label": "Change language",
+        "locale": "{locale, select, zh {🇨🇳 中文} en {🇺🇸 English} other {Unknown}}"
+    }
+}
