@@ -282,6 +282,19 @@ async def compute_sha256_checksum(filepath):
             sha256.update(chunk)
     return sha256.hexdigest()
 
+@server.PromptServer.instance.routes.get('/comfyui-deploy/models')
+async def get_installed_models(request):
+    # Directly return the list of paths as JSON
+    new_dict = {}
+    for key, value in folder_paths.folder_names_and_paths.items():
+        # Convert set to list for JSON compatibility
+        # for path in value[0]:
+        file_list = folder_paths.get_filename_list(key)
+        value_json_compatible = (value[0], list(value[1]), file_list)
+        new_dict[key] = value_json_compatible
+    # print(new_dict)
+    return web.json_response(new_dict)
+
 # This is start uploading the files to Comfy Deploy
 @server.PromptServer.instance.routes.post('/comfyui-deploy/upload-file')
 async def upload_file_endpoint(request):
