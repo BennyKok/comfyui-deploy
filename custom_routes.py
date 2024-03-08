@@ -155,6 +155,9 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
                 # Fix for external text default value
                 if (value["class_type"] == "ComfyUIDeployExternalText"):
                     value['inputs']["default_value"] = new_value
+                    
+                if (value["class_type"] == "ComfyUIDeployExternalCheckpoint"):
+                    value['inputs']["default_value"] = new_value
 
                 
     print(workflow_api)
