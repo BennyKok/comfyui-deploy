@@ -480,6 +480,7 @@ async def websocket_handler(request):
                         print("Got input: ", data.get("inputs"))
                         input = data.get('inputs')
                         streaming_prompt_metadata[sid].inputs.update(input)
+                    elif event_type == 'queue_prompt':
                         clear_current_prompt(sid)
                         send_prompt(sid, streaming_prompt_metadata[sid])
                     else:
@@ -519,8 +520,8 @@ async def websocket_handler(request):
                         except Exception as e:
                             print(f"Error closing previous image for input ID {input_id}: {e}")
                     streaming_prompt_metadata[sid].inputs[input_id] = image
-                    clear_current_prompt(sid)
-                    send_prompt(sid, streaming_prompt_metadata[sid])
+                    # clear_current_prompt(sid)
+                    # send_prompt(sid, streaming_prompt_metadata[sid])
                     print(f"Received {image_type} image of size {image.size} with input ID {input_id}")
             
             if msg.type == aiohttp.WSMsgType.ERROR:
