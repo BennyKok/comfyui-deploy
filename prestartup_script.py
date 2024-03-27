@@ -58,6 +58,9 @@ if cd_enable_log:
    print("** Comfy Deploy logging enabled")
    setup() 
 
+
+# Store the original working directory
+original_cwd = os.getcwd()
 try:
     # Get the absolute path of the script's directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,3 +70,6 @@ try:
     print(f"** Comfy Deploy Revision: {current_git_commit}")
 except Exception as e:
     print(f"** Comfy Deploy failed to get current git commit: {str(e)}")
+finally:
+    # Change back to the original directory
+    os.chdir(original_cwd)
