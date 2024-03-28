@@ -3,6 +3,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ export function NavbarMenu({
 
   const pathnames = usePathname();
   const pathname = `/${pathnames.split("/")[1]}`;
+  const t = useTranslations("NavbarMenu")
 
   const pages = [
     {
@@ -57,7 +59,7 @@ export function NavbarMenu({
                 key={page.name}
                 value={page.path}
               >
-                <Link href={page.path}>{page.name}</Link>
+                <Link href={page.path}>{t(page.name)}</Link>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -77,7 +79,7 @@ export function NavbarMenu({
                 }}
                 className="p-2 hover:bg-gray-100/20 hover:underline"
               >
-                {page.name}
+                {t(page.name)}
               </Link>
             ))}
           </div>

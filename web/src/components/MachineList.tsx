@@ -55,6 +55,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { useState } from "react";
 import type { z } from "zod";
@@ -311,7 +312,7 @@ export function MachineList({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
+  const t = useTranslations("MachineList");
   const table = useReactTable({
     data,
     columns,
@@ -335,7 +336,7 @@ export function MachineList({
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter machines..."
+          placeholder={t("Filter machines")}
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
@@ -355,8 +356,8 @@ export function MachineList({
                 ? "Only one hosted machine at preview stage"
                 : undefined
             }
-            title="New Machine"
-            description="Add custom ComfyUI machines to your account."
+            title={t("New Machine")}
+            description={t("Add custom ComfyUI machines to your account")}
             serverAction={addCustomMachine}
             formSchema={addCustomMachineSchema}
             fieldConfig={{
@@ -391,8 +392,8 @@ export function MachineList({
             }}
           />
           <InsertModal
-            title="Custom Machine"
-            description="Add custom comfyui machines to your account."
+            title={t("Custom Machine")}
+            description={t("Add custom ComfyUI machines to your account")}
             serverAction={addMachine}
             formSchema={addMachineSchema}
           />
@@ -409,9 +410,9 @@ export function MachineList({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
@@ -441,7 +442,7 @@ export function MachineList({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t("No results")}
                 </TableCell>
               </TableRow>
             )}
@@ -451,8 +452,8 @@ export function MachineList({
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} {t("of")}{" "}
+          {table.getFilteredRowModel().rows.length} {t("row(s) selected")}
         </div>
         <div className="space-x-2">
           <Button
@@ -461,7 +462,7 @@ export function MachineList({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("Previous")}
           </Button>
           <Button
             variant="outline"
@@ -469,7 +470,7 @@ export function MachineList({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("Next")}
           </Button>
         </div>
       </div>
