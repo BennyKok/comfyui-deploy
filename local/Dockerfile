@@ -11,7 +11,7 @@ WORKDIR /web
 
 RUN cp .env.example .env.local
 
-RUN npm install glob
+RUN bunx node-gyp
 
 RUN bun i
 
