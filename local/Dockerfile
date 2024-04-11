@@ -1,6 +1,6 @@
 FROM node:21-bullseye AS comfy_deploy
 
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y python3 make g++
 
 RUN npm install -g bun
 
