@@ -637,8 +637,9 @@ async def send_json_override(self, event, data, sid=None):
         if prompt_id in prompt_metadata:
             node = data.get('node')
             class_type = prompt_metadata[prompt_id].workflow_api[node]['class_type']
-            print("skipping preview image")
+            print("executed", class_type)
             if class_type == "PreviewImage":
+                print("skipping preview image")
                 return
             
         await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
