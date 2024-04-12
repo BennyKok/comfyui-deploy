@@ -13,7 +13,6 @@ import traceback
 import uuid
 import asyncio
 import logging
-from enum import Enum
 from urllib.parse import quote
 import threading
 import hashlib
@@ -24,30 +23,11 @@ from PIL import Image
 import copy
 import struct
 
-from globals import StreamingPrompt, sockets, streaming_prompt_metadata, BaseModel
-
-class Status(Enum):
-    NOT_STARTED = "not-started"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILED = "failed"
-    UPLOADING = "uploading"
-    
-class SimplePrompt(BaseModel):
-    status_endpoint: str
-    file_upload_endpoint: str
-    workflow_api: dict
-    status: Status = Status.NOT_STARTED
-    progress: set = set()
-    last_updated_node: Optional[str] = None,
-    uploading_nodes: set = set()
-    done: bool = False
-    is_realtime: bool = False,
-    start_time: Optional[float] = None,
+from globals import StreamingPrompt, Status, sockets, SimplePrompt, streaming_prompt_metadata, prompt_metadata
 
 api = None
 api_task = None
-prompt_metadata: dict[str, SimplePrompt] = {}
+
 cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
 cd_enable_run_log = os.environ.get('CD_ENABLE_RUN_LOG', 'false').lower() == 'true'
 
@@ -653,6 +633,14 @@ async def send_json_override(self, event, data, sid=None):
         # await update_run_with_output(prompt_id, data)
 
     if event == 'executed' and 'node' in data and 'output' in data:
+        print("executed", data)
+        if prompt_id in prompt_metadata:
+            node = data.get('node')
+            class_type = prompt_metadata[prompt_id].workflow_api[node]['class_type']
+            print("skipping preview image")
+            if class_type == "PreviewImage":
+                return
+            
         await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # update_run_with_output(prompt_id, data.get('output'))
@@ -892,6 +880,9 @@ async def update_file_status(prompt_id: str, data, uploading, have_error=False, 
 async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, default_content_type: str):
     items = data.get(key, [])
     for item in items:
+        # # Skipping temp files
+        # if item.get("type") == "temp":
+        #     continue
         await upload_file(
             prompt_id,
             item.get("filename"),
@@ -899,7 +890,6 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
             type=item.get("type"),
             content_type=item.get(content_type_key, default_content_type)
         )
-
 
 # Upload files in the background
 async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=True):

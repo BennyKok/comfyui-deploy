@@ -1,16 +1,21 @@
 import struct
-
+from enum import Enum
 import aiohttp
-
 from typing import List, Union, Any, Optional
 from PIL import Image, ImageOps
 from io import BytesIO
-
 from pydantic import BaseModel as PydanticBaseModel
 
 class BaseModel(PydanticBaseModel):
     class Config:
         arbitrary_types_allowed = True
+        
+class Status(Enum):
+    NOT_STARTED = "not-started"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    UPLOADING = "uploading"
 
 class StreamingPrompt(BaseModel):
     workflow_api: Any
@@ -19,8 +24,21 @@ class StreamingPrompt(BaseModel):
     running_prompt_ids: set[str] = set()
     status_endpoint: str
     file_upload_endpoint: str
+    
+class SimplePrompt(BaseModel):
+    status_endpoint: str
+    file_upload_endpoint: str
+    workflow_api: dict
+    status: Status = Status.NOT_STARTED
+    progress: set = set()
+    last_updated_node: Optional[str] = None,
+    uploading_nodes: set = set()
+    done: bool = False
+    is_realtime: bool = False,
+    start_time: Optional[float] = None,
 
 sockets = dict()
+prompt_metadata: dict[str, SimplePrompt] = {}
 streaming_prompt_metadata: dict[str, StreamingPrompt] = {}
 
 class BinaryEventTypes:
