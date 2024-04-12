@@ -362,26 +362,60 @@ async def upload_file_endpoint(request):
     }, status=500)
         
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Assuming the cache file is stored in the same directory as this script
+CACHE_FILE_PATH = script_dir + '/file-hash-cache.json'
+
+# Global in-memory cache
+file_hash_cache = {}
+
+# Load cache from disk at startup
+def load_cache():
+    global file_hash_cache
+    try:
+        with open(CACHE_FILE_PATH, 'r') as cache_file:
+            file_hash_cache = json.load(cache_file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        file_hash_cache = {}
+
+# Save cache to disk
+def save_cache():
+    with open(CACHE_FILE_PATH, 'w') as cache_file:
+        json.dump(file_hash_cache, cache_file)
+
+# Initialize cache on application start
+load_cache()
+
 @server.PromptServer.instance.routes.get('/comfyui-deploy/get-file-hash')
 async def get_file_hash(request):
     file_path = request.rel_url.query.get('file_path', '')
 
-    if file_path is None:
+    if not file_path:
         return web.json_response({
             "error": "file_path is required"
         }, status=400)
     
     try:
         base = folder_paths.base_path
-        file_path = os.path.join(base, file_path)
-        # print("file_path", file_path)
-        start_time = time.time()  # Capture the start time
-        file_hash = await compute_sha256_checksum(
-            file_path
-        )
-        end_time = time.time()  # Capture the end time after the code execution
-        elapsed_time = end_time - start_time  # Calculate the elapsed time
-        print(f"Execution time: {elapsed_time} seconds")
+        full_file_path = os.path.join(base, file_path)
+
+        # Check if the file hash is in the cache
+        if full_file_path in file_hash_cache:
+            file_hash = file_hash_cache[full_file_path]
+            print("Cache hit")
+        else:
+            print("Cache miss")
+            start_time = time.time()
+            file_hash = await compute_sha256_checksum(full_file_path)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Execution time: {elapsed_time} seconds")
+
+            # Update the in-memory cache
+            file_hash_cache[full_file_path] = file_hash
+            
+            save_cache()
+
         return web.json_response({
             "file_hash": file_hash
         })
