@@ -916,8 +916,8 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
     items = data.get(key, [])
     for item in items:
         # # Skipping temp files
-        # if item.get("type") == "temp":
-        #     continue
+        if item.get("type") == "temp":
+            continue
         await upload_file(
             prompt_id,
             item.get("filename"),
