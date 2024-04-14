@@ -402,14 +402,12 @@ async def get_file_hash(request):
         # Check if the file hash is in the cache
         if full_file_path in file_hash_cache:
             file_hash = file_hash_cache[full_file_path]
-            print("Cache hit")
         else:
-            print("Cache miss")
             start_time = time.time()
             file_hash = await compute_sha256_checksum(full_file_path)
             end_time = time.time()
             elapsed_time = end_time - start_time
-            print(f"Execution time: {elapsed_time} seconds")
+            print(f"Cache miss -> Execution time: {elapsed_time} seconds")
 
             # Update the in-memory cache
             file_hash_cache[full_file_path] = file_hash
