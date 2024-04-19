@@ -18,6 +18,11 @@ const ext = {
     const auth_token = queryParams.get("auth_token");
     const org_display = queryParams.get("org_display");
     const origin = queryParams.get("origin");
+    const workspace_mode = queryParams.get("workspace_mode");
+
+    if (workspace_mode) {
+      document.querySelector(".comfy-menu").style.display = "none";
+    }
 
     const data = getData();
     let endpoint = data.endpoint;
@@ -153,8 +158,24 @@ const ext = {
     // const graphCanvas = document.getElementById("graph-canvas");
 
     window.addEventListener("message", (event) => {
-      if (!event.data.flow || Object.entries(event.data.flow).length <= 0)
-        return;
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "graph_load") {
+          const comfyUIWorkflow = message.data;
+          console.log("recieved: ", comfyUIWorkflow);
+          // Assuming there's a method to load the workflow data into the ComfyUI
+          // This part of the code would depend on how the ComfyUI expects to receive and process the workflow data
+          // For demonstration, let's assume there's a loadWorkflow method in the ComfyUI API
+          if (comfyUIWorkflow && app && app.loadGraphData) {
+            app.loadGraphData(comfyUIWorkflow);
+          }
+        }
+      } catch (error) {
+        console.error("Error processing message:", error);
+      }
+
+      // if (!event.data.flow || Object.entries(event.data.flow).length <= 0)
+      //   return;
       //   updateBlendshapesPrompts(event.data.flow);
     });
 
@@ -167,6 +188,11 @@ const ext = {
 
       //   }
     });
+
+    const message = {
+      type: "cd_plugin_setup",
+    };
+    window.parent.postMessage(JSON.stringify(message), "*");
   },
 };
 
