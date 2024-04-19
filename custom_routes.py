@@ -717,7 +717,7 @@ def update_run(prompt_id: str, status: Status):
     if (prompt_metadata[prompt_id].status != status):
 
         # when the status is already failed, we don't want to update it to success
-        if ('status' in prompt_metadata[prompt_id] and prompt_metadata[prompt_id].status == Status.FAILED):
+        if (prompt_metadata[prompt_id].status is Status.FAILED):
             return
 
         status_endpoint = prompt_metadata[prompt_id].status_endpoint
