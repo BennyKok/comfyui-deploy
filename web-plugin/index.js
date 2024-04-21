@@ -5,6 +5,14 @@ import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.23";
 
 const loadingIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="#888888" stroke-linecap="round" stroke-width="2"><path stroke-dasharray="60" stroke-dashoffset="60" stroke-opacity=".3" d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="1.3s" values="60;0"/></path><path stroke-dasharray="15" stroke-dashoffset="15" d="M12 3C16.9706 3 21 7.02944 21 12"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0"/><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></path></g></svg>`;
 
+function sendEventToCD(event, data) {
+  const message = {
+    type: event,
+    data: data,
+  };
+  window.parent.postMessage(JSON.stringify(message), "*");
+}
+
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
 const ext = {
@@ -169,9 +177,11 @@ const ext = {
           if (comfyUIWorkflow && app && app.loadGraphData) {
             app.loadGraphData(comfyUIWorkflow);
           }
+        } else if (message.type === "deploy") {
+          deployWorkflow();
         }
       } catch (error) {
-        console.error("Error processing message:", error);
+        // console.error("Error processing message:", error);
       }
 
       // if (!event.data.flow || Object.entries(event.data.flow).length <= 0)
@@ -189,10 +199,16 @@ const ext = {
       //   }
     });
 
-    const message = {
-      type: "cd_plugin_setup",
-    };
-    window.parent.postMessage(JSON.stringify(message), "*");
+    app.graph.onAfterChange = ((originalFunction) => async function () {
+        const prompt = await app.graphToPrompt();
+        sendEventToCD("cd_plugin_onAfterChange", prompt);
+
+        if (typeof originalFunction === "function") {
+          originalFunction.apply(this, arguments);
+        }
+      })(app.graph.onAfterChange);
+
+    sendEventToCD("cd_plugin_setup");
   },
 };
 
@@ -293,294 +309,301 @@ function createDynamicUIHtml(data) {
   return html;
 }
 
-function addButton() {
-  const menu = document.querySelector(".comfy-menu");
+async function deployWorkflow() {
+  const deploy = document.getElementById("deploy-button");
 
-  const deploy = document.createElement("button");
-  deploy.style.position = "relative";
-  deploy.style.display = "block";
-  deploy.innerHTML = "<div id='button-title'>Deploy</div>";
-  deploy.onclick = async () => {
-    /** @type {LGraph} */
-    const graph = app.graph;
+  /** @type {LGraph} */
+  const graph = app.graph;
 
-    let { endpoint, apiKey, displayName } = getData();
+  let { endpoint, apiKey, displayName } = getData();
 
-    if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
-      configDialog.show();
-      return;
-    }
+  if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
+    configDialog.show();
+    return;
+  }
 
-    let deployMeta = graph.findNodesByType("ComfyDeploy");
+  let deployMeta = graph.findNodesByType("ComfyDeploy");
 
-    if (deployMeta.length == 0) {
-      const text = await inputDialog.input(
-        "Create your deployment",
-        "Workflow name",
-      );
-      if (!text) return;
-      console.log(text);
-      app.graph.beforeChange();
-      var node = LiteGraph.createNode("ComfyDeploy");
-      node.configure({
-        widgets_values: [text],
-      });
-      node.pos = [0, 0];
-      app.graph.add(node);
-      app.graph.afterChange();
-      deployMeta = [node];
-    }
-
-    const deployMetaNode = deployMeta[0];
-
-    const workflow_name = deployMetaNode.widgets[0].value;
-    const workflow_id = deployMetaNode.widgets[1].value;
-
-    const ok = await confirmDialog.confirm(
-      `Confirm deployment`,
-      `
-      <div>
-
-      A new version of <button style="font-size: 18px;">${workflow_name}</button> will be deployed, do you confirm? 
-      <br><br>
-
-      <button style="font-size: 18px;">${displayName}</button>
-      <br>
-      <button style="font-size: 18px;">${endpoint}</button>
-
-      <br><br>
-      <label>
-      <input id="include-deps" type="checkbox" checked>Include dependency</input>
-      </label>
-      <br>
-      <label>
-      <input id="reuse-hash" type="checkbox" checked>Reuse hash from last version</input>
-      </label>
-      </div>
-      `,
+  if (deployMeta.length == 0) {
+    const text = await inputDialog.input(
+      "Create your deployment",
+      "Workflow name",
     );
-    if (!ok) return;
+    if (!text) return;
+    console.log(text);
+    app.graph.beforeChange();
+    var node = LiteGraph.createNode("ComfyDeploy");
+    node.configure({
+      widgets_values: [text],
+    });
+    node.pos = [0, 0];
+    app.graph.add(node);
+    app.graph.afterChange();
+    deployMeta = [node];
+  }
 
-    const includeDeps = document.getElementById("include-deps").checked;
-    const reuseHash = document.getElementById("reuse-hash").checked;
+  const deployMetaNode = deployMeta[0];
 
-    if (endpoint.endsWith("/")) {
-      endpoint = endpoint.slice(0, -1);
-    }
-    loadingDialog.showLoading("Generating snapshot");
+  const workflow_name = deployMetaNode.widgets[0].value;
+  const workflow_id = deployMetaNode.widgets[1].value;
 
-    const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
-    // console.log(snapshot);
-    loadingDialog.close();
+  const ok = await confirmDialog.confirm(
+    `Confirm deployment`,
+    `
+    <div>
 
-    if (!snapshot) {
-      showError(
-        "Error when deploying",
-        "Unable to generate snapshot, please install ComfyUI Manager",
-      );
-      return;
-    }
+    A new version of <button style="font-size: 18px;">${workflow_name}</button> will be deployed, do you confirm? 
+    <br><br>
 
-    const title = deploy.querySelector("#button-title");
+    <button style="font-size: 18px;">${displayName}</button>
+    <br>
+    <button style="font-size: 18px;">${endpoint}</button>
 
-    const prompt = await app.graphToPrompt();
-    let deps = undefined;
+    <br><br>
+    <label>
+    <input id="include-deps" type="checkbox" checked>Include dependency</input>
+    </label>
+    <br>
+    <label>
+    <input id="reuse-hash" type="checkbox" checked>Reuse hash from last version</input>
+    </label>
+    </div>
+    `,
+  );
+  if (!ok) return;
 
-    if (includeDeps) {
-      loadingDialog.showLoading("Fetching existing version");
+  const includeDeps = document.getElementById("include-deps").checked;
+  const reuseHash = document.getElementById("reuse-hash").checked;
 
-      const existing_workflow = await fetch(
-        endpoint + "/api/workflow/" + workflow_id,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + apiKey,
-          },
-        },
-      )
-        .then((x) => x.json())
-        .catch(() => {
-          return {};
-        });
+  if (endpoint.endsWith("/")) {
+    endpoint = endpoint.slice(0, -1);
+  }
+  loadingDialog.showLoading("Generating snapshot");
 
-      loadingDialog.close();
+  const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
+  // console.log(snapshot);
+  loadingDialog.close();
 
-      loadingDialog.showLoading("Generating dependency graph");
-      deps = await generateDependencyGraph({
-        workflow_api: prompt.output,
-        snapshot: snapshot,
-        computeFileHash: async (file) => {
-          console.log(existing_workflow?.dependencies?.models);
+  if (!snapshot) {
+    showError(
+      "Error when deploying",
+      "Unable to generate snapshot, please install ComfyUI Manager",
+    );
+    return;
+  }
 
-          // Match previous hash for models
-          if (reuseHash && existing_workflow?.dependencies?.models) {
-            const previousModelHash = Object.entries(
-              existing_workflow?.dependencies?.models,
-            ).flatMap(([key, value]) => {
-              return Object.values(value).map((x) => ({
-                ...x,
-                name: "models/" + key + "/" + x.name,
-              }));
-            });
-            console.log(previousModelHash);
+  const title = deploy.querySelector("#button-title");
 
-            const match = previousModelHash.find((x) => {
-              console.log(file, x.name);
-              return file == x.name;
-            });
-            console.log(match);
-            if (match && match.hash) {
-              console.log("cached hash used");
-              return match.hash;
-            }
-          }
-          console.log(file);
-          loadingDialog.showLoading("Generating hash", file);
-          const hash = await fetch(
-            `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(
-              file,
-            )}`,
-          ).then((x) => x.json());
-          loadingDialog.showLoading("Generating hash", file);
-          console.log(hash);
-          return hash.file_hash;
-        },
-        handleFileUpload: async (file, hash, prevhash) => {
-          console.log("Uploading ", file);
-          loadingDialog.showLoading("Uploading file", file);
-          try {
-            const { download_url } = await fetch(
-              `/comfyui-deploy/upload-file`,
-              {
-                method: "POST",
-                body: JSON.stringify({
-                  file_path: file,
-                  token: apiKey,
-                  url: endpoint + "/api/upload-url",
-                }),
-              },
-            )
-              .then((x) => x.json())
-              .catch(() => {
-                loadingDialog.close();
-                confirmDialog.confirm("Error", "Unable to upload file " + file);
-              });
-            loadingDialog.showLoading("Uploaded file", file);
-            console.log(download_url);
-            return download_url;
-          } catch (error) {
-            return undefined;
-          }
-        },
-        existingDependencies: existing_workflow.dependencies,
-      });
+  const prompt = await app.graphToPrompt();
+  let deps = undefined;
 
-      // Need to find a way to include this if this is not included in comfyui-json level
-      if (
-        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] &&
-        !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
-      )
-        deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
-          url: "https://github.com/BennyKok/comfyui-deploy",
-          install_type: "git-clone",
-          hash:
-            snapshot?.git_custom_nodes?.[
-              "https://github.com/BennyKok/comfyui-deploy"
-            ]?.hash ?? "HEAD",
-          name: "ComfyUI Deploy",
-        };
+  if (includeDeps) {
+    loadingDialog.showLoading("Fetching existing version");
 
-      loadingDialog.close();
-
-      const depsOk = await confirmDialog.confirm(
-        "Check dependencies",
-        // JSON.stringify(deps, null, 2),
-        `
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
-        <iframe 
-        style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
-        src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
-          JSON.stringify(deps),
-        )}" />`,
-        // createDynamicUIHtml(deps),
-      );
-      if (!depsOk) return;
-
-      console.log(deps);
-    }
-
-    loadingDialog.showLoading("Deploying...");
-
-    title.innerText = "Deploying...";
-    title.style.color = "orange";
-
-    // console.log(prompt);
-
-    // TODO trim the ending / from endpoint is there is
-    if (endpoint.endsWith("/")) {
-      endpoint = endpoint.slice(0, -1);
-    }
-
-    // console.log(prompt.workflow);
-
-    const apiRoute = endpoint + "/api/workflow";
-    // const userId = apiKey
-    try {
-      const body = {
-        workflow_name,
-        workflow_id,
-        workflow: prompt.workflow,
-        workflow_api: prompt.output,
-        snapshot: snapshot,
-        dependencies: deps,
-      };
-      console.log(body);
-      let data = await fetch(apiRoute, {
-        method: "POST",
-        body: JSON.stringify(body),
+    const existing_workflow = await fetch(
+      endpoint + "/api/workflow/" + workflow_id,
+      {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + apiKey,
         },
+      },
+    )
+      .then((x) => x.json())
+      .catch(() => {
+        return {};
       });
 
-      console.log(data);
+    loadingDialog.close();
 
-      if (data.status !== 200) {
-        throw new Error(await data.text());
-      } else {
-        data = await data.json();
-      }
+    loadingDialog.showLoading("Generating dependency graph");
+    deps = await generateDependencyGraph({
+      workflow_api: prompt.output,
+      snapshot: snapshot,
+      computeFileHash: async (file) => {
+        console.log(existing_workflow?.dependencies?.models);
 
-      loadingDialog.close();
+        // Match previous hash for models
+        if (reuseHash && existing_workflow?.dependencies?.models) {
+          const previousModelHash = Object.entries(
+            existing_workflow?.dependencies?.models,
+          ).flatMap(([key, value]) => {
+            return Object.values(value).map((x) => ({
+              ...x,
+              name: "models/" + key + "/" + x.name,
+            }));
+          });
+          console.log(previousModelHash);
 
-      title.textContent = "Done";
-      title.style.color = "green";
+          const match = previousModelHash.find((x) => {
+            console.log(file, x.name);
+            return file == x.name;
+          });
+          console.log(match);
+          if (match && match.hash) {
+            console.log("cached hash used");
+            return match.hash;
+          }
+        }
+        console.log(file);
+        loadingDialog.showLoading("Generating hash", file);
+        const hash = await fetch(
+          `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(
+            file,
+          )}`,
+        ).then((x) => x.json());
+        loadingDialog.showLoading("Generating hash", file);
+        console.log(hash);
+        return hash.file_hash;
+      },
+      handleFileUpload: async (file, hash, prevhash) => {
+        console.log("Uploading ", file);
+        loadingDialog.showLoading("Uploading file", file);
+        try {
+          const { download_url } = await fetch(
+            `/comfyui-deploy/upload-file`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                file_path: file,
+                token: apiKey,
+                url: endpoint + "/api/upload-url",
+              }),
+            },
+          )
+            .then((x) => x.json())
+            .catch(() => {
+              loadingDialog.close();
+              confirmDialog.confirm("Error", "Unable to upload file " + file);
+            });
+          loadingDialog.showLoading("Uploaded file", file);
+          console.log(download_url);
+          return download_url;
+        } catch (error) {
+          return undefined;
+        }
+      },
+      existingDependencies: existing_workflow.dependencies,
+    });
 
-      deployMetaNode.widgets[1].value = data.workflow_id;
-      deployMetaNode.widgets[2].value = data.version;
-      graph.change();
+    // Need to find a way to include this if this is not included in comfyui-json level
+    if (
+      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] &&
+      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
+    )
+      deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
+        url: "https://github.com/BennyKok/comfyui-deploy",
+        install_type: "git-clone",
+        hash:
+          snapshot?.git_custom_nodes?.[
+            "https://github.com/BennyKok/comfyui-deploy"
+          ]?.hash ?? "HEAD",
+        name: "ComfyUI Deploy",
+      };
 
-      infoDialog.show(
-        `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
-      );
+    loadingDialog.close();
 
-      setTimeout(() => {
-        title.textContent = "Deploy";
-        title.style.color = "white";
-      }, 1000);
-    } catch (e) {
-      loadingDialog.close();
-      app.ui.dialog.show(e);
-      console.error(e);
-      title.textContent = "Error";
-      title.style.color = "red";
-      setTimeout(() => {
-        title.textContent = "Deploy";
-        title.style.color = "white";
-      }, 1000);
+    const depsOk = await confirmDialog.confirm(
+      "Check dependencies",
+      // JSON.stringify(deps, null, 2),
+      `
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
+      <iframe 
+      style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
+      src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
+        JSON.stringify(deps),
+      )}" />`,
+      // createDynamicUIHtml(deps),
+    );
+    if (!depsOk) return;
+
+    console.log(deps);
+  }
+
+  loadingDialog.showLoading("Deploying...");
+
+  title.innerText = "Deploying...";
+  title.style.color = "orange";
+
+  // console.log(prompt);
+
+  // TODO trim the ending / from endpoint is there is
+  if (endpoint.endsWith("/")) {
+    endpoint = endpoint.slice(0, -1);
+  }
+
+  // console.log(prompt.workflow);
+
+  const apiRoute = endpoint + "/api/workflow";
+  // const userId = apiKey
+  try {
+    const body = {
+      workflow_name,
+      workflow_id,
+      workflow: prompt.workflow,
+      workflow_api: prompt.output,
+      snapshot: snapshot,
+      dependencies: deps,
+    };
+    console.log(body);
+    let data = await fetch(apiRoute, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + apiKey,
+      },
+    });
+
+    console.log(data);
+
+    if (data.status !== 200) {
+      throw new Error(await data.text());
+    } else {
+      data = await data.json();
     }
+
+    loadingDialog.close();
+
+    title.textContent = "Done";
+    title.style.color = "green";
+
+    deployMetaNode.widgets[1].value = data.workflow_id;
+    deployMetaNode.widgets[2].value = data.version;
+    graph.change();
+
+    infoDialog.show(
+      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
+    );
+
+    setTimeout(() => {
+      title.textContent = "Deploy";
+      title.style.color = "white";
+    }, 1000);
+  } catch (e) {
+    loadingDialog.close();
+    app.ui.dialog.show(e);
+    console.error(e);
+    title.textContent = "Error";
+    title.style.color = "red";
+    setTimeout(() => {
+      title.textContent = "Deploy";
+      title.style.color = "white";
+    }, 1000);
+  }
+}
+
+function addButton() {
+  const menu = document.querySelector(".comfy-menu");
+
+  const deploy = document.createElement("button");
+  deploy.id = "deploy-button";
+  deploy.style.position = "relative";
+  deploy.style.display = "block";
+  deploy.innerHTML = "<div id='button-title'>Deploy</div>";
+  deploy.onclick = async () => {
+    await deployWorkflow()
   };
 
   const config = document.createElement("img");
