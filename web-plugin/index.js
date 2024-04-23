@@ -165,7 +165,7 @@ const ext = {
   async setup() {
     // const graphCanvas = document.getElementById("graph-canvas");
 
-    window.addEventListener("message", (event) => {
+    window.addEventListener("message", async (event) => {
       try {
         const message = JSON.parse(event.data);
         if (message.type === "graph_load") {
@@ -178,7 +178,12 @@ const ext = {
             app.loadGraphData(comfyUIWorkflow);
           }
         } else if (message.type === "deploy") {
-          deployWorkflow();
+          // deployWorkflow();
+          const prompt = await app.graphToPrompt();
+          sendEventToCD("cd_plugin_onDeployChanges", prompt);
+        } else if (message.type === "queue_prompt") {
+          const prompt = await app.graphToPrompt();
+          sendEventToCD("cd_plugin_onQueuePrompt", prompt);
         }
       } catch (error) {
         // console.error("Error processing message:", error);
