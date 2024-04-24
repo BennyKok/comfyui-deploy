@@ -105,6 +105,38 @@ def apply_random_seed_to_workflow(workflow_api):
                 workflow_api[key]['inputs']['seed'] = randomSeed(8);
                 continue
             workflow_api[key]['inputs']['seed'] = randomSeed();
+            
+def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
+    # Loop through each of the inputs and replace them
+    for key, value in workflow_api.items():
+        if 'inputs' in value:
+            
+            # Support websocket
+            if sid is not None:
+                if (value["class_type"] == "ComfyDeployWebscoketImageOutput"):
+                    value['inputs']["client_id"] = sid
+                if (value["class_type"] == "ComfyDeployWebscoketImageInput"):
+                    value['inputs']["client_id"] = sid
+                    
+            if "input_id" in value['inputs'] and value['inputs']['input_id'] in inputs:
+                new_value = inputs[value['inputs']['input_id']]
+                
+                # Lets skip it if its an image
+                if isinstance(new_value, Image.Image):
+                    continue
+                
+                # Backward compactibility
+                value['inputs']["input_id"] = new_value
+            
+                # Fix for external text default value
+                if (value["class_type"] == "ComfyUIDeployExternalText"):
+                    value['inputs']["default_value"] = new_value
+                    
+                if (value["class_type"] == "ComfyUIDeployExternalCheckpoint"):
+                    value['inputs']["default_value"] = new_value
+                    
+                if (value["class_type"] == "ComfyUIDeployExternalImageBatch"):
+                    value['inputs']["images"] = new_value
 
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
@@ -114,31 +146,8 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     apply_random_seed_to_workflow(workflow_api)
             
     print("getting inputs" , inputs.inputs)
-            
-    # Loop through each of the inputs and replace them
-    for key, value in workflow_api.items():
-        if 'inputs' in value:
-            if (value["class_type"] == "ComfyDeployWebscoketImageOutput"):
-                value['inputs']["client_id"] = sid
-            if (value["class_type"] == "ComfyDeployWebscoketImageInput"):
-                value['inputs']["client_id"] = sid
-                
-            if "input_id" in value['inputs'] and value['inputs']['input_id'] in inputs.inputs:
-                new_value = inputs.inputs[value['inputs']['input_id']]
-                
-                # Lets skip it if its an image
-                if isinstance(new_value, Image.Image):
-                    continue
-                
-                value['inputs']["input_id"] = new_value
-            
-                # Fix for external text default value
-                if (value["class_type"] == "ComfyUIDeployExternalText"):
-                    value['inputs']["default_value"] = new_value
-                    
-                if (value["class_type"] == "ComfyUIDeployExternalCheckpoint"):
-                    value['inputs']["default_value"] = new_value
-
+    
+    apply_inputs_to_workflow(workflow_api, inputs.inputs, sid=sid)
                 
     print(workflow_api)
                 
@@ -171,15 +180,15 @@ async def comfy_deploy_run(request):
     prompt_server = server.PromptServer.instance
     data = await request.json()
 
-    workflow_api = data.get("workflow_api")
-
+    # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
+    workflow_api = data.get("workflow_api_raw")
     # The prompt id generated from comfy deploy, can be None
     prompt_id = data.get("prompt_id")
+    inputs = data.get("inputs")
 
+    # Now it handles directly in here
     apply_random_seed_to_workflow(workflow_api)
-    # for key in workflow_api:
-    #     if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
-    #         workflow_api[key]['inputs']['seed'] = randomSeed()
+    apply_inputs_to_workflow(workflow_api, inputs)
 
     prompt = {
         "prompt": workflow_api,
