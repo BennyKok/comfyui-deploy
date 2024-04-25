@@ -818,8 +818,13 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
 
     target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}"
 
+    start_time = time.time()  # Start timing here
     result = requests.get(target_url)
+    end_time = time.time()  # End timing after the request is complete
+    print("Time taken for getting file upload endpoint: {:.2f} seconds".format(end_time - start_time))
     ok = result.json()
+    
+    start_time = time.time()  # Start timing here
     
     with open(file, 'rb') as f:
         data = f.read()
@@ -831,7 +836,9 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         response = requests.put(ok.get("url"), headers=headers, data=data)
         async with aiohttp.ClientSession() as session:
             async with session.put(ok.get("url"), headers=headers, data=data) as response:
-                print("upload file response", response.status)
+                print("Upload file response", response.status)
+                end_time = time.time()  # End timing after the request is complete
+                print("Upload time: {:.2f} seconds".format(end_time - start_time))
 
 def have_pending_upload(prompt_id):
     if prompt_id in prompt_metadata and len(prompt_metadata[prompt_id].uploading_nodes) > 0:
@@ -917,7 +924,7 @@ async def update_file_status(prompt_id: str, data, uploading, have_error=False, 
     # if there are no nodes that are uploading, then we set the status to success
     elif not uploading and not have_pending_upload(prompt_id) and is_prompt_done(prompt_id=prompt_id):
         update_run(prompt_id, Status.SUCCESS)
-        print("Status: SUCCUSS")
+        # print("Status: SUCCUSS")
         await send("success", {
             "prompt_id": prompt_id,
         })
