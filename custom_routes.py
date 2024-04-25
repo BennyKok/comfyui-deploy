@@ -118,7 +118,7 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 if (value["class_type"] == "ComfyDeployWebscoketImageInput"):
                     value['inputs']["client_id"] = sid
                     
-            if "input_id" in value['inputs'] and value['inputs']['input_id'] in inputs:
+            if "input_id" in value['inputs'] and inputs is not None and value['inputs']['input_id'] in inputs:
                 new_value = inputs[value['inputs']['input_id']]
                 
                 # Lets skip it if its an image
