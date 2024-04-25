@@ -833,7 +833,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
             "Content-Type": content_type,
             "Content-Length": str(len(data)),
         }
-        response = requests.put(ok.get("url"), headers=headers, data=data)
+        # response = requests.put(ok.get("url"), headers=headers, data=data)
         async with aiohttp.ClientSession() as session:
             async with session.put(ok.get("url"), headers=headers, data=data) as response:
                 print("Upload file response", response.status)
@@ -977,7 +977,8 @@ async def update_run_with_output(prompt_id, data, node_id=None):
         if have_upload:
             await update_file_status(prompt_id, data, True, node_id=node_id)
 
-        asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
+        # asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
+        await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
 
     except Exception as e:
         await handle_error(prompt_id, data, e)
