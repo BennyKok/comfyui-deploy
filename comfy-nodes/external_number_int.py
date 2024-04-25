@@ -29,7 +29,7 @@ class ComfyUIDeployExternalNumberInt:
     CATEGORY = "number"
 
     def run(self, input_id, default_value=None):
-        if not input_id or not input_id.strip().isdigit():
+        if not input_id or (isinstance(input_id, str) and not input_id.strip().isdigit()):
             return [default_value]
         return [int(input_id)]
 
