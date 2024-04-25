@@ -137,6 +137,9 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                     
                 if (value["class_type"] == "ComfyUIDeployExternalImageBatch"):
                     value['inputs']["images"] = new_value
+                
+                if value["class_type"] == "ComfyUIDeployExternalLora":
+                    value["inputs"]["default_lora_name"] = new_value
 
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api

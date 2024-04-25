@@ -16,8 +16,8 @@ class ComfyUIDeployExternalLora:
                 ),
             },
             "optional": {
-                "default_lora_name": (folder_paths.get_filename_list("loras"), ),
-            }
+                "default_lora_name": (folder_paths.get_filename_list("loras"),),
+            },
         }
 
     RETURN_TYPES = (folder_paths.get_filename_list("loras"),)
@@ -32,23 +32,29 @@ class ComfyUIDeployExternalLora:
         import os
         import uuid
 
-        if input_id:
-            if input_id.startswith('http'):
-                unique_filename = str(uuid.uuid4()) + ".safetensors"
-                print(unique_filename)
-                print(folder_paths.folder_names_and_paths["loras"][0][0])
-                destination_path = os.path.join(folder_paths.folder_names_and_paths["loras"][0][0], unique_filename)
-                print(destination_path)
-                print("Downloading external lora - " + input_id + " to " + destination_path)
-                response = requests.get(input_id, headers={'User-Agent': 'Mozilla/5.0'}, allow_redirects=True)
-                with open(destination_path, 'wb') as out_file:
-                    out_file.write(response.content)
-                return (unique_filename,)
-            else:
-                return (input_id,)
+        if default_lora_name.startswith("http"):
+            unique_filename = str(uuid.uuid4()) + ".safetensors"
+            print(unique_filename)
+            print(folder_paths.folder_names_and_paths["loras"][0][0])
+            destination_path = os.path.join(
+                folder_paths.folder_names_and_paths["loras"][0][0], unique_filename
+            )
+            print(destination_path)
+            print("Downloading external lora - " + input_id + " to " + destination_path)
+            response = requests.get(
+                input_id,
+                headers={"User-Agent": "Mozilla/5.0"},
+                allow_redirects=True,
+            )
+            with open(destination_path, "wb") as out_file:
+                out_file.write(response.content)
+            return (unique_filename,)
+        else:
+            print(f"using lora: {default_lora_name}")
+            return (default_lora_name,)
 
-        return (default_lora_name,)
-        
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalLora": ComfyUIDeployExternalLora}
-NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalLora": "External Lora (ComfyUI Deploy)"}
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "ComfyUIDeployExternalLora": "External Lora (ComfyUI Deploy)"
+}
