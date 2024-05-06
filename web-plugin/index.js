@@ -30,6 +30,30 @@ const ext = {
 
     if (workspace_mode) {
       document.querySelector(".comfy-menu").style.display = "none";
+
+      sendEventToCD("cd_plugin_onInit");
+
+      app.queuePrompt = ((originalFunction) =>
+        async () => {
+          // const prompt = await app.graphToPrompt();
+          sendEventToCD("cd_plugin_onQueuePromptTrigger");
+        })(app.queuePrompt);
+
+      // // Intercept the onkeydown event
+      // window.addEventListener(
+      //   "keydown",
+      //   (event) => {
+      //     // Check for specific keys if necessary
+      //     console.log("hi");
+      //     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      //       event.preventDefault();
+      //       event.stopImmediatePropagation();
+      //       event.stopPropagation();
+      //       sendEventToCD("cd_plugin_onQueuePrompt", prompt);
+      //     }
+      //   },
+      //   true,
+      // );
     }
 
     const data = getData();
@@ -204,7 +228,8 @@ const ext = {
       //   }
     });
 
-    app.graph.onAfterChange = ((originalFunction) => async function () {
+    app.graph.onAfterChange = ((originalFunction) =>
+      async function () {
         const prompt = await app.graphToPrompt();
         sendEventToCD("cd_plugin_onAfterChange", prompt);
 
@@ -454,9 +479,7 @@ async function deployWorkflow() {
         console.log(file);
         loadingDialog.showLoading("Generating hash", file);
         const hash = await fetch(
-          `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(
-            file,
-          )}`,
+          `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(file)}`,
         ).then((x) => x.json());
         loadingDialog.showLoading("Generating hash", file);
         console.log(hash);
@@ -466,17 +489,14 @@ async function deployWorkflow() {
         console.log("Uploading ", file);
         loadingDialog.showLoading("Uploading file", file);
         try {
-          const { download_url } = await fetch(
-            `/comfyui-deploy/upload-file`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                file_path: file,
-                token: apiKey,
-                url: endpoint + "/api/upload-url",
-              }),
-            },
-          )
+          const { download_url } = await fetch(`/comfyui-deploy/upload-file`, {
+            method: "POST",
+            body: JSON.stringify({
+              file_path: file,
+              token: apiKey,
+              url: endpoint + "/api/upload-url",
+            }),
+          })
             .then((x) => x.json())
             .catch(() => {
               loadingDialog.close();
@@ -608,7 +628,7 @@ function addButton() {
   deploy.style.display = "block";
   deploy.innerHTML = "<div id='button-title'>Deploy</div>";
   deploy.onclick = async () => {
-    await deployWorkflow()
+    await deployWorkflow();
   };
 
   const config = document.createElement("img");
