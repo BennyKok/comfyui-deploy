@@ -140,6 +140,9 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 
                 if value["class_type"] == "ComfyUIDeployExternalLora":
                     value["inputs"]["default_lora_name"] = new_value
+                    
+                if value["class_type"] == "ComfyUIDeployExternalBoolean":
+                    value["inputs"]["default_value"] = new_value
 
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
@@ -950,6 +953,7 @@ async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=T
         await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
         # This will also be mp4
         await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
+        await handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
             
         if have_upload:
             await update_file_status(prompt_id, data, False, node_id=node_id)
@@ -971,7 +975,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
     }
 
     try:
-        have_upload = 'images' in data or 'files' in data or 'gifs' in data
+        have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
         print("\nhave_upload", have_upload, node_id)
 
         if have_upload:
