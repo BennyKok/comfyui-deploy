@@ -30,6 +30,10 @@ api_task = None
 
 cd_enable_log = os.environ.get('CD_ENABLE_LOG', 'false').lower() == 'true'
 cd_enable_run_log = os.environ.get('CD_ENABLE_RUN_LOG', 'false').lower() == 'true'
+bypass_upload = os.environ.get('CD_BYPASS_UPLOAD', 'false').lower() == 'true'
+
+print("CD_BYPASS_UPLOAD", bypass_upload)
+
 
 def clear_current_prompt(sid):
     prompt_server = server.PromptServer.instance
@@ -974,19 +978,19 @@ async def update_run_with_output(prompt_id, data, node_id=None):
         "output_data": data
     }
 
-    try:
-        have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
-        print("\nhave_upload", have_upload, node_id)
+    if not bypass_upload:
+        try:
+            have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
+            print("\nhave_upload", have_upload, node_id)
 
-        if have_upload:
-            await update_file_status(prompt_id, data, True, node_id=node_id)
+            if have_upload:
+                await update_file_status(prompt_id, data, True, node_id=node_id)
 
-        # asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
-        await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
+            # asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
+            await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
 
-    except Exception as e:
-        await handle_error(prompt_id, data, e)
-        
+        except Exception as e:
+            await handle_error(prompt_id, data, e)
 
     requests.post(status_endpoint, json=body)
 
