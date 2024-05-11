@@ -144,6 +144,9 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 
                 if value["class_type"] == "ComfyUIDeployExternalLora":
                     value["inputs"]["default_lora_name"] = new_value
+                
+                if value["class_type"] == "ComfyUIDeployExternalSlider":
+                    value["inputs"]["default_value"] = new_value
                     
                 if value["class_type"] == "ComfyUIDeployExternalBoolean":
                     value["inputs"]["default_value"] = new_value
