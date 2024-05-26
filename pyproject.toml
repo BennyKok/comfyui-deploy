@@ -10,6 +10,6 @@ Repository = "https://github.com/BennyKok/comfyui-deploy"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "comfydeploy"
 DisplayName = "comfyui-deploy"
 Icon = ""
