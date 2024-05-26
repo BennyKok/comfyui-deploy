@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-deploy"
+description = "Open source comfyui deployment platform, a vercel for generative workflow infra."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["aiofiles", "pydantic", "opencv-python", "imageio-ffmpeg"]
+
+[project.urls]
+Repository = "https://github.com/BennyKok/comfyui-deploy"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyui-deploy"
+Icon = ""
