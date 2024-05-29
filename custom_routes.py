@@ -945,12 +945,22 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
         # # Skipping temp files
         if item.get("type") == "temp":
             continue
+        
+        file_type = item.get(content_type_key, default_content_type)
+        file_extension = os.path.splitext(item.get("filename"))[1]
+        if file_extension in ['.jpg', '.jpeg']:
+            file_type = 'image/jpeg'
+        elif file_extension == '.png':
+            file_type = 'image/png'
+        elif file_extension == '.webp':
+            file_type = 'image/webp'
+        
         await upload_file(
             prompt_id,
             item.get("filename"),
             subfolder=item.get("subfolder"),
             type=item.get("type"),
-            content_type=item.get(content_type_key, default_content_type)
+            content_type=file_type
         )
 
 # Upload files in the background
