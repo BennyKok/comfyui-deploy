@@ -1170,8 +1170,8 @@ async def update_run_with_output(prompt_id, data, node_id=None):
 
     if not bypass_upload and prompt_metadata[prompt_id].file_upload_endpoint is not None:
         try:
-            logger.info(f"\nhave_upload {have_upload} {node_id}")
             have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
+            logger.info(f"\nhave_upload {have_upload} {node_id}")
 
             if have_upload:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
