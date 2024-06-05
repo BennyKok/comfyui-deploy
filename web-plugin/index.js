@@ -13,6 +13,53 @@ function sendEventToCD(event, data) {
   window.parent.postMessage(JSON.stringify(message), "*");
 }
 
+function dispatchAPIEventData(data) {
+  const msg = JSON.parse(data);
+  switch (msg.type) {
+    case "status":
+      if (msg.data.sid) {
+        // this.clientId = msg.data.sid;
+        // window.name = this.clientId; // use window name so it isnt reused when duplicating tabs
+        // sessionStorage.setItem("clientId", this.clientId); // store in session storage so duplicate tab can load correct workflow
+      }
+      api.dispatchEvent(new CustomEvent("status", { detail: msg.data.status }));
+      break;
+    case "progress":
+      api.dispatchEvent(new CustomEvent("progress", { detail: msg.data }));
+      break;
+    case "executing":
+      api.dispatchEvent(
+        new CustomEvent("executing", { detail: msg.data.node }),
+      );
+      break;
+    case "executed":
+      api.dispatchEvent(new CustomEvent("executed", { detail: msg.data }));
+      break;
+    case "execution_start":
+      api.dispatchEvent(
+        new CustomEvent("execution_start", { detail: msg.data }),
+      );
+      break;
+    case "execution_error":
+      api.dispatchEvent(
+        new CustomEvent("execution_error", { detail: msg.data }),
+      );
+      break;
+    case "execution_cached":
+      api.dispatchEvent(
+        new CustomEvent("execution_cached", { detail: msg.data }),
+      );
+      break;
+    default:
+      api.dispatchEvent(new CustomEvent(msg.type, { detail: msg.data }));
+      // default:
+      // if (this.#registered.has(msg.type)) {
+    // } else {
+    // throw new Error(`Unknown message type ${msg.type}`);
+    // }
+  }
+}
+
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
 const ext = {
@@ -33,11 +80,10 @@ const ext = {
 
       sendEventToCD("cd_plugin_onInit");
 
-      app.queuePrompt = ((originalFunction) =>
-        async () => {
-          // const prompt = await app.graphToPrompt();
-          sendEventToCD("cd_plugin_onQueuePromptTrigger");
-        })(app.queuePrompt);
+      app.queuePrompt = ((originalFunction) => async () => {
+        // const prompt = await app.graphToPrompt();
+        sendEventToCD("cd_plugin_onQueuePromptTrigger");
+      })(app.queuePrompt);
 
       // // Intercept the onkeydown event
       // window.addEventListener(
@@ -208,7 +254,12 @@ const ext = {
         } else if (message.type === "queue_prompt") {
           const prompt = await app.graphToPrompt();
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
+        } else if (message.type === "event") {
+          dispatchAPIEventData(message.data);
         }
+        // else if (message.type === "refresh") {
+        //   sendEventToCD("cd_plugin_onRefresh");
+        // }
       } catch (error) {
         // console.error("Error processing message:", error);
       }
