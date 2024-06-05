@@ -15,7 +15,7 @@ function sendEventToCD(event, data) {
 
 function dispatchAPIEventData(data) {
   const msg = JSON.parse(data);
-  switch (msg.type) {
+  switch (msg.event) {
     case "status":
       if (msg.data.sid) {
         // this.clientId = msg.data.sid;
