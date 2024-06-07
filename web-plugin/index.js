@@ -32,7 +32,7 @@ function dispatchAPIEventData(data) {
     }
 
     app.ui.dialog.show(message);
-    if (error.response) {
+    if (msg.node_errors) {
       app.lastNodeErrors = msg.node_errors;
       app.canvas.draw(true, true);
     }
