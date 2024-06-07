@@ -362,7 +362,8 @@ async def stream_response(request):
 
         try:
             result = await stream_prompt(data=data)
-            await response.write(json.dumps(result).encode('utf-8'))
+            await response.write(f"event: event_update\ndata: {json.dumps(result)}\n\n".encode('utf-8'))
+            # await response.write(.encode('utf-8'))
             await response.drain()  # Ensure the buffer is flushed
 
             while pending:
@@ -372,7 +373,7 @@ async def stream_response(request):
 
                         logfire.info(data["event"], data=json.dumps(data))
                         # logger.info("listener", data)
-                        await response.write(json.dumps(data).encode('utf-8'))
+                        await response.write(f"event: event_update\ndata: {json.dumps(data)}\n\n".encode('utf-8'))
                         await response.drain()  # Ensure the buffer is flushed
 
                         if data["event"] == "status":
