@@ -25,8 +25,10 @@ import struct
 
 from logging import basicConfig, getLogger
 import logfire
-if os.environ.get('LOGFIRE_TOKEN', None) is not None:
-    logfire.configure()
+# if os.environ.get('LOGFIRE_TOKEN', None) is not None:
+logfire.configure(
+    send_to_logfire="if-token-present"
+)
 # basicConfig(handlers=[logfire.LogfireLoggingHandler()])
 logfire_handler = logfire.LogfireLoggingHandler()
 logger = getLogger("comfy-deploy")
@@ -323,7 +325,7 @@ async def stream_prompt(data):
          # When there are critical errors, the prompt is actually not run
         await update_run(prompt_id, Status.FAILED)
         # return web.Response(status=500, reason=f"{error_type}: {e}, {stack_trace_short}")
-        raise Exception("Prompt failed")
+        # raise Exception("Prompt failed")
 
     status = 200
 
@@ -339,7 +341,7 @@ async def stream_prompt(data):
         # When there are critical errors, the prompt is actually not run
         if "error" in res:
             await update_run(prompt_id, Status.FAILED)
-            raise Exception("Prompt failed")
+            # raise Exception("Prompt failed")
 
     return res
     # return web.json_response(res, status=status)

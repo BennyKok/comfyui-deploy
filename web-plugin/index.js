@@ -15,7 +15,32 @@ function sendEventToCD(event, data) {
 
 function dispatchAPIEventData(data) {
   const msg = JSON.parse(data);
+
+  // Custom parse error
+  if (msg.error) {
+    let message = msg.error.message;
+    if (msg.error.details)
+      message += ": " + msg.error.details;
+    for (const [nodeID, nodeError] of Object.entries(
+      msg.node_errors,
+    )) {
+      message += "\n" + nodeError.class_type + ":";
+      for (const errorReason of nodeError.errors) {
+        message +=
+          "\n    - " + errorReason.message + ": " + errorReason.details;
+      }
+    }
+
+    app.ui.dialog.show(message);
+    if (error.response) {
+      app.lastNodeErrors = msg.node_errors;
+      app.canvas.draw(true, true);
+    }
+  }
+
   switch (msg.event) {
+    case "error":
+      break;
     case "status":
       if (msg.data.sid) {
         // this.clientId = msg.data.sid;
@@ -52,8 +77,8 @@ function dispatchAPIEventData(data) {
       break;
     default:
       api.dispatchEvent(new CustomEvent(msg.type, { detail: msg.data }));
-      // default:
-      // if (this.#registered.has(msg.type)) {
+    // default:
+    // if (this.#registered.has(msg.type)) {
     // } else {
     // throw new Error(`Unknown message type ${msg.type}`);
     // }
