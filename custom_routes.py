@@ -1026,7 +1026,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         # response = requests.put(ok.get("url"), headers=headers, data=data)
         async with aiohttp.ClientSession() as session:
             async with session.put(ok.get("url"), headers=headers, data=data) as response:
-                logger.info(f"Upload file response {response.status}")
+                logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
                 end_time = time.time()  # End timing after the request is complete
                 logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
 
