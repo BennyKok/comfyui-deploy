@@ -1059,3 +1059,9 @@ def run_in_new_thread(coroutine):
 
 if cd_enable_log:
     run_in_new_thread(watch_file_changes(log_file_path, send_logs_to_websocket))
+
+# use after calling GET /object_info (it populates the `filename_list_cache` variable)
+@server.PromptServer.instance.routes.get("/comfyui-deploy/filename_list_cache")
+async def get_filename_list_cache(_):
+    from folder_paths import filename_list_cache
+    return web.json_response({'filename_list': filename_list_cache})
