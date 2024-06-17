@@ -1,9 +1,19 @@
 import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
+import createMiddleware from 'next-intl/middleware';
 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
+const I18nMiddleware = createMiddleware({
+  locales: ["en", "zh"],
+  defaultLocale: "en",
+});
+
 export default authMiddleware({
+  beforeAuth: (req) => {
+    // Execute next-intl middleware before Clerk's auth middleware
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+    if (pathname.startsWith("/api/")) return null;
+    return I18nMiddleware(req);
+  },
   // debug: true,
   publicRoutes: ["/", "/api/(.*)", "/docs(.*)", "/share(.*)"],
   // publicRoutes: ["/", "/(.*)"],

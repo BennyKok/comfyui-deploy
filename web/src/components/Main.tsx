@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import meta from "next-gen/config";
+import { getTranslations } from "next-intl/server";
 
 function isDevelopment() {
   return process.env.NODE_ENV === "development";
@@ -43,7 +44,7 @@ function FeatureCard(props: {
 
 export default async function Main() {
   const { userId } = await auth();
-
+  const t = await getTranslations("Main")
   if (userId) {
     const user = await db.query.usersTable.findFirst({
       where: eq(usersTable.id, userId),
@@ -65,24 +66,24 @@ export default async function Main() {
               className="text-sm"
               href="https://github.com/BennyKok/comfyui-deploy"
             >
-              ✨ Open Source on Github
+              {t("Open Source on Github")}
             </Section.Announcement>
 
             <Section.Title className="text-left">
               <span className="text-5xl sm:text-6xl md:text-7xl pb-2 inline-flex animate-background-shine bg-[linear-gradient(110deg,#1e293b,45%,#939393,55%,#1e293b)] bg-[length:250%_100%] bg-clip-text text-transparent">
-                {meta.tagline}
+                {t(meta.tagline)}
               </span>
             </Section.Title>
 
             <Section.Subtitle className="text-left">
-              {meta.description}
+              {t(meta.description)}
             </Section.Subtitle>
 
             <Section.PrimaryAction
               href="/workflows"
               className="mt-10 px-8 py-8 rounded-2xl w-fit text-lg font-bold"
             >
-              Get Started
+              {t("Get Started")}
             </Section.PrimaryAction>
           </div>
 

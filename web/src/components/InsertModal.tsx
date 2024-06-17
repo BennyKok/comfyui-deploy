@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { useState } from "react";
 import type { UnknownKeysParam, ZodObject, ZodRawShape, z } from "zod";
@@ -39,7 +40,7 @@ export function InsertModal<
 }) {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-
+  const t = useTranslations("InsertModal")
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {/* <DialogTrigger disabled={props.disabled}> */}
@@ -91,7 +92,7 @@ export function InsertModal<
         >
           <div className="flex justify-end">
             <AutoFormSubmit>
-              Save Changes
+              {t("Save Changes")}
               {isLoading && <LoadingIcon />}
             </AutoFormSubmit>
           </div>
@@ -122,13 +123,13 @@ export function UpdateModal<
   ) => Promise<unknown>;
   formSchema: Z;
   fieldConfig?: FieldConfig<z.infer<Z>>;
-  trigger?: React.ReactNode;
+  trigger?: any;
   extraButtons?: React.ReactNode;
 }) {
   const [_open, _setOpen] = React.useState(false);
   const open = props.open ?? _open;
   const setOpen = props.setOpen ?? _setOpen;
-
+  const t = useTranslations("InsertModal")
   const [values, setValues] = useState<Partial<z.infer<Z>>>({});
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -174,7 +175,7 @@ export function UpdateModal<
           <div className="flex justify-end flex-wrap gap-2">
             {props.extraButtons}
             <AutoFormSubmit>
-              Save Changes
+              {t("Save Changes")}
               {isLoading && <LoadingIcon />}
             </AutoFormSubmit>
           </div>
