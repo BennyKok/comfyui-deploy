@@ -991,7 +991,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
         "output_data": data
     }
 
-    if not bypass_upload:
+    if bypass_upload == False:
         try:
             have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
             print("\nhave_upload", have_upload, node_id)
