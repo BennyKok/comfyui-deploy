@@ -990,16 +990,19 @@ async def update_run_with_output(prompt_id, data, node_id=None):
         "run_id": prompt_id,
         "output_data": data
     }
+    have_upload_media = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
+    if bypass_upload and have_upload_media:
+        print("CD_BYPASS_UPLOAD is enabled, skipping the upload of the output:", node_id)
+        return
 
-    if not bypass_upload:
+    if have_upload_media:
         try:
-            have_upload = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
-            print("\nhave_upload", have_upload, node_id)
+            print("\nhave_upload", have_upload_media, node_id)
 
-            if have_upload:
+            if have_upload_media:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
 
-            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload))
+            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media))
             # await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
 
         except Exception as e:
