@@ -22,12 +22,13 @@ class StreamingPrompt(BaseModel):
     auth_token: str
     inputs: dict[str, Union[str, bytes, Image.Image]]
     running_prompt_ids: set[str] = set()
-    status_endpoint: str
-    file_upload_endpoint: str
+    status_endpoint: Optional[str]
+    file_upload_endpoint: Optional[str]
     
 class SimplePrompt(BaseModel):
-    status_endpoint: str
-    file_upload_endpoint: str
+    status_endpoint: Optional[str]
+    file_upload_endpoint: Optional[str]
+    
     workflow_api: dict
     status: Status = Status.NOT_STARTED
     progress: set = set()

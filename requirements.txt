@@ -2,3 +2,4 @@ aiofiles
 pydantic
 opencv-python
 imageio-ffmpeg
+logfire
