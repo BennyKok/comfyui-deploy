@@ -19,11 +19,8 @@ function dispatchAPIEventData(data) {
   // Custom parse error
   if (msg.error) {
     let message = msg.error.message;
-    if (msg.error.details)
-      message += ": " + msg.error.details;
-    for (const [nodeID, nodeError] of Object.entries(
-      msg.node_errors,
-    )) {
+    if (msg.error.details) message += ": " + msg.error.details;
+    for (const [nodeID, nodeError] of Object.entries(msg.node_errors)) {
       message += "\n" + nodeError.class_type + ":";
       for (const errorReason of nodeError.errors) {
         message +=
@@ -261,26 +258,49 @@ const ext = {
     // const graphCanvas = document.getElementById("graph-canvas");
 
     window.addEventListener("message", async (event) => {
+      //   console.log("message", event);
       try {
         const message = JSON.parse(event.data);
         if (message.type === "graph_load") {
           const comfyUIWorkflow = message.data;
-          console.log("recieved: ", comfyUIWorkflow);
+          // console.log("recieved: ", comfyUIWorkflow);
           // Assuming there's a method to load the workflow data into the ComfyUI
           // This part of the code would depend on how the ComfyUI expects to receive and process the workflow data
           // For demonstration, let's assume there's a loadWorkflow method in the ComfyUI API
           if (comfyUIWorkflow && app && app.loadGraphData) {
+            console.log("loadGraphData");
             app.loadGraphData(comfyUIWorkflow);
           }
         } else if (message.type === "deploy") {
           // deployWorkflow();
           const prompt = await app.graphToPrompt();
+          // api.handlePromptGenerated(prompt);
           sendEventToCD("cd_plugin_onDeployChanges", prompt);
         } else if (message.type === "queue_prompt") {
           const prompt = await app.graphToPrompt();
+          api.handlePromptGenerated(prompt);
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
+        } else if (message.type === "get_prompt") {
+          const prompt = await app.graphToPrompt();
+          sendEventToCD("cd_plugin_onGetPrompt", prompt);
         } else if (message.type === "event") {
           dispatchAPIEventData(message.data);
+        } else if (message.type === "add_node") {
+          console.log("add node", message.data);
+          app.graph.beforeChange();
+          var node = LiteGraph.createNode(message.data.type);
+          node.configure({
+            widgets_values: message.data.widgets_values,
+          });
+
+          console.log("node", node);
+
+          const graphMouse = app.canvas.graph_mouse;
+
+          node.pos = [graphMouse[0], graphMouse[1]];
+
+          app.graph.add(node);
+          app.graph.afterChange();
         }
         // else if (message.type === "refresh") {
         //   sendEventToCD("cd_plugin_onRefresh");
@@ -288,10 +308,6 @@ const ext = {
       } catch (error) {
         // console.error("Error processing message:", error);
       }
-
-      // if (!event.data.flow || Object.entries(event.data.flow).length <= 0)
-      //   return;
-      //   updateBlendshapesPrompts(event.data.flow);
     });
 
     api.addEventListener("executed", (evt) => {
@@ -348,10 +364,10 @@ function createDynamicUIHtml(data) {
           <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
           <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
           ${data.missing_nodes
-            .map((node) => {
-              return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
-            })
-            .join("")}
+        .map((node) => {
+          return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
+        })
+        .join("")}
       </div>
   `;
   }
@@ -359,17 +375,14 @@ function createDynamicUIHtml(data) {
   Object.values(data.custom_nodes).forEach((node) => {
     html += `
           <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
-              <a href="${
-                node.url
-              }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${
-                node.name
-              }</a>
+              <a href="${node.url
+      }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${node.name
+      }</a>
               <p style="font-size: 14px; color: #4b5563;">${node.hash}</p>
-              ${
-                node.warning
-                  ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
-                  : ""
-              }
+              ${node.warning
+        ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
+        : ""
+      }
           </div>
       `;
   });
@@ -383,9 +396,8 @@ function createDynamicUIHtml(data) {
   Object.entries(data.models).forEach(([section, items]) => {
     html += `
     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${section.charAt(0).toUpperCase() + section.slice(1)
+      }</h3>`;
     items.forEach((item) => {
       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
     });
@@ -401,9 +413,8 @@ function createDynamicUIHtml(data) {
   Object.entries(data.files).forEach(([section, items]) => {
     html += `
     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${section.charAt(0).toUpperCase() + section.slice(1)
+      }</h3>`;
     items.forEach((item) => {
       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
     });
@@ -826,14 +837,12 @@ export class LoadingDialog extends ComfyDialog {
   showLoading(title, message) {
     this.show(`
       <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
-        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${
-          this.loadingIcon
-        }</h3>
-          ${
-            message
-              ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
-              : ""
-          }
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${this.loadingIcon
+      }</h3>
+          ${message
+        ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
+        : ""
+      }
         </div>
       `);
   }
@@ -1099,21 +1108,17 @@ export class ConfigDialog extends ComfyDialog {
     </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
-          data.endpoint
-        }">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${data.endpoint
+      }">
       </label>
       <div style="color: white;">
-        API Key: User / Org <button style="font-size: 18px;">${
-          data.displayName ?? ""
-        }</button>
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
-          data.apiKey
-        }">
+        API Key: User / Org <button style="font-size: 18px;">${data.displayName ?? ""
+      }</button>
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${data.apiKey
+      }">
         <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
-          ${
-            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
-          }
+          ${data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
+      }
         </button>
       </div>
       </div>
