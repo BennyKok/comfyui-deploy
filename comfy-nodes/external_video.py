@@ -511,7 +511,7 @@ class ComfyUIDeployExternalVideo:
     RETURN_TYPES = (
         "IMAGE",
         "INT",
-        "VHS_AUDIO",
+        "AUDIO",
         "VHS_VIDEOINFO",
     )
     RETURN_NAMES = (
