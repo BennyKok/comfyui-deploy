@@ -737,6 +737,7 @@ def load_video_cv(
         return (None, len(images), audio, video_info, {"samples": images})
 
 
+# modeled after Video upload node
 class ComfyUIDeployExternalVideo:
     @classmethod
     def INPUT_TYPES(s):
