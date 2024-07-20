@@ -1177,7 +1177,7 @@ async def update_run_with_output(prompt_id, data, node_id=None):
 
     if have_upload_media:
         try:
-            logger.info(f"\nhave_upload {have_upload} {node_id}")
+            logger.info(f"\nhave_upload {have_upload_media} {node_id}")
 
             if have_upload_media:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
