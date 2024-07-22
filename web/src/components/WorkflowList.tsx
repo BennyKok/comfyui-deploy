@@ -38,6 +38,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 
 export type WorkflowItemList = NonNullable<
@@ -174,7 +175,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
+  const t = useTranslations("WorkflowList")
   const table = useReactTable({
     data,
     columns,
@@ -198,7 +199,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
     <div className="grid grid-rows-[auto,1fr,auto] h-full">
       <div className="flex flex-row w-full items-center py-4">
         <Input
-          placeholder="Filter workflows..."
+          placeholder={t("Filter workflows")}
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
@@ -217,9 +218,9 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   );
                 })}
@@ -249,7 +250,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t("No results")}
                 </TableCell>
               </TableRow>
             )}
@@ -258,8 +259,8 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
       </ScrollArea>
       <div className="flex flex-row items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} {t("of")}{" "}
+          {table.getFilteredRowModel().rows.length} {t("row(s) selected")}
         </div>
         <div className="space-x-2">
           <Button
@@ -268,7 +269,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("Previous")}
           </Button>
           <Button
             variant="outline"
@@ -276,7 +277,7 @@ export function WorkflowList({ data }: { data: WorkflowItemList[] }) {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("Next")}
           </Button>
         </div>
       </div>

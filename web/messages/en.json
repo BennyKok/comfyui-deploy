@@ -1,0 +1,63 @@
+{
+    "NavbarMenu": {
+        "Workflows": "Workflows",
+        "Machines": "Machines",
+        "API Keys": "API Keys",
+        "Examples": "Examples"
+    },
+    "Navbar": {
+        "Docs": "Docs"
+    },
+    "LoadingWrapper": {
+        "Fetching": "Fetching"
+    },
+    "WorkflowList": {
+        "Filter workflows": "Filter workflows...",
+        "No results": "No results.",
+        "row(s) selected": "row(s) selected.",
+        "of": "of",
+        "Previous": "Previous",
+        "Next": "Next"
+    },
+    "MachineList": {
+        "Filter machines": "Filter machines...",
+        "No results": "No results.",
+        "row(s) selected": "row(s) selected.",
+        "of": "of",
+        "Previous": "Previous",
+        "Next": "Next",
+        "New Machine": "New Machine",
+        "Custom Machine": "Custom Machine",
+        "Add custom ComfyUI machines to your account": "Add custom ComfyUI machines to your account."
+    },
+    "APIKeyList": {
+        "Filter keys": "Filter keys...",
+        "No results": "No results.",
+        "row(s) selected": "row(s) selected.",
+        "of": "of",
+        "Previous": "Previous",
+        "Next": "Next",
+        "Create API Key": "Create API Key",
+        "My API Key": "My API Key",
+        "Create API Key for workflow upload": "Create API Key for workflow upload",
+        "Name": "Name"
+    },
+    "InsertModal": {
+        "Save Changes": "Save Changes"
+    },
+    "Main": {
+        "Open Source on Github": "✨ Open Source on Github",
+        "Stable Diffusion from your terminal to the world": "Stable Diffusion from your terminal to the world",
+        "From your comfyui workflow to production ready API, flexibility at the speed of thought": "From your comfyui workflow to production ready API, flexibility at the speed of thought",
+        "Get Started": "Get Started"
+    },
+    "Examples": {
+        "Check out some examples": "Check out some examples",
+        "View Workflow": "View Workflow",
+        "Text to Image": "Text to Image, Image to Image, IPAdapter, and more. Here are some examples that you can use to deploy your workflow."
+    },
+    "LocaleSwitcher": {
+        "label": "Change language",
+        "locale": "{locale, select, zh {🇨🇳 中文} en {🇺🇸 English} other {Unknown}}"
+    }
+}
