@@ -102,7 +102,7 @@ export const createRun = withServerPromise(
 
     let prompt_id: string | undefined = undefined;
     const shareData = {
-      workflow_api: workflow_api,
+      workflow_api_raw: workflow_api,
       status_endpoint: `${origin}/api/update-run`,
       file_upload_endpoint: `${origin}/api/file-upload`,
     };
