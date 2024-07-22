@@ -73,11 +73,11 @@ def clear_current_prompt(sid):
     prompt_server = server.PromptServer.instance
     to_delete = list(streaming_prompt_metadata[sid].running_prompt_ids)  # Convert set to list
 
-    logger.info("clearning out prompt: ", to_delete)
+    logger.info(f"clearing out prompt: {to_delete}")
     for id_to_delete in to_delete:
         delete_func = lambda a: a[1] == id_to_delete
         prompt_server.prompt_queue.delete_queue_item(delete_func)
-        logger.info("deleted prompt: ", id_to_delete, prompt_server.prompt_queue.get_tasks_remaining())
+        logger.info(f"deleted prompt: {id_to_delete}, remaining tasks: {prompt_server.prompt_queue.get_tasks_remaining()}")
 
     streaming_prompt_metadata[sid].running_prompt_ids.clear()
 
