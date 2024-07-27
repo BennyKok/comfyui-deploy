@@ -50,10 +50,14 @@ def exit_handler():
 
 atexit.register(exit_handler)
 
+max_retries = int(os.environ.get('MAX_RETRIES', '3'))
+retry_delay_multiplier = float(os.environ.get('RETRY_DELAY_MULTIPLIER', '2'))
+
+print(f"max_retries: {max_retries}, retry_delay_multiplier: {retry_delay_multiplier}")
+
 async def async_request_with_retry(method, url, **kwargs):
     global client_session
     await ensure_client_session()
-    max_retries = 3
     retry_delay = 1  # Start with 1 second delay
 
     for attempt in range(max_retries):
@@ -64,10 +68,10 @@ async def async_request_with_retry(method, url, **kwargs):
         except ClientError as e:
             if attempt == max_retries - 1:
                 logger.error(f"Request failed after {max_retries} attempts: {e}")
-                raise
+                # raise
             logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {e}")
             await asyncio.sleep(retry_delay)
-            retry_delay *= 2  # Exponential backoff
+            retry_delay *= retry_delay_multiplier  # Exponential backoff
 
 from logging import basicConfig, getLogger
 
