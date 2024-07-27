@@ -4,6 +4,11 @@ import numpy as np
 import torch
 import folder_paths
 
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+        
+WILDCARD = AnyType("*")
 
 class ComfyUIDeployExternalLora:
     @classmethod
@@ -20,7 +25,7 @@ class ComfyUIDeployExternalLora:
             },
         }
 
-    RETURN_TYPES = (folder_paths.get_filename_list("loras"),)
+    RETURN_TYPES = (WILDCARD,)
     RETURN_NAMES = ("path",)
 
     FUNCTION = "run"

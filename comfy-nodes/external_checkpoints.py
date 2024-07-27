@@ -5,6 +5,12 @@ import torch
 import folder_paths
 from tqdm import tqdm
 
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+        
+WILDCARD = AnyType("*")
+
 class ComfyUIDeployExternalCheckpoint:
     @classmethod
     def INPUT_TYPES(s):
@@ -20,7 +26,7 @@ class ComfyUIDeployExternalCheckpoint:
             }
         }
 
-    RETURN_TYPES = (folder_paths.get_filename_list("checkpoints"),)
+    RETURN_TYPES = (WILDCARD,)
     RETURN_NAMES = ("path",)
 
     FUNCTION = "run"
