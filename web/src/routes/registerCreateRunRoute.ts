@@ -51,7 +51,9 @@ const createRunRoute = createRoute({
 export const registerCreateRunRoute = (app: App) => {
   app.openapi(createRunRoute, async (c) => {
     const data = c.req.valid("json");
-    const origin = new URL(c.req.url).origin;
+    const proto = c.req.headers.get('x-forwarded-proto')  || "http";
+    const host = c.req.headers.get('x-forwarded-host') || c.req.headers.get('host');
+    const origin = `${proto}://${host}` || new URL(c.req.url).origin;
     const apiKeyTokenData = c.get("apiKeyTokenData")!;
 
     const { deployment_id, inputs } = data;
