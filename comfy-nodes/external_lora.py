@@ -4,11 +4,14 @@ import numpy as np
 import torch
 import folder_paths
 
+
 class AnyType(str):
     def __ne__(self, __value: object) -> bool:
         return False
-        
+
+
 WILDCARD = AnyType("*")
+
 
 class ComfyUIDeployExternalLora:
     @classmethod
@@ -22,6 +25,10 @@ class ComfyUIDeployExternalLora:
             },
             "optional": {
                 "default_lora_name": (folder_paths.get_filename_list("loras"),),
+                "lora_save_name": ( # if `default_lora_name` is a link to download a file, we will attempt to save it with this name
+                    "STRING",
+                    {"multiline": False, "default": ""},
+                ), 
             },
         }
 
@@ -32,17 +39,23 @@ class ComfyUIDeployExternalLora:
 
     CATEGORY = "deploy"
 
-    def run(self, input_id, default_lora_name=None):
+    def run(self, input_id, default_lora_name=None, lora_save_name=None):
         import requests
         import os
         import uuid
 
         if default_lora_name.startswith("http"):
-            unique_filename = str(uuid.uuid4()) + ".safetensors"
-            print(unique_filename)
+            if lora_save_name:
+                existing_loras = folder_paths.get_filename_list("loras")
+                # Check if lora_save_name exists in the list
+                if lora_save_name in existing_loras:
+                    raise "LoRA file '{lora_save_name}' already exists."
+            else:
+                lora_save_name = str(uuid.uuid4()) + ".safetensors"
+            print(lora_save_name)
             print(folder_paths.folder_names_and_paths["loras"][0][0])
             destination_path = os.path.join(
-                folder_paths.folder_names_and_paths["loras"][0][0], unique_filename
+                folder_paths.folder_names_and_paths["loras"][0][0], lora_save_name
             )
             print(destination_path)
             print("Downloading external lora - " + input_id + " to " + destination_path)
@@ -53,7 +66,7 @@ class ComfyUIDeployExternalLora:
             )
             with open(destination_path, "wb") as out_file:
                 out_file.write(response.content)
-            return (unique_filename,)
+            return (lora_save_name,)
         else:
             print(f"using lora: {default_lora_name}")
             return (default_lora_name,)
