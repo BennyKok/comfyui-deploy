@@ -278,7 +278,11 @@ const ext = {
           sendEventToCD("cd_plugin_onDeployChanges", prompt);
         } else if (message.type === "queue_prompt") {
           const prompt = await app.graphToPrompt();
-          api.handlePromptGenerated(prompt);
+          if (typeof api.handlePromptGenerated === "function") {
+            api.handlePromptGenerated(prompt);
+          } else {
+            console.warn("api.handlePromptGenerated is not a function");
+          }
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
         } else if (message.type === "get_prompt") {
           const prompt = await app.graphToPrompt();
