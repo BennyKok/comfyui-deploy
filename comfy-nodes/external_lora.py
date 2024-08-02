@@ -49,7 +49,8 @@ class ComfyUIDeployExternalLora:
                 existing_loras = folder_paths.get_filename_list("loras")
                 # Check if lora_save_name exists in the list
                 if lora_save_name in existing_loras:
-                    raise "LoRA file '{lora_save_name}' already exists."
+                    print(f"using lora: {lora_save_name}")
+                    return (lora_save_name,)
             else:
                 lora_save_name = str(uuid.uuid4()) + ".safetensors"
             print(lora_save_name)
