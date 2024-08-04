@@ -387,7 +387,7 @@ async def stream_prompt(data):
         workflow_api=workflow_api
     )
 
-    log('info', "Begin prompt", prompt=prompt)
+    # log('info', "Begin prompt", prompt=prompt)
 
     try:
         res = post_prompt(prompt)
@@ -454,7 +454,7 @@ async def stream_response(request):
                     if not comfy_message_queues[prompt_id].empty():
                         data = await comfy_message_queues[prompt_id].get()
 
-                        log('info', data["event"], data=json.dumps(data))
+                        # log('info', data["event"], data=json.dumps(data))
                         # logger.info("listener", data)
                         await response.write(f"event: event_update\ndata: {json.dumps(data)}\n\n".encode('utf-8'))
                         await response.drain()  # Ensure the buffer is flushed
