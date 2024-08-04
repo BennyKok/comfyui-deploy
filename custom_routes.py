@@ -108,7 +108,8 @@ def log_span(name):
     if use_logfire:
         with logger.span(name):
             yield
-    # else:
+    else:
+        yield
     #     logger.info(f"Start: {name}")
     #     yield
     #     logger.info(f"End: {name}")
