@@ -33,16 +33,14 @@ class ComfyUIDeployExternalTextList:
     CATEGORY = "text"
 
     def run(self, input_id, text=None):
-        images_list = []
-        print(text)
+        text_list = []
         try:
-            images_list = json.loads(text)  # Assuming images is a JSON array string
-            print(images_list)
+            text_list = json.loads(text)  # Assuming images is a JSON array string
         except Exception as e:
             print(f"Error processing images: {e}")
             pass
-        return [images_list]
+        return [text_list]
 
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalTextList": ComfyUIDeployExternalTextList}
-NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalTextList": "External TexT List (ComfyUI Deploy)"}
+NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalTextList": "External Text List (ComfyUI Deploy)"}
