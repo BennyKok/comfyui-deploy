@@ -17,9 +17,6 @@ class ComfyUIDeployExternalTextList:
                     "STRING",
                     {"multiline": True, "default": "[]"},
                 ),
-            },
-            "optional": {
-               
             }
         }
 
