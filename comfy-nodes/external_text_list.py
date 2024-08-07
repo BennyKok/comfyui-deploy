@@ -35,7 +35,7 @@ class ComfyUIDeployExternalTextList:
     def run(self, input_id, text=None):
         text_list = []
         try:
-            text_list = json.loads(text)  # Assuming images is a JSON array string
+            text_list = json.loads(text)  # Assuming text is a JSON array string
         except Exception as e:
             print(f"Error processing images: {e}")
             pass
