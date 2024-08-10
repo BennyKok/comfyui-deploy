@@ -36,8 +36,7 @@ class ComfyUIDeployExternalTextList:
         except Exception as e:
             print(f"Error processing images: {e}")
             pass
-        return [text_list]
-
+        return ([text_list],)
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalTextList": ComfyUIDeployExternalTextList}
 NODE_DISPLAY_NAME_MAPPINGS = {"ComfyUIDeployExternalTextList": "External Text List (ComfyUI Deploy)"}
