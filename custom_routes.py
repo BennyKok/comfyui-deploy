@@ -221,18 +221,23 @@ def apply_random_seed_to_workflow(workflow_api):
             if isinstance(workflow_api[key]['inputs']['seed'], list):
                 continue
             if workflow_api[key]['class_type'] == "PromptExpansion":
-                workflow_api[key]['inputs']['seed'] = randomSeed(8);
+                workflow_api[key]['inputs']['seed'] = randomSeed(8)
+                logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to PromptExpansion")
                 continue
             if workflow_api[key]['class_type'] == "RandomNoise":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to RandomNoise")
                 continue
             if workflow_api[key]['class_type'] == "KSamplerAdvanced":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to KSamplerAdvanced")
                 continue
             if workflow_api[key]['class_type'] == "SamplerCustom":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to SamplerCustom")
                 continue
-            workflow_api[key]['inputs']['seed'] = randomSeed();
+            workflow_api[key]['inputs']['seed'] = randomSeed()
+            logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to {workflow_api[key]['class_type']}")
 
 def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
     # Loop through each of the inputs and replace them
