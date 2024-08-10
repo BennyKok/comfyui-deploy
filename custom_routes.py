@@ -223,6 +223,15 @@ def apply_random_seed_to_workflow(workflow_api):
             if workflow_api[key]['class_type'] == "PromptExpansion":
                 workflow_api[key]['inputs']['seed'] = randomSeed(8);
                 continue
+            if workflow_api[key]['class_type'] == "RandomNoise":
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                continue
+            if workflow_api[key]['class_type'] == "KSamplerAdvanced":
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                continue
+            if workflow_api[key]['class_type'] == "SamplerCustom":
+                workflow_api[key]['inputs']['noise_seed'] = randomSeed();
+                continue
             workflow_api[key]['inputs']['seed'] = randomSeed();
 
 def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
