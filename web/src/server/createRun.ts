@@ -191,7 +191,8 @@ export const createRun = withServerPromise(
             ...shareData,
             prompt_id: prompt_id,
           };
-          // console.log(body);
+          console.log(machine.endpoint)
+          console.log(body);
           const comfyui_endpoint = `${machine.endpoint}/comfyui-deploy/run`;
           const _result = await fetch(comfyui_endpoint, {
             method: "POST",
