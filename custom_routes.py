@@ -17,12 +17,13 @@ from urllib.parse import quote
 import threading
 import hashlib
 import aiohttp
+from aiohttp import ClientSession, web
 import aiofiles
 from typing import Dict, List, Union, Any, Optional
 from PIL import Image
 import copy
 import struct
-from aiohttp import ClientError
+from aiohttp import web, ClientSession, ClientError
 import atexit
 
 # Global session
@@ -835,7 +836,51 @@ async def send(event, data, sid=None):
     except Exception as e:
         logger.info(f"Exception: {e}")
         traceback.print_exc()
+        
+@server.PromptServer.instance.routes.get('/comfydeploy/{tail:.*}')
+@server.PromptServer.instance.routes.post('/comfydeploy/{tail:.*}')
+async def proxy_to_comfydeploy(request):
+    # Get the base URL
+    base_url = f'https://www.comfydeploy.com/{request.match_info["tail"]}'
+    
+    # Get all query parameters
+    query_params = request.query_string
+    
+    # Construct the full target URL with query parameters
+    target_url = f"{base_url}?{query_params}" if query_params else base_url
+    
+    print(f"Proxying request to: {target_url}")
 
+    try:
+        # Create a new ClientSession for each request
+        async with ClientSession() as client_session:
+            # Forward the request
+            client_req = await client_session.request(
+                method=request.method,
+                url=target_url,
+                headers={k: v for k, v in request.headers.items() if k.lower() not in ('host', 'content-length')},
+                data=await request.read(),
+                allow_redirects=False,
+            )
+
+            # Read the entire response content
+            content = await client_req.read()
+
+            # Try to decode the content as JSON
+            try:
+                json_data = json.loads(content)
+                # If successful, return a JSON response
+                return web.json_response(json_data, status=client_req.status)
+            except json.JSONDecodeError:
+                # If it's not valid JSON, return the content as-is
+                return web.Response(body=content, status=client_req.status, headers=client_req.headers)
+
+    except ClientError as e:
+        print(f"Client error occurred while proxying request: {str(e)}")
+        return web.Response(status=502, text=f"Bad Gateway: {str(e)}")
+    except Exception as e:
+        print(f"Error occurred while proxying request: {str(e)}")
+        return web.Response(status=500, text=f"Internal Server Error: {str(e)}")
 
 
 prompt_server = server.PromptServer.instance

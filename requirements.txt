@@ -2,4 +2,5 @@ aiofiles
 pydantic
 opencv-python
 imageio-ffmpeg
+brotli
 # logfire
