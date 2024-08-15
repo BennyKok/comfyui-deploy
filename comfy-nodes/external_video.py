@@ -796,8 +796,6 @@ class ComfyUIDeployExternalVideo:
         meta_batch = kwargs.get("meta_batch")
         unique_id = kwargs.get("unique_id")
 
-        video = kwargs.get("default_value")
-        video_path = folder_paths.get_annotated_filepath(video.strip('"'))
 
         input_dir = folder_paths.get_input_directory()
         if input_id.startswith("http"):
@@ -827,8 +825,11 @@ class ComfyUIDeployExternalVideo:
                     leave=True,
                 ):
                     out_file.write(chunk)
-
-        print("video path: ", video_path)
+        else:
+            video = kwargs.get("default_value", "")
+            if video is None:
+                raise "No default video given and no external video provided"
+            video_path = folder_paths.get_annotated_filepath(video.strip('"'))
 
         return load_video_cv(
             video=video_path,
