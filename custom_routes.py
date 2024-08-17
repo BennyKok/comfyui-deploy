@@ -849,7 +849,7 @@ async def proxy_to_comfydeploy(request):
     # Construct the full target URL with query parameters
     target_url = f"{base_url}?{query_params}" if query_params else base_url
     
-    print(f"Proxying request to: {target_url}")
+    # print(f"Proxying request to: {target_url}")
 
     try:
         # Create a new ClientSession for each request

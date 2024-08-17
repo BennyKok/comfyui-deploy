@@ -498,6 +498,7 @@ function createDynamicUIHtml(data) {
   return html;
 }
 
+// Modify the existing deployWorkflow function
 async function deployWorkflow() {
   const deploy = document.getElementById("deploy-button");
 
@@ -770,6 +771,14 @@ async function deployWorkflow() {
       `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`,
     );
 
+    // // Refresh the workflows list in the sidebar
+    // const sidebarEl = document.querySelector(
+    //   '.comfy-sidebar-tab[data-id="search"]',
+    // );
+    // if (sidebarEl) {
+    //   refreshWorkflowsList(sidebarEl);
+    // }
+
     setTimeout(() => {
       title.textContent = "Deploy";
       title.style.color = "white";
@@ -785,6 +794,85 @@ async function deployWorkflow() {
       title.style.color = "white";
     }, 1000);
   }
+}
+
+// Add this function to refresh the workflows list
+function refreshWorkflowsList(el) {
+  const workflowsList = el.querySelector("#workflows-list");
+  const workflowsLoading = el.querySelector("#workflows-loading");
+
+  workflowsLoading.style.display = "flex";
+  workflowsList.style.display = "none";
+  workflowsList.innerHTML = "";
+
+  client.workflows
+    .getAll({
+      page: "1",
+      pageSize: "10",
+    })
+    .then((result) => {
+      workflowsLoading.style.display = "none";
+      workflowsList.style.display = "block";
+
+      if (result.length === 0) {
+        workflowsList.innerHTML =
+          "<li style='color: #bdbdbd;'>No workflows found</li>";
+        return;
+      }
+
+      result.forEach((workflow) => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "15px";
+        li.style.padding = "15px";
+        li.style.backgroundColor = "#2a2a2a";
+        li.style.borderRadius = "8px";
+        li.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+
+        const lastRun = workflow.runs[0];
+        const lastRunStatus = lastRun ? lastRun.status : "No runs";
+        const statusColor =
+          lastRunStatus === "success"
+            ? "#4CAF50"
+            : lastRunStatus === "error"
+              ? "#F44336"
+              : "#FFC107";
+
+        const timeAgo = getTimeAgo(new Date(workflow.updatedAt));
+
+        li.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <strong style="font-size: 18px; color: #e0e0e0;">${workflow.name}</strong>
+            </div>
+            <span style="font-size: 12px; color: ${statusColor}; margin-left: 10px;">Last run: ${lastRunStatus}</span>
+          </div>
+          <div style="font-size: 14px; color: #bdbdbd; margin-bottom: 10px;">Last updated ${timeAgo}</div>
+          <div style="display: flex; gap: 10px;">
+            <button class="open-cloud-btn" style="padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Open in Cloud</button>
+            <button class="load-api-btn" style="padding: 5px 10px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Load Workflow</button>
+          </div>
+        `;
+
+        const openCloudBtn = li.querySelector(".open-cloud-btn");
+        openCloudBtn.onclick = () =>
+          window.open(
+            `${getData().endpoint}/workflows/${workflow.id}?workspace=true`,
+            "_blank",
+          );
+
+        const loadApiBtn = li.querySelector(".load-api-btn");
+        loadApiBtn.onclick = () => loadWorkflowApi(workflow.versions[0].id);
+
+        workflowsList.appendChild(li);
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching workflows:", error);
+      workflowsLoading.style.display = "none";
+      workflowsList.style.display = "block";
+      workflowsList.innerHTML =
+        "<li style='color: #F44336;'>Error fetching workflows</li>";
+    });
 }
 
 function addButton() {
@@ -1299,7 +1387,10 @@ app.extensionManager.registerSidebarTab({
         <div id="deploy-container" style="margin-bottom: 20px;"></div>
         <div id="workflows-container">
           <h4>Your Workflows</h4>
-          <ul id="workflows-list" style="list-style-type: none; padding: 0;"></ul>
+          <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+            ${loadingIcon}
+          </div>
+          <ul id="workflows-list" style="list-style-type: none; padding: 0; display: none;"></ul>
         </div>
         <div id="config-container"></div>
       </div>
@@ -1325,6 +1416,8 @@ app.extensionManager.registerSidebarTab({
     deployButton.innerHTML = `<i class="pi pi-cloud-upload" style="margin-right: 8px;"></i><div id='sidebar-button-title'>Deploy</div>`;
     deployButton.onclick = async () => {
       await deployWorkflow();
+      // Refresh the workflows list after deployment
+      refreshWorkflowsList(el);
     };
     deployContainer.appendChild(deployButton);
 
@@ -1350,63 +1443,9 @@ app.extensionManager.registerSidebarTab({
 
     // Fetch and display workflows
     const workflowsList = el.querySelector("#workflows-list");
-    client.workflows
-      .getAll({
-        page: "1",
-        pageSize: "10",
-      })
-      .then((result) => {
-        result.forEach((workflow) => {
-          const li = document.createElement("li");
-          li.style.marginBottom = "15px";
-          li.style.padding = "15px";
-          li.style.backgroundColor = "#2a2a2a";
-          li.style.borderRadius = "8px";
-          li.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+    const workflowsLoading = el.querySelector("#workflows-loading");
 
-          const lastRun = workflow.runs[0];
-          const lastRunStatus = lastRun ? lastRun.status : "No runs";
-          const statusColor =
-            lastRunStatus === "success"
-              ? "#4CAF50"
-              : lastRunStatus === "error"
-                ? "#F44336"
-                : "#FFC107";
-
-          const timeAgo = getTimeAgo(new Date(workflow.updatedAt));
-
-          li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <strong style="font-size: 18px; color: #e0e0e0;">${workflow.name}</strong>
-              </div>
-              <span style="font-size: 12px; color: ${statusColor}; margin-left: 10px;">Last run: ${lastRunStatus}</span>
-            </div>
-            <div style="font-size: 14px; color: #bdbdbd; margin-bottom: 10px;">Last updated ${timeAgo}</div>
-            <div style="display: flex; gap: 10px;">
-              <button class="open-cloud-btn" style="padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Open in Cloud</button>
-              <button class="load-api-btn" style="padding: 5px 10px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Load Workflow</button>
-            </div>
-          `;
-
-          const openCloudBtn = li.querySelector(".open-cloud-btn");
-          openCloudBtn.onclick = () =>
-            window.open(
-              `${getData().endpoint}/workflows/${workflow.id}?workspace=true`,
-              "_blank",
-            );
-
-          const loadApiBtn = li.querySelector(".load-api-btn");
-          loadApiBtn.onclick = () => loadWorkflowApi(workflow.versions[0].id);
-
-          workflowsList.appendChild(li);
-        });
-      })
-      .catch((error) => {
-        console.error("Error fetching workflows:", error);
-        workflowsList.innerHTML =
-          "<li style='color: #F44336;'>Error fetching workflows</li>";
-      });
+    refreshWorkflowsList(el);
   },
 });
 
