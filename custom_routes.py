@@ -364,7 +364,7 @@ async def comfy_deploy_run(request):
 
     status = 200
 
-    if "node_errors" in res and res["node_errors"] is not None:
+    if "node_errors" in res and res["node_errors"] is not None and len(res["node_errors"]) > 0:
         # Even tho there are node_errors it can still be run
         status = 400
         await update_run_with_output(prompt_id, {
@@ -425,7 +425,7 @@ async def stream_prompt(data):
 
     status = 200
 
-    if "node_errors" in res and res["node_errors"] is not None:
+    if "node_errors" in res and res["node_errors"] is not None and len(res["node_errors"]) > 0:
         # Even tho there are node_errors it can still be run
         status = 400
         await update_run_with_output(prompt_id, {
