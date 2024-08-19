@@ -16,7 +16,7 @@ class ComfyUIDeployExternalNumberInt:
             "optional": {
                 "default_value": (
                     "INT",
-                    {"multiline": True, "display": "number", "default": 0},
+                    {"multiline": True, "display": "number", "min": -2147483647, "max": 2147483647, "default": 0},
                 ),
             }
         }
