@@ -23,7 +23,7 @@ from typing import Dict, List, Union, Any, Optional
 from PIL import Image
 import copy
 import struct
-from aiohttp import web, ClientSession, ClientError
+from aiohttp import web, ClientSession, ClientError, ClientTimeout
 import atexit
 
 # Global session
@@ -51,7 +51,7 @@ def exit_handler():
 
 atexit.register(exit_handler)
 
-max_retries = int(os.environ.get('MAX_RETRIES', '3'))
+max_retries = int(os.environ.get('MAX_RETRIES', '5'))
 retry_delay_multiplier = float(os.environ.get('RETRY_DELAY_MULTIPLIER', '2'))
 
 print(f"max_retries: {max_retries}, retry_delay_multiplier: {retry_delay_multiplier}")
@@ -60,19 +60,31 @@ async def async_request_with_retry(method, url, **kwargs):
     global client_session
     await ensure_client_session()
     retry_delay = 1  # Start with 1 second delay
+    initial_timeout = 5  # 5 seconds timeout for the initial connection
 
     for attempt in range(max_retries):
         try:
+            # Set a timeout for the initial connection
+            timeout = ClientTimeout(total=None, connect=initial_timeout)
+            kwargs['timeout'] = timeout
+
             async with client_session.request(method, url, **kwargs) as response:
                 response.raise_for_status()
                 return response
+        except asyncio.TimeoutError:
+            logger.warning(f"Request timed out after {initial_timeout} seconds (attempt {attempt + 1}/{max_retries})")
         except ClientError as e:
             if attempt == max_retries - 1:
                 logger.error(f"Request failed after {max_retries} attempts: {e}")
                 # raise
             logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {e}")
-            await asyncio.sleep(retry_delay)
-            retry_delay *= retry_delay_multiplier  # Exponential backoff
+        
+        # Wait before retrying
+        await asyncio.sleep(retry_delay)
+        retry_delay *= retry_delay_multiplier  # Exponential backoff
+
+    # If all retries fail, raise an exception
+    raise Exception(f"Request failed after {max_retries} attempts")
 
 from logging import basicConfig, getLogger
 
