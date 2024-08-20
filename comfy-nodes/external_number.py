@@ -18,6 +18,14 @@ class ComfyUIDeployExternalNumber:
                     "FLOAT",
                     {"multiline": True, "display": "number", "default": 0, "min": -2147483647, "max": 2147483647, "step": 0.01},
                 ),
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -28,7 +36,7 @@ class ComfyUIDeployExternalNumber:
 
     CATEGORY = "number"
 
-    def run(self, input_id, default_value=None):
+    def run(self, input_id, default_value=None, display_name=None, description=None):
         try:
             float_value = float(input_id)
             print("my number", float_value)

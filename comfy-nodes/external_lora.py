@@ -29,6 +29,14 @@ class ComfyUIDeployExternalLora:
                     "STRING",
                     {"multiline": False, "default": ""},
                 ), 
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             },
         }
 
@@ -39,7 +47,7 @@ class ComfyUIDeployExternalLora:
 
     CATEGORY = "deploy"
 
-    def run(self, input_id, default_lora_name=None, lora_save_name=None):
+    def run(self, input_id, default_lora_name=None, lora_save_name=None, display_name=None, description=None):
         import requests
         import os
         import uuid

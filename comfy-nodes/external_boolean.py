@@ -8,6 +8,16 @@ class ComfyUIDeployExternalBoolean:
                     {"multiline": False, "default": "input_bool"},
                 ),
                 "default_value": ("BOOLEAN", {"default": False})
+            },
+            "optional": {
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -16,7 +26,7 @@ class ComfyUIDeployExternalBoolean:
     
     FUNCTION = "run"
     
-    def run(self, input_id, default_value=None):
+    def run(self, input_id, default_value=None, display_name=None, description=None):
         print(f"Node '{input_id}' processing with switch set to {default_value}")
         return [default_value]
     

@@ -18,6 +18,14 @@ class ComfyUIDeployExternalNumberInt:
                     "INT",
                     {"multiline": True, "display": "number", "min": -2147483647, "max": 2147483647, "default": 0},
                 ),
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -28,7 +36,7 @@ class ComfyUIDeployExternalNumberInt:
 
     CATEGORY = "number"
 
-    def run(self, input_id, default_value=None):
+    def run(self, input_id, default_value=None, display_name=None, description=None):
         if not input_id or (isinstance(input_id, str) and not input_id.strip().isdigit()):
             return [default_value]
         return [int(input_id)]

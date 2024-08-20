@@ -21,6 +21,14 @@ class ComfyUIDeployExternalNumberSlider:
                     "FLOAT",
                     {"multiline": True, "display": "number", "min": -2147483647, "max": 2147483647, "default": 1, "step": 0.01},
                 ),
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -31,7 +39,7 @@ class ComfyUIDeployExternalNumberSlider:
 
     CATEGORY = "number"
 
-    def run(self, input_id, default_value=None, min_value=0, max_value=1):
+    def run(self, input_id, default_value=None, min_value=0, max_value=1, display_name=None, description=None):
         try:
             float_value = float(input_id)
             if min_value <= float_value <= max_value:

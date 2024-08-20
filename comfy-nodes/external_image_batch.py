@@ -21,6 +21,14 @@ class ComfyUIDeployExternalImageBatch:
             },
             "optional": {
                 "default_value": ("IMAGE",),
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -31,7 +39,7 @@ class ComfyUIDeployExternalImageBatch:
 
     CATEGORY = "image"
     
-    def run(self, input_id, images=None, default_value=None):
+    def run(self, input_id, images=None, default_value=None, display_name=None, description=None):
         processed_images = []
         try:
             images_list = json.loads(images)  # Assuming images is a JSON array string

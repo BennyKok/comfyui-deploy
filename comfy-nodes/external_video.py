@@ -765,6 +765,14 @@ class ComfyUIDeployExternalVideo:
                     "meta_batch": ("VHS_BatchManager",),
                     "vae": ("VAE",),
                     "default_value": (sorted(files),),
+                    "display_name": (
+                        "STRING",
+                        {"multiline": False, "default": "Name of the node (optional)"},
+                    ),
+                    "description": (
+                        "STRING",
+                        {"multiline": True, "default": "Description of the node (optional)"},
+                    ),
                 },
                 "hidden": {
                     "unique_id": "UNIQUE_ID"

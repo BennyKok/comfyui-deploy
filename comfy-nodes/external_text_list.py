@@ -17,6 +17,16 @@ class ComfyUIDeployExternalTextList:
                     "STRING",
                     {"multiline": True, "default": "[]"},
                 ),
+            },
+            "optional": {
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": "Name of the node (optional)"},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": "Description of the node (optional)"},
+                ),
             }
         }
 
@@ -29,7 +39,7 @@ class ComfyUIDeployExternalTextList:
 
     CATEGORY = "text"
 
-    def run(self, input_id, text=None):
+    def run(self, input_id, text=None, display_name=None, description=None):
         text_list = []
         try:
             text_list = json.loads(text)  # Assuming text is a JSON array string
