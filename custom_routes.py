@@ -33,7 +33,7 @@ client_session = None
 #     global client_session
 #     if client_session is None:
 #         client_session = aiohttp.ClientSession()
-        
+
 async def ensure_client_session():
     global client_session
     if client_session is None:
@@ -43,7 +43,7 @@ async def cleanup():
     global client_session
     if client_session:
         await client_session.close()
-        
+
 def exit_handler():
     print("Exiting the application. Initiating cleanup...")
     loop = asyncio.get_event_loop()
@@ -82,7 +82,7 @@ async def async_request_with_retry(method, url, disable_timeout=False, **kwargs)
                 logger.error(f"Request failed after {max_retries} attempts: {e}")
                 # raise
             logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {e}")
-        
+
         # Wait before retrying
         await asyncio.sleep(retry_delay)
         retry_delay *= retry_delay_multiplier  # Exponential backoff
@@ -116,7 +116,7 @@ def log(level, message, **kwargs):
         getattr(logger, level)(message, **kwargs)
     else:
         getattr(logger, level)(f"{message} {kwargs}")
-        
+
 # For a span, you might need to create a context manager
 from contextlib import contextmanager
 
@@ -234,29 +234,32 @@ def apply_random_seed_to_workflow(workflow_api):
         workflow_api (dict): The workflow API dictionary to modify.
     """
     for key in workflow_api:
-        if 'inputs' in workflow_api[key] and 'seed' in workflow_api[key]['inputs']:
-            if isinstance(workflow_api[key]['inputs']['seed'], list):
-                continue
-            if workflow_api[key]['class_type'] == "PromptExpansion":
-                workflow_api[key]['inputs']['seed'] = randomSeed(8)
-                logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to PromptExpansion")
-                continue
-            if workflow_api[key]['class_type'] == "RandomNoise":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
-                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to RandomNoise")
-                continue
-            if workflow_api[key]['class_type'] == "KSamplerAdvanced":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
-                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to KSamplerAdvanced")
-                continue
-            if workflow_api[key]['class_type'] == "SamplerCustom":
-                workflow_api[key]['inputs']['noise_seed'] = randomSeed()
-                logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to SamplerCustom")
-                continue
-            workflow_api[key]['inputs']['seed'] = randomSeed()
-            logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to {workflow_api[key]['class_type']}")
+        if 'inputs' in workflow_api[key]
+            if 'seed' in workflow_api[key]['inputs']:
+                if isinstance(workflow_api[key]['inputs']['seed'], list):
+                    continue
+                if workflow_api[key]['class_type'] == "PromptExpansion":
+                    workflow_api[key]['inputs']['seed'] = randomSeed(8)
+                    logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to PromptExpansion")
+                    continue
+                workflow_api[key]['inputs']['seed'] = randomSeed()
+                logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to {workflow_api[key]['class_type']}")
 
-def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
+            if 'noise_seed' in workflow_api[key]:
+                if workflow_api[key]['class_type'] == "RandomNoise":
+                    workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                    logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to RandomNoise")
+                    continue
+                if workflow_api[key]['class_type'] == "KSamplerAdvanced":
+                    workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                    logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to KSamplerAdvanced")
+                    continue
+                if workflow_api[key]['class_type'] == "SamplerCustom":
+                    workflow_api[key]['inputs']['noise_seed'] = randomSeed()
+                    logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to SamplerCustom")
+                    continue
+
+def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str | None = None):
     # Loop through each of the inputs and replace them
     for key, value in workflow_api.items():
         if 'inputs' in value:
@@ -852,19 +855,19 @@ async def send(event, data, sid=None):
     except Exception as e:
         logger.info(f"Exception: {e}")
         traceback.print_exc()
-        
+
 @server.PromptServer.instance.routes.get('/comfydeploy/{tail:.*}')
 @server.PromptServer.instance.routes.post('/comfydeploy/{tail:.*}')
 async def proxy_to_comfydeploy(request):
     # Get the base URL
     base_url = f'https://www.comfydeploy.com/{request.match_info["tail"]}'
-    
+
     # Get all query parameters
     query_params = request.query_string
-    
+
     # Construct the full target URL with query parameters
     target_url = f"{base_url}?{query_params}" if query_params else base_url
-    
+
     # print(f"Proxying request to: {target_url}")
 
     try:
@@ -998,7 +1001,7 @@ async def send_json_override(self, event, data, sid=None):
                 return
         else:
             logger.info(f"Executed {data}")
-            
+
         await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # update_run_with_output(prompt_id, data.get('output'))
