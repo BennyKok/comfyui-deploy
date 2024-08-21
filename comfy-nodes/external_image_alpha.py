@@ -17,11 +17,11 @@ class ComfyUIDeployExternalImageAlpha:
                 "default_value": ("IMAGE",),
                 "display_name": (
                     "STRING",
-                    {"multiline": False, "default": "Name of the node (optional)"},
+                    {"multiline": False, "default": ""},
                 ),
                 "description": (
                     "STRING",
-                    {"multiline": True, "default": "Description of the node (optional)"},
+                    {"multiline": True, "default": ""},
                 ),
             }
         }
