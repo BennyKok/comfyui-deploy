@@ -37,6 +37,10 @@ class ComfyUIDeployExternalLora:
                     "STRING",
                     {"multiline": True, "default": ""},
                 ),
+                "lora_url": (
+                    "STRING",
+                    {"multiline": False, "default": ""},
+                ),
             },
         }
 
@@ -47,12 +51,12 @@ class ComfyUIDeployExternalLora:
 
     CATEGORY = "deploy"
 
-    def run(self, input_id, default_lora_name=None, lora_save_name=None, display_name=None, description=None):
+    def run(self, input_id, default_lora_name=None, lora_save_name=None, display_name=None, description=None, lora_url=None):
         import requests
         import os
         import uuid
 
-        if default_lora_name.startswith("http"):
+        if lora_url and lora_url.startswith("http"):
             if lora_save_name:
                 existing_loras = folder_paths.get_filename_list("loras")
                 # Check if lora_save_name exists in the list
