@@ -989,17 +989,22 @@ async def send_json_override(self, event, data, sid=None):
         # await update_run_with_output(prompt_id, data)
 
     if event == 'executed' and 'node' in data and 'output' in data:
+        node_meta = None
         if prompt_id in prompt_metadata:
             node = data.get('node')
             class_type = prompt_metadata[prompt_id].workflow_api[node]['class_type']
             logger.info(f"Executed {class_type} {data}")
+            node_meta = {
+                "node_id": node,
+                "node_class": class_type, 
+            }
             if class_type == "PreviewImage":
                 logger.info("Skipping preview image")
                 return
         else:
             logger.info(f"Executed {data}")
             
-        await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
+        await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'), node_meta=node_meta)
         # await update_run_with_output(prompt_id, data.get('output'), node_id=data.get('node'))
         # update_run_with_output(prompt_id, data.get('output'))
 
@@ -1312,7 +1317,7 @@ async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=T
     except Exception as e:
         await handle_error(prompt_id, data, e)
 
-async def update_run_with_output(prompt_id, data, node_id=None):
+async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
     if prompt_id not in prompt_metadata:
         return
 
@@ -1323,7 +1328,8 @@ async def update_run_with_output(prompt_id, data, node_id=None):
 
     body = {
         "run_id": prompt_id,
-        "output_data": data
+        "output_data": data,
+        "node_meta": node_meta,
     }
     have_upload_media = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
     if bypass_upload and have_upload_media:
