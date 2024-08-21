@@ -234,7 +234,7 @@ def apply_random_seed_to_workflow(workflow_api):
         workflow_api (dict): The workflow API dictionary to modify.
     """
     for key in workflow_api:
-        if 'inputs' in workflow_api[key]
+        if 'inputs' in workflow_api[key]:
             if 'seed' in workflow_api[key]['inputs']:
                 if isinstance(workflow_api[key]['inputs']['seed'], list):
                     continue
