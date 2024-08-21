@@ -245,7 +245,7 @@ def apply_random_seed_to_workflow(workflow_api):
                 workflow_api[key]['inputs']['seed'] = randomSeed()
                 logger.info(f"Applied random seed {workflow_api[key]['inputs']['seed']} to {workflow_api[key]['class_type']}")
 
-            if 'noise_seed' in workflow_api[key]:
+            if 'noise_seed' in workflow_api[key]['inputs']:
                 if workflow_api[key]['class_type'] == "RandomNoise":
                     workflow_api[key]['inputs']['noise_seed'] = randomSeed()
                     logger.info(f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to RandomNoise")
