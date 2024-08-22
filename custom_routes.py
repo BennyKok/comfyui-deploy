@@ -56,39 +56,50 @@ retry_delay_multiplier = float(os.environ.get('RETRY_DELAY_MULTIPLIER', '2'))
 
 print(f"max_retries: {max_retries}, retry_delay_multiplier: {retry_delay_multiplier}")
 
+import time
+
 async def async_request_with_retry(method, url, disable_timeout=False, **kwargs):
     global client_session
     await ensure_client_session()
-    # async with aiohttp.ClientSession() as client_session:
     retry_delay = 1  # Start with 1 second delay
     initial_timeout = 5  # 5 seconds timeout for the initial connection
 
+    start_time = time.time()
     for attempt in range(max_retries):
         try:
-            # Set a timeout for the initial connection
             if not disable_timeout:
                 timeout = ClientTimeout(total=None, connect=initial_timeout)
                 kwargs['timeout'] = timeout
 
+            request_start = time.time()
             async with client_session.request(method, url, **kwargs) as response:
+                request_end = time.time()
+                logger.info(f"Request attempt {attempt + 1} took {request_end - request_start:.2f} seconds")
+                
                 response.raise_for_status()
                 if method.upper() == 'GET':
                     await response.read()
+                
+                total_time = time.time() - start_time
+                logger.info(f"Request succeeded after {total_time:.2f} seconds (attempt {attempt + 1}/{max_retries})")
                 return response
         except asyncio.TimeoutError:
             logger.warning(f"Request timed out after {initial_timeout} seconds (attempt {attempt + 1}/{max_retries})")
         except ClientError as e:
+            end_time = time.time()
+            logger.error(f"Request failed (attempt {attempt + 1}/{max_retries}): {e}")
+            logger.error(f"Time taken for failed attempt: {end_time - request_start:.2f} seconds")
+            logger.error(f"Total time elapsed: {end_time - start_time:.2f} seconds")
+            
             if attempt == max_retries - 1:
                 logger.error(f"Request failed after {max_retries} attempts: {e}")
-                # raise
-            logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                raise
         
-        # Wait before retrying
         await asyncio.sleep(retry_delay)
-        retry_delay *= retry_delay_multiplier  # Exponential backoff
+        retry_delay *= retry_delay_multiplier
 
-    # If all retries fail, raise an exception
-    raise Exception(f"Request failed after {max_retries} attempts")
+    total_time = time.time() - start_time
+    raise Exception(f"Request failed after {max_retries} attempts and {total_time:.2f} seconds")
 
 from logging import basicConfig, getLogger
 
