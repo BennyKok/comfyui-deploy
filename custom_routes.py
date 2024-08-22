@@ -91,6 +91,11 @@ async def async_request_with_retry(method, url, disable_timeout=False, **kwargs)
             logger.error(f"Time taken for failed attempt: {end_time - request_start:.2f} seconds")
             logger.error(f"Total time elapsed: {end_time - start_time:.2f} seconds")
             
+            # Log the response body for ClientError as well
+            if hasattr(e, 'response') and e.response is not None:
+                error_body = await e.response.text()
+                logger.error(f"Error response body: {error_body}")
+            
             if attempt == max_retries - 1:
                 logger.error(f"Request failed after {max_retries} attempts: {e}")
                 raise
