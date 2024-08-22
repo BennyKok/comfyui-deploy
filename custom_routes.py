@@ -1175,22 +1175,22 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
     prompt_id = quote(prompt_id)
     content_type = quote(content_type)
 
-    target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2"
-
-    start_time = time.time()  # Start timing here
-    result = await async_request_with_retry("GET", target_url, disable_timeout=True)
-    end_time = time.time()  # End timing after the request is complete
-    logger.info("Time taken for getting file upload endpoint: {:.2f} seconds".format(end_time - start_time))
-    ok = await result.json()
-
-    start_time = time.time()  # Start timing here
-
     async with aiofiles.open(file, 'rb') as f:
         data = await f.read()
+        size = str(len(data))
+        target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2&size={quote(size)}"
+
+        start_time = time.time()  # Start timing here
+        result = await async_request_with_retry("GET", target_url, disable_timeout=True)
+        end_time = time.time()  # End timing after the request is complete
+        logger.info("Time taken for getting file upload endpoint: {:.2f} seconds".format(end_time - start_time))
+        ok = await result.json()
+
+        start_time = time.time()  # Start timing here
         headers = {
             # "x-amz-acl": "public-read",
             "Content-Type": content_type,
-            "Content-Length": str(len(data)),
+            "Content-Length": size,
         }
         # response = requests.put(ok.get("url"), headers=headers, data=data)
         response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
