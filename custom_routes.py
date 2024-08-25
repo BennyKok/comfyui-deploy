@@ -1,4 +1,5 @@
 from io import BytesIO
+from pprint import pprint
 from aiohttp import web
 import os
 import requests
@@ -1148,7 +1149,7 @@ async def update_run(prompt_id: str, status: Status):
                 })
 
 
-async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output"):
+async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output", item=None):
     """
     Uploads file to S3 bucket using S3 client object
     :return: None
@@ -1205,6 +1206,12 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
         end_time = time.time()  # End timing after the request is complete
         logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
+        
+        if item is not None:
+            file_download_url = ok.get("download_url")
+            if file_download_url is not None:
+                item["url"] = file_download_url
+            item["upload_duration"] = end_time - start_time
 
 def have_pending_upload(prompt_id):
     if prompt_id in prompt_metadata and len(prompt_metadata[prompt_id].uploading_nodes) > 0:
@@ -1318,14 +1325,15 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
             item.get("filename"),
             subfolder=item.get("subfolder"),
             type=item.get("type"),
-            content_type=file_type
+            content_type=file_type,
+            item=item
         ))
 
     # Execute all upload tasks concurrently
     await asyncio.gather(*upload_tasks)
 
 # Upload files in the background
-async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=True):
+async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=True, node_meta=None):
     try:
         upload_tasks = [
             handle_upload(prompt_id, data, 'images', "content_type", "image/png"),
@@ -1336,7 +1344,16 @@ async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=T
 
         await asyncio.gather(*upload_tasks)
 
+        status_endpoint = prompt_metadata[prompt_id].status_endpoint
         if have_upload:
+            if status_endpoint is not None:
+                body = {
+                    "run_id": prompt_id,
+                    "output_data": data,
+                    "node_meta": node_meta,
+                }
+                # pprint(body)
+                await async_request_with_retry('POST', status_endpoint, json=body)
             await update_file_status(prompt_id, data, False, node_id=node_id)
     except Exception as e:
         await handle_error(prompt_id, data, e)
@@ -1372,9 +1389,8 @@ async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
 
         except Exception as e:
             await handle_error(prompt_id, data, e)
-
     # requests.post(status_endpoint, json=body)
-    if status_endpoint is not None:
+    elif status_endpoint is not None:
         await async_request_with_retry('POST', status_endpoint, json=body)
 
     await send('outputs_uploaded', {
