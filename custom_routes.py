@@ -1388,7 +1388,7 @@ async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
             if have_upload_media:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
 
-            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media))
+            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media, node_meta=node_meta))
             # await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
 
         except Exception as e:
