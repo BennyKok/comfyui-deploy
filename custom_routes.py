@@ -80,7 +80,7 @@ async def async_request_with_retry(method, url, disable_timeout=False, **kwargs)
                 if response.status != 200:
                     error_body = await response.text()
                     logger.error(f"Request failed with status {response.status} and body {error_body}")
-                    raise Exception(f"Request failed with status {response.status}")
+                    # raise Exception(f"Request failed with status {response.status}")
                 
                 response.raise_for_status()
                 if method.upper() == 'GET':
@@ -629,7 +629,7 @@ async def upload_file_endpoint(request):
                 with open(file_path, 'rb') as f:
                     headers = {
                         "Content-Type": file_type,
-                        "Content-Length": str(file_size)
+                        # "Content-Length": str(file_size)
                     }
                     if content.get('include_acl') is True:
                         headers["x-amz-acl"] = "public-read"
@@ -1188,7 +1188,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
     async with aiofiles.open(file, 'rb') as f:
         data = await f.read()
         size = str(len(data))
-        target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2&size={quote(size)}"
+        target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2"
 
         start_time = time.time()  # Start timing here
         result = await async_request_with_retry("GET", target_url, disable_timeout=True)
@@ -1199,7 +1199,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         start_time = time.time()  # Start timing here
         headers = {
             "Content-Type": content_type,
-            "Content-Length": size,
+            # "Content-Length": size,
         }
         
         if ok.get('include_acl') is True:
