@@ -76,6 +76,11 @@ async def async_request_with_retry(method, url, disable_timeout=False, **kwargs)
                 request_end = time.time()
                 logger.info(f"Request attempt {attempt + 1} took {request_end - request_start:.2f} seconds")
                 
+                if response.status != 200:
+                    error_body = await response.text()
+                    logger.error(f"Request failed with status {response.status} and body {error_body}")
+                    raise Exception(f"Request failed with status {response.status}")
+                
                 response.raise_for_status()
                 if method.upper() == 'GET':
                     await response.read()
@@ -623,7 +628,7 @@ async def upload_file_endpoint(request):
                 with open(file_path, 'rb') as f:
                     headers = {
                         "Content-Type": file_type,
-                        # "x-amz-acl": "public-read",
+                        "x-amz-acl": "public-read",
                         "Content-Length": str(file_size)
                     }
                     upload_response = await async_request_with_retry('PUT', upload_url, data=f, headers=headers)
@@ -1191,7 +1196,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
 
         start_time = time.time()  # Start timing here
         headers = {
-            # "x-amz-acl": "public-read",
+            "x-amz-acl": "public-read",
             "Content-Type": content_type,
             "Content-Length": size,
         }
