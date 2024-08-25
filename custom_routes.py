@@ -629,9 +629,10 @@ async def upload_file_endpoint(request):
                 with open(file_path, 'rb') as f:
                     headers = {
                         "Content-Type": file_type,
-                        "x-amz-acl": "public-read",
                         "Content-Length": str(file_size)
                     }
+                    if content.get('include_acl') is True:
+                        headers["x-amz-acl"] = "public-read"
                     upload_response = await async_request_with_retry('PUT', upload_url, data=f, headers=headers)
                     if upload_response.status == 200:
                         return web.json_response({
@@ -1197,10 +1198,13 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
 
         start_time = time.time()  # Start timing here
         headers = {
-            "x-amz-acl": "public-read",
             "Content-Type": content_type,
             "Content-Length": size,
         }
+        
+        if ok.get('include_acl') is True:
+            headers["x-amz-acl"] = "public-read"
+        
         # response = requests.put(ok.get("url"), headers=headers, data=data)
         response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
         logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
