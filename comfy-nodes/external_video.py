@@ -764,7 +764,7 @@ class ComfyUIDeployExternalVideo:
                 "optional": {
                     "meta_batch": ("VHS_BatchManager",),
                     "vae": ("VAE",),
-                    "default_value": (sorted(files),),
+                    "default_video": (sorted(files),),
                     "display_name": (
                         "STRING",
                         {"multiline": False, "default": ""},
@@ -834,7 +834,7 @@ class ComfyUIDeployExternalVideo:
                 ):
                     out_file.write(chunk)
         else:
-            video = kwargs.get("default_value", "")
+            video = kwargs.get("default_video", "")
             if video is None:
                 raise "No default video given and no external video provided"
             video_path = folder_paths.get_annotated_filepath(video.strip('"'))
