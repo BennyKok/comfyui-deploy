@@ -25,10 +25,10 @@ class ComfyUIDeployExternalLora:
             },
             "optional": {
                 "default_lora_name": (folder_paths.get_filename_list("loras"),),
-                "lora_save_name": ( # if `default_lora_name` is a link to download a file, we will attempt to save it with this name
+                "lora_save_name": (  # if `default_lora_name` is a link to download a file, we will attempt to save it with this name
                     "STRING",
                     {"multiline": False, "default": ""},
-                ), 
+                ),
                 "display_name": (
                     "STRING",
                     {"multiline": False, "default": ""},
@@ -51,7 +51,15 @@ class ComfyUIDeployExternalLora:
 
     CATEGORY = "deploy"
 
-    def run(self, input_id, default_lora_name=None, lora_save_name=None, display_name=None, description=None, lora_url=None):
+    def run(
+        self,
+        input_id,
+        default_lora_name=None,
+        lora_save_name=None,
+        display_name=None,
+        description=None,
+        lora_url=None,
+    ):
         import requests
         import os
         import uuid
@@ -71,9 +79,9 @@ class ComfyUIDeployExternalLora:
                 folder_paths.folder_names_and_paths["loras"][0][0], lora_save_name
             )
             print(destination_path)
-            print("Downloading external lora - " + input_id + " to " + destination_path)
+            print("Downloading external lora - " + lora_url + " to " + destination_path)
             response = requests.get(
-                input_id,
+                lora_url,
                 headers={"User-Agent": "Mozilla/5.0"},
                 allow_redirects=True,
             )

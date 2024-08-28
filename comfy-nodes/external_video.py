@@ -834,7 +834,7 @@ class ComfyUIDeployExternalVideo:
                 ):
                     out_file.write(chunk)
         else:
-            video = kwargs.get("default_video", "")
+            video = kwargs.get("default_video", None)
             if video is None:
                 raise "No default video given and no external video provided"
             video_path = folder_paths.get_annotated_filepath(video.strip('"'))
