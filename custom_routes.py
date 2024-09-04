@@ -1244,6 +1244,8 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
             if file_download_url is not None:
                 item["url"] = file_download_url
             item["upload_duration"] = end_time - start_time
+            if ok.get("is_public") is not None:
+                item["is_public"] = ok.get("is_public")
 
 def have_pending_upload(prompt_id):
     if prompt_id in prompt_metadata and len(prompt_metadata[prompt_id].uploading_nodes) > 0:
