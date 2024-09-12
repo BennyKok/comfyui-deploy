@@ -39,18 +39,38 @@ class ComfyUIDeployExternalImageBatch:
 
     CATEGORY = "image"
     
+    def process_image(self, image):
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
+        image = np.array(image).astype(np.float32) / 255.0
+        image_tensor = torch.from_numpy(image)[None,]
+        return image_tensor
+    
     def run(self, input_id, images=None, default_value=None, display_name=None, description=None):
+        import requests
+        import zipfile
+        import io
+        
         processed_images = []
         try:
             images_list = json.loads(images)  # Assuming images is a JSON array string
             print(images_list)
             for img_input in images_list:
                 if img_input.startswith('http'):
-                    import requests
                     from io import BytesIO
                     print("Fetching image from url: ", img_input)
                     response = requests.get(img_input)
                     image = Image.open(BytesIO(response.content))
+                elif img_input.startswith('http') and img_input.endswith('.zip'):
+                    print("Fetching zip file from url: ", img_input)
+                    response = requests.get(img_input)
+                    zip_file = zipfile.ZipFile(io.BytesIO(response.content))
+                    for file_name in zip_file.namelist():
+                        if file_name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            with zip_file.open(file_name) as file:
+                                image = Image.open(file)
+                                image = self.process_image(image)
+                                processed_images.append(image)
                 elif img_input.startswith('data:image/png;base64,') or img_input.startswith('data:image/jpeg;base64,') or img_input.startswith('data:image/jpg;base64,'):
                     import base64
                     from io import BytesIO
