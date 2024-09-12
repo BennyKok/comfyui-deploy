@@ -29,6 +29,8 @@ class SimplePrompt(BaseModel):
     status_endpoint: Optional[str]
     file_upload_endpoint: Optional[str]
     
+    token: Optional[str]
+    
     workflow_api: dict
     status: Status = Status.NOT_STARTED
     progress: set = set()
