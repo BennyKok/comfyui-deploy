@@ -56,12 +56,7 @@ class ComfyUIDeployExternalImageBatch:
             images_list = json.loads(images)  # Assuming images is a JSON array string
             print(images_list)
             for img_input in images_list:
-                if img_input.startswith('http'):
-                    from io import BytesIO
-                    print("Fetching image from url: ", img_input)
-                    response = requests.get(img_input)
-                    image = Image.open(BytesIO(response.content))
-                elif img_input.startswith('http') and img_input.endswith('.zip'):
+                if img_input.startswith('http') and img_input.endswith('.zip'):
                     print("Fetching zip file from url: ", img_input)
                     response = requests.get(img_input)
                     zip_file = zipfile.ZipFile(io.BytesIO(response.content))
@@ -71,6 +66,11 @@ class ComfyUIDeployExternalImageBatch:
                                 image = Image.open(file)
                                 image = self.process_image(image)
                                 processed_images.append(image)
+                elif  img_input.startswith('http'):
+                    from io import BytesIO
+                    print("Fetching image from url: ", img_input)
+                    response = requests.get(img_input)
+                    image = Image.open(BytesIO(response.content))
                 elif img_input.startswith('data:image/png;base64,') or img_input.startswith('data:image/jpeg;base64,') or img_input.startswith('data:image/jpg;base64,'):
                     import base64
                     from io import BytesIO
