@@ -971,6 +971,7 @@ async def send_json_override(self, event, data, sid=None):
             "data": data
         })
 
+    asyncio.create_task(update_run_ws_event(prompt_id, event, data))
     # event_emitter.emit("send_json", {
     #     "event": event,
     #     "data": data
@@ -1092,6 +1093,26 @@ async def update_run_live_status(prompt_id, live_status, calculated_progress: fl
         })
 
     # requests.post(status_endpoint, json=body)
+    await async_request_with_retry('POST', status_endpoint, token=token, json=body)
+
+async def update_run_ws_event(prompt_id: str, event: str, data: dict):
+    if prompt_id not in prompt_metadata:
+        return
+    
+    # print("update_run_ws_event", prompt_id, event, data)
+    status_endpoint = prompt_metadata[prompt_id].status_endpoint
+    
+    if status_endpoint is None:
+        return
+    
+    token = prompt_metadata[prompt_id].token
+    body = {
+        "run_id": prompt_id,
+        "ws_event": {
+            "event": event,
+            "data": data,
+        },
+    }
     await async_request_with_retry('POST', status_endpoint, token=token, json=body)
 
 
