@@ -1338,7 +1338,7 @@ async def update_file_status(prompt_id: str, data, uploading, have_error=False, 
 
 async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, default_content_type: str):
     items = data.get(key, [])
-    upload_tasks = []
+    # upload_tasks = []
 
     for item in items:
         # Skipping temp files
@@ -1354,17 +1354,25 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
         elif file_extension == '.webp':
             file_type = 'image/webp'
 
-        upload_tasks.append(upload_file(
+        # upload_tasks.append(upload_file(
+        #     prompt_id,
+        #     item.get("filename"),
+        #     subfolder=item.get("subfolder"),
+        #     type=item.get("type"),
+        #     content_type=file_type,
+        #     item=item
+        # ))
+        await upload_file(
             prompt_id,
             item.get("filename"),
             subfolder=item.get("subfolder"),
             type=item.get("type"),
             content_type=file_type,
             item=item
-        ))
+        )
 
     # Execute all upload tasks concurrently
-    await asyncio.gather(*upload_tasks)
+    # await asyncio.gather(*upload_tasks)
 
 # Upload files in the background
 async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=True, node_meta=None):
@@ -1407,6 +1415,7 @@ async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
         "output_data": data,
         "node_meta": node_meta,
     }
+    pprint(body)
     have_upload_media = False
     if data is not None:
         have_upload_media = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
