@@ -1407,7 +1407,9 @@ async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
         "output_data": data,
         "node_meta": node_meta,
     }
-    have_upload_media = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
+    have_upload_media = False
+    if data is not None:
+        have_upload_media = 'images' in data or 'files' in data or 'gifs' in data or 'mesh' in data
     if bypass_upload and have_upload_media:
         print("CD_BYPASS_UPLOAD is enabled, skipping the upload of the output:", node_id)
         return
