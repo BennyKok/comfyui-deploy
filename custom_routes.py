@@ -1398,14 +1398,10 @@ async def handle_upload(prompt_id: str, data, key: str, content_type_key: str, d
 # Upload files in the background
 async def upload_in_background(prompt_id: str, data, node_id=None, have_upload=True, node_meta=None):
     try:
-        upload_tasks = [
-            handle_upload(prompt_id, data, 'images', "content_type", "image/png"),
-            handle_upload(prompt_id, data, 'files', "content_type", "image/png"),
-            handle_upload(prompt_id, data, 'gifs', "format", "image/gif"),
-            handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
-        ]
-
-        await asyncio.gather(*upload_tasks)
+        await handle_upload(prompt_id, data, 'images', "content_type", "image/png")
+        await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
+        await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
+        await handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
 
         status_endpoint = prompt_metadata[prompt_id].status_endpoint
         token = prompt_metadata[prompt_id].token
@@ -1451,7 +1447,8 @@ async def update_run_with_output(prompt_id, data, node_id=None, node_meta=None):
             if have_upload_media:
                 await update_file_status(prompt_id, data, True, node_id=node_id)
 
-            asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media, node_meta=node_meta))
+            # asyncio.create_task(upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media, node_meta=node_meta))
+            await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload_media, node_meta=node_meta)
             # await upload_in_background(prompt_id, data, node_id=node_id, have_upload=have_upload)
 
         except Exception as e:
