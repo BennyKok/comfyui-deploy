@@ -1234,43 +1234,45 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
     prompt_id = quote(prompt_id)
     content_type = quote(content_type)
 
+    target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2"
+
+    start_time = time.time()  # Start timing here
+    logger.info(f"Target URL: {target_url}")
+    result = await async_request_with_retry("GET", target_url, disable_timeout=True, token=token)
+    end_time = time.time()  # End timing after the request is complete
+    logger.info("Time taken for getting file upload endpoint: {:.2f} seconds".format(end_time - start_time))
+    ok = await result.json()
+    
+    logger.info(f"Result: {ok}")
+
     async with aiofiles.open(file, 'rb') as f:
         data = await f.read()
-        size = str(len(data))
-        target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2"
-
-        start_time = time.time()  # Start timing here
-        logger.info(f"Image size: {size}")
-        logger.info(f"Target URL: {target_url}")
-        result = await async_request_with_retry("GET", target_url, disable_timeout=True, token=token)
-        end_time = time.time()  # End timing after the request is complete
-        logger.info("Time taken for getting file upload endpoint: {:.2f} seconds".format(end_time - start_time))
-        ok = await result.json()
         
-        logger.info(f"Result: {ok}")
-
-        start_time = time.time()  # Start timing here
-        headers = {
-            "Content-Type": content_type,
-            # "Content-Length": size,
-        }
-        
-        if ok.get('include_acl') is True:
-            headers["x-amz-acl"] = "public-read"
-        
-        # response = requests.put(ok.get("url"), headers=headers, data=data)
-        response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
-        logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
-        end_time = time.time()  # End timing after the request is complete
-        logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
-        
-        if item is not None:
-            file_download_url = ok.get("download_url")
-            if file_download_url is not None:
-                item["url"] = file_download_url
-            item["upload_duration"] = end_time - start_time
-            if ok.get("is_public") is not None:
-                item["is_public"] = ok.get("is_public")
+    size = str(len(data))
+    logger.info(f"Image size: {size}")
+    
+    start_time = time.time()  # Start timing here
+    headers = {
+        "Content-Type": content_type,
+        # "Content-Length": size,
+    }
+    
+    if ok.get('include_acl') is True:
+        headers["x-amz-acl"] = "public-read"
+    
+    # response = requests.put(ok.get("url"), headers=headers, data=data)
+    response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
+    logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
+    end_time = time.time()  # End timing after the request is complete
+    logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
+    
+    if item is not None:
+        file_download_url = ok.get("download_url")
+        if file_download_url is not None:
+            item["url"] = file_download_url
+        item["upload_duration"] = end_time - start_time
+        if ok.get("is_public") is not None:
+            item["is_public"] = ok.get("is_public")
 
 def have_pending_upload(prompt_id):
     if prompt_id in prompt_metadata and len(prompt_metadata[prompt_id].uploading_nodes) > 0:
