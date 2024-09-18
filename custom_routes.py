@@ -368,14 +368,17 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
 @server.PromptServer.instance.routes.post("/comfyui-deploy/run")
 async def comfy_deploy_run(request):
     # Extract the bearer token from the Authorization header
-    auth_header = request.headers.get('Authorization')
-    token = None
-    if auth_header:
-        parts = auth_header.split()
-        if len(parts) == 2 and parts[0].lower() == 'bearer':
-            token = parts[1]
-
     data = await request.json()
+    
+    if "cd_token" in data:
+        token = data["cd_token"]
+    else:
+        auth_header = request.headers.get('Authorization')
+        token = None
+        if auth_header:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0].lower() == 'bearer':
+                token = parts[1]
 
     # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
     workflow_api = data.get("workflow_api_raw")
