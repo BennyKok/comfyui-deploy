@@ -1199,6 +1199,16 @@ async def update_run(prompt_id: str, status: Status):
                 })
 
 
+async def file_sender(file_object, chunk_size):
+    while True:
+        chunk = await file_object.read(chunk_size)
+        if not chunk:
+            break
+        yield chunk
+        
+        
+chunk_size = 1024 * 1024  # 1MB chunks, adjust as needed
+
 async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output", item=None):
     """
     Uploads file to S3 bucket using S3 client object
@@ -1246,25 +1256,25 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
     logger.info(f"Result: {ok}")
 
     async with aiofiles.open(file, 'rb') as f:
-        data = await f.read()
+        # data = await f.read()
         
-    size = str(len(data))
-    logger.info(f"Image size: {size}")
-    
-    start_time = time.time()  # Start timing here
-    headers = {
-        "Content-Type": content_type,
-        # "Content-Length": size,
-    }
-    
-    if ok.get('include_acl') is True:
-        headers["x-amz-acl"] = "public-read"
-    
-    # response = requests.put(ok.get("url"), headers=headers, data=data)
-    response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
-    logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
-    end_time = time.time()  # End timing after the request is complete
-    logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
+        # size = str(len(data))
+        # logger.info(f"Image size: {size}")
+        
+        start_time = time.time()  # Start timing here
+        headers = {
+            "Content-Type": content_type,
+            # "Content-Length": size,
+        }
+        
+        if ok.get('include_acl') is True:
+            headers["x-amz-acl"] = "public-read"
+        
+        # response = requests.put(ok.get("url"), headers=headers, data=data)
+        response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=file_sender(f, chunk_size))
+        logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
+        end_time = time.time()  # End timing after the request is complete
+        logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
     
     if item is not None:
         file_download_url = ok.get("download_url")
