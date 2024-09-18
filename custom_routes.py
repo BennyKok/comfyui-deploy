@@ -1240,6 +1240,7 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         target_url = f"{file_upload_endpoint}?file_name={filename}&run_id={prompt_id}&type={content_type}&version=v2"
 
         start_time = time.time()  # Start timing here
+        logger.info(f"Image size: {size}")
         logger.info(f"Target URL: {target_url}")
         result = await async_request_with_retry("GET", target_url, disable_timeout=True, token=token)
         end_time = time.time()  # End timing after the request is complete
