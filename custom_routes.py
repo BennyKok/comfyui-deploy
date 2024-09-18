@@ -24,7 +24,7 @@ from typing import Dict, List, Union, Any, Optional
 from PIL import Image
 import copy
 import struct
-from aiohttp import web, ClientSession, ClientError, ClientTimeout
+from aiohttp import web, ClientSession, ClientError, ClientTimeout, ClientResponseError
 import atexit
 
 # Global session
@@ -1209,6 +1209,37 @@ async def file_sender(file_object, chunk_size):
         
 chunk_size = 1024 * 1024  # 1MB chunks, adjust as needed
 
+async def upload_with_retry(session, url, headers, data, max_retries=3, initial_delay=1):
+    start_time = time.time()  # Start timing here
+    for attempt in range(max_retries):
+        try:
+            async with session.put(url, headers=headers, data=data) as response:
+                upload_duration = time.time() - start_time
+                logger.info(f"Upload attempt {attempt + 1} completed in {upload_duration:.2f} seconds")
+                logger.info(f"Upload response status: {response.status}")
+                
+                response.raise_for_status()  # This will raise an exception for 4xx and 5xx status codes
+                
+                response_text = await response.text()
+                logger.info(f"Response body: {response_text[:1000]}...")
+                
+                logger.info("Upload successful")
+                return response  # Successful upload, exit the retry loop
+                
+        except (ClientError, ClientResponseError) as e:
+            logger.error(f"Upload attempt {attempt + 1} failed: {str(e)}")
+            if attempt < max_retries - 1:  # If it's not the last attempt
+                delay = initial_delay * (2 ** attempt)  # Exponential backoff
+                logger.info(f"Retrying in {delay} seconds...")
+                await asyncio.sleep(delay)
+            else:
+                logger.error("Max retries reached. Upload failed.")
+                raise  # Re-raise the last exception if all retries are exhausted
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise  # Re-raise unexpected exceptions immediately
+
 async def upload_file(prompt_id, filename, subfolder=None, content_type="image/png", type="output", item=None):
     """
     Uploads file to S3 bucket using S3 client object
@@ -1277,29 +1308,11 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.put(ok.get("url"), headers=headers, data=data) as response:
-                    upload_duration = time.time() - start_time
-                    logger.info(f"Upload completed in {upload_duration:.2f} seconds")
-                    logger.info(f"Upload response status: {response.status}")
-                    logger.info(f"Upload response reason: {response.reason}")
-                    
-                    response_headers = response.headers
-                    logger.info(f"Response headers: {dict(response_headers)}")
-                    
-                    response_text = await response.text()
-                    logger.info(f"Response body: {response_text[:1000]}...")  # Log first 1000 characters of response body
-                    
-                    if response.status not in [200, 201, 204]:
-                        logger.error(f"Upload failed with status {response.status}")
-                        logger.error(f"Full response body: {response_text}")
-                    else:
-                        logger.info("Upload successful")
-
-            except aiohttp.ClientError as e:
-                logger.error(f"Client error during upload: {str(e)}")
+                response = await upload_with_retry(session, ok.get("url"), headers, data)
+                # Process successful response...
             except Exception as e:
-                logger.error(f"Unexpected error during upload: {str(e)}")
-                logger.error(traceback.format_exc())
+                # Handle final failure...
+                logger.error(f"Upload ultimately failed: {str(e)}")
 
         end_time = time.time()  # End timing after the request is complete
         logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
