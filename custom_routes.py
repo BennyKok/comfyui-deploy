@@ -1260,20 +1260,47 @@ async def upload_file(prompt_id, filename, subfolder=None, content_type="image/p
         size = str(len(data))
         # logger.info(f"Image size: {size}")
         
-        start_time = time.time()  # Start timing here
-        headers = {
-            "Content-Type": content_type,
-            "Content-Length": size,
-        }
-        
-        if ok.get('include_acl') is True:
-            headers["x-amz-acl"] = "public-read"
-        
-        # response = requests.put(ok.get("url"), headers=headers, data=data)
-        response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
-        logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
-        end_time = time.time()  # End timing after the request is complete
-        logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
+    start_time = time.time()  # Start timing here
+    headers = {
+        "Content-Type": content_type,
+        "Content-Length": size,
+    }
+    
+    if ok.get('include_acl') is True:
+        headers["x-amz-acl"] = "public-read"
+    
+    # response = requests.put(ok.get("url"), headers=headers, data=data)
+    # response = await async_request_with_retry('PUT', ok.get("url"), headers=headers, data=data)
+    # logger.info(f"Upload file response status: {response.status}, status text: {response.reason}")
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.put(ok.get("url"), headers=headers, data=data) as response:
+                upload_duration = time.time() - start_time
+                logger.info(f"Upload completed in {upload_duration:.2f} seconds")
+                logger.info(f"Upload response status: {response.status}")
+                logger.info(f"Upload response reason: {response.reason}")
+                
+                response_headers = response.headers
+                logger.info(f"Response headers: {dict(response_headers)}")
+                
+                response_text = await response.text()
+                logger.info(f"Response body: {response_text[:1000]}...")  # Log first 1000 characters of response body
+                
+                if response.status not in [200, 201, 204]:
+                    logger.error(f"Upload failed with status {response.status}")
+                    logger.error(f"Full response body: {response_text}")
+                else:
+                    logger.info("Upload successful")
+
+        except aiohttp.ClientError as e:
+            logger.error(f"Client error during upload: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {str(e)}")
+            logger.error(traceback.format_exc())
+    
+    end_time = time.time()  # End timing after the request is complete
+    logger.info("Upload time: {:.2f} seconds".format(end_time - start_time))
     
     if item is not None:
         file_download_url = ok.get("download_url")
