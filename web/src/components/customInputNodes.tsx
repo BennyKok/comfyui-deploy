@@ -6,4 +6,5 @@ export const customInputNodes: Record<string, string> = {
   ComfyUIDeployExternalNumberInt: "integer",
   ComfyUIDeployExternalLora: "string - (public lora download url)",
   ComfyUIDeployExternalCheckpoint: "string - (public checkpoints download url)",
+  ComfyUIDeployExternalFaceModel: "string - (public face model download url)",
 };
