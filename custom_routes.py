@@ -309,7 +309,7 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 value['inputs']["input_id"] = new_value
 
                 # Fix for external text default value
-                if (value["class_type"] == "ComfyUIDeployExternalText"):
+                if (value["class_type"] == "ComfyUIDeployExternalText" or value["class_type"] == "ComfyUIDeployExternalTextAny"):
                     value['inputs']["default_value"] = new_value
 
                 if (value["class_type"] == "ComfyUIDeployExternalCheckpoint"):
