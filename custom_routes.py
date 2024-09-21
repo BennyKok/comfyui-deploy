@@ -80,11 +80,11 @@ async def async_request_with_retry(method, url, disable_timeout=False, token=Non
             request_start = time.time()
             async with client_session.request(method, url, **kwargs) as response:
                 request_end = time.time()
-                logger.info(f"Request attempt {attempt + 1} took {request_end - request_start:.2f} seconds")
+                # logger.info(f"Request attempt {attempt + 1} took {request_end - request_start:.2f} seconds")
                 
                 if response.status != 200:
                     error_body = await response.text()
-                    logger.error(f"Request failed with status {response.status} and body {error_body}")
+                    # logger.error(f"Request failed with status {response.status} and body {error_body}")
                     # raise Exception(f"Request failed with status {response.status}")
                 
                 response.raise_for_status()
@@ -92,7 +92,7 @@ async def async_request_with_retry(method, url, disable_timeout=False, token=Non
                     await response.read()
                 
                 total_time = time.time() - start_time
-                logger.info(f"Request succeeded after {total_time:.2f} seconds (attempt {attempt + 1}/{max_retries})")
+                # logger.info(f"Request succeeded after {total_time:.2f} seconds (attempt {attempt + 1}/{max_retries})")
                 return response
         except asyncio.TimeoutError:
             logger.warning(f"Request timed out after {initial_timeout} seconds (attempt {attempt + 1}/{max_retries})")
