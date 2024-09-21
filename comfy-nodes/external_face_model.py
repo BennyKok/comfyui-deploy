@@ -24,7 +24,8 @@ class ComfyUIDeployExternalFaceModel:
             },
             "optional": {
                 "default_face_model_name": (
-                    folder_paths.get_filename_list("reactor/faces"),
+                    "STRING",
+                    {"multiline": False, "default": ""},
                 ),
                 "face_model_save_name": (  # if `default_face_model_name` is a link to download a file, we will attempt to save it with this name
                     "STRING",
