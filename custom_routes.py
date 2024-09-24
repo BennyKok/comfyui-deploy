@@ -333,6 +333,7 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
     workflow_api = copy.deepcopy(inputs.workflow_api)
+    workflow = copy.deepcopy(inputs.workflow)
 
     # Random seed
     apply_random_seed_to_workflow(workflow_api)
@@ -348,7 +349,8 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     prompt = {
         "prompt": workflow_api,
         "client_id": sid, #"comfy_deploy_instance", #api.client_id
-        "prompt_id": prompt_id
+        "prompt_id": prompt_id,
+        "extra_data": {"extra_pnginfo": {"workflow": workflow}},
     }
 
     try:
@@ -387,6 +389,7 @@ async def comfy_deploy_run(request):
     # The prompt id generated from comfy deploy, can be None
     prompt_id = data.get("prompt_id")
     inputs = data.get("inputs")
+    workflow = data.get("workflow")
 
     # Now it handles directly in here
     apply_random_seed_to_workflow(workflow_api)
@@ -396,6 +399,7 @@ async def comfy_deploy_run(request):
         "prompt": workflow_api,
         "client_id": "comfy_deploy_instance", #api.client_id
         "prompt_id": prompt_id,
+        "extra_data": {"extra_pnginfo": {"workflow": workflow}}
     }
 
     prompt_metadata[prompt_id] = SimplePrompt(
@@ -446,6 +450,7 @@ async def stream_prompt(data, token):
     # The prompt id generated from comfy deploy, can be None
     prompt_id = data.get("prompt_id")
     inputs = data.get("inputs")
+    workflow = data.get("workflow")
 
     # Now it handles directly in here
     apply_random_seed_to_workflow(workflow_api)
@@ -454,7 +459,8 @@ async def stream_prompt(data, token):
     prompt = {
         "prompt": workflow_api,
         "client_id": "comfy_deploy_instance", #api.client_id
-        "prompt_id": prompt_id
+        "prompt_id": prompt_id,
+        "extra_data": {"extra_pnginfo": {"workflow": workflow}},
     }
 
     prompt_metadata[prompt_id] = SimplePrompt(
@@ -788,6 +794,7 @@ async def websocket_handler(request):
                 inputs={},
                 status_endpoint=status_endpoint,
                 file_upload_endpoint=request.rel_url.query.get('file_upload_endpoint', None),
+                workflow=workflow["workflow"],
             )
 
             await update_realtime_run_status(realtime_id, status_endpoint, Status.RUNNING)
