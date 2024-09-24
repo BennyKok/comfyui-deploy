@@ -83,7 +83,9 @@ function dispatchAPIEventData(data) {
   }
 }
 
-let selectedWorkflowInfo 
+const context = {
+  selectedWorkflowInfo: null,
+};
 // let selectedWorkflowInfo = {
 //   workflow_id: "05da8f2b-63af-4c0c-86dd-08d01ec512b7",
 //   machine_id: "45ac5f85-b7b6-436f-8d97-2383b25485f3",
@@ -91,11 +93,11 @@ let selectedWorkflowInfo
 // };
 
 function getSelectedWorkflowInfo() {
-  return selectedWorkflowInfo;
+  return context.selectedWorkflowInfo;
 }
 
 function setSelectedWorkflowInfo(info) {
-  selectedWorkflowInfo = info;
+  context.selectedWorkflowInfo = info;
 }
 
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
@@ -118,10 +120,10 @@ const ext = {
 
       sendEventToCD("cd_plugin_onInit");
 
-      app.queuePrompt = ((originalFunction) => async () => {
-        // const prompt = await app.graphToPrompt();
-        sendEventToCD("cd_plugin_onQueuePromptTrigger");
-      })(app.queuePrompt);
+      // app.queuePrompt = ((originalFunction) => async () => {
+      //   // const prompt = await app.graphToPrompt();
+      //   sendEventToCD("cd_plugin_onQueuePromptTrigger");
+      // })(app.queuePrompt);
 
       // // Intercept the onkeydown event
       // window.addEventListener(
@@ -1525,18 +1527,25 @@ api.fetchApi = async (route, options) => {
 
     const body = JSON.parse(options.body);
 
+    // getData().apiKey
+
+    const data = {
+      client_id: body.client_id,
+      workflow_api_json: body.prompt,
+      is_native_run: true,
+      machine_id: info.machine_id,
+      workflow_id: info.workflow_id,
+      native_run_api_endpoint: info.native_run_api_endpoint,
+    };
+
+
     return await fetch("/comfyui-deploy/run", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${getData().apiKey}`,
+        Authorization: `Bearer ${info.cd_token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        client_id: body.client_id,
-        workflow_api_json: body.prompt,
-        is_native_run: true,
-        ...info,
-      }),
+      body: JSON.stringify(data),
     });
   }
 
