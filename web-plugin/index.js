@@ -313,6 +313,14 @@ const ext = {
           // This part of the code would depend on how the ComfyUI expects to receive and process the workflow data
           // For demonstration, let's assume there's a loadWorkflow method in the ComfyUI API
           if (comfyUIWorkflow && app && app.loadGraphData) {
+            try {
+              await window["app"].ui.settings.setSettingValueAsync(
+                "Comfy.Validation.Workflows",
+                false,
+              );
+            } catch (error) {
+              console.warning("Error setting validation to false, is fine to ignore this", error);
+            }
             console.log("loadGraphData");
             app.loadGraphData(comfyUIWorkflow);
           }
