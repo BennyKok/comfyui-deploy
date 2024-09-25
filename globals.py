@@ -24,6 +24,7 @@ class StreamingPrompt(BaseModel):
     running_prompt_ids: set[str] = set()
     status_endpoint: Optional[str]
     file_upload_endpoint: Optional[str]
+    workflow: Any
     
 class SimplePrompt(BaseModel):
     status_endpoint: Optional[str]
