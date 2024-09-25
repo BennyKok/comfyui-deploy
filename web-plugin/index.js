@@ -1532,6 +1532,7 @@ api.fetchApi = async (route, options) => {
     const data = {
       client_id: body.client_id,
       workflow_api_json: body.prompt,
+      workflow: body.workflow,
       is_native_run: true,
       machine_id: info.machine_id,
       workflow_id: info.workflow_id,
