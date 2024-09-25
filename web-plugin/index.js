@@ -1523,22 +1523,17 @@ api.fetchApi = async (route, options) => {
 
   const info = getSelectedWorkflowInfo();
   if (info && route.startsWith("/prompt")) {
-    console.log("Prompt API called");
-
     const body = JSON.parse(options.body);
-
-    // getData().apiKey
 
     const data = {
       client_id: body.client_id,
       workflow_api_json: body.prompt,
-      workflow: body.workflow,
+      workflow: body?.extra_data?.extra_pnginfo?.workflow,
       is_native_run: true,
       machine_id: info.machine_id,
       workflow_id: info.workflow_id,
       native_run_api_endpoint: info.native_run_api_endpoint,
     };
-
 
     return await fetch("/comfyui-deploy/run", {
       method: "POST",
