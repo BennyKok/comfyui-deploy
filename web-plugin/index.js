@@ -1541,6 +1541,7 @@ api.fetchApi = async (route, options) => {
       machine_id: info.machine_id,
       workflow_id: info.workflow_id,
       native_run_api_endpoint: info.native_run_api_endpoint,
+      gpu_event_id: info.gpu_event_id,
     };
 
     return await fetch("/comfyui-deploy/run", {
