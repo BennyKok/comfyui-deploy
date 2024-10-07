@@ -468,6 +468,7 @@ async def comfy_deploy_run(request):
             if len(parts) == 2 and parts[0].lower() == "bearer":
                 token = parts[1]
 
+    print("RECIEVED DATA", data)
     # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
     workflow_api = data.get("workflow_api_raw")
     # The prompt id generated from comfy deploy, can be None
@@ -1290,6 +1291,11 @@ async def update_run_ws_event(prompt_id: str, event: str, data: dict):
 
     token = prompt_metadata[prompt_id].token
     gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
+
+    print("prompt_metadata", prompt_metadata[prompt_id])
+    print("gpu_event_id", gpu_event_id)
+    print("event", event)
+    print("data", data)
 
     body = {
         "run_id": prompt_id,
