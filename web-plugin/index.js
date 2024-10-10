@@ -460,9 +460,19 @@ const ext = {
     if (this.native_mode) {
       // console.log("native mode", window, window.app);
       try {
-        await app.ui.settings.setSettingValueAsync('Comfy.UseNewMenu', 'Top')
-        await app.ui.settings.setSettingValueAsync('Comfy.Sidebar.Size', 'small')
-        await app.ui.settings.setSettingValueAsync('Comfy.Sidebar.Location', 'right')
+        await app.ui.settings.setSettingValueAsync("Comfy.UseNewMenu", "Top");
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.Sidebar.Size",
+          "small"
+        );
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.Sidebar.Location",
+          "right"
+        );
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.MenuPosition.Docked",
+          true
+        );
       } catch (error) {
         console.error("Error setting validation to false", error);
       }
