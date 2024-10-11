@@ -28,6 +28,7 @@ class StreamingPrompt(BaseModel):
     status_endpoint: Optional[str]
     file_upload_endpoint: Optional[str]
     workflow: Any
+    gpu_event_id: Optional[str] = None
 
 
 class SimplePrompt(BaseModel):
