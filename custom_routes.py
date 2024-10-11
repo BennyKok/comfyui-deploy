@@ -1139,6 +1139,9 @@ async def send_json_override(self, event, data, sid=None):
         ]
     )
 
+    if prompt_id in comfy_message_queues:
+        comfy_message_queues[prompt_id].put_nowait({"event": event, "data": data})
+
     asyncio.create_task(update_run_ws_event(prompt_id, event, data))
 
     if event == "execution_start":
@@ -1225,19 +1228,20 @@ async def send_json_override(self, event, data, sid=None):
             }
             if class_type == "PreviewImage":
                 logger.info("Skipping preview image")
-                return
-            await update_run_with_output(
-                prompt_id,
-                data.get("output"),
-                node_id=data.get("node"),
-                node_meta=node_meta,
-            )
+            else:
+                await update_run_with_output(
+                    prompt_id,
+                    data.get("output"),
+                    node_id=data.get("node"),
+                    node_meta=node_meta,
+                )
+                if prompt_id in comfy_message_queues:
+                    comfy_message_queues[prompt_id].put_nowait(
+                        {"event": "output_ready", "data": data}
+                    )
             logger.info(f"Executed {class_type} {data}")
         else:
             logger.info(f"Executed {data}")
-
-    if prompt_id in comfy_message_queues:
-        comfy_message_queues[prompt_id].put_nowait({"event": event, "data": data})
 
 
 # Global variable to keep track of the last read line number

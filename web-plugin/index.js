@@ -92,8 +92,30 @@ const context = {
 //   native_run_api_endpoint: "http://localhost:3011/api/run",
 // };
 
-function getSelectedWorkflowInfo() {
-  return context.selectedWorkflowInfo;
+async function getSelectedWorkflowInfo() {
+  const workflow_info_promise = new Promise((resolve) => {
+    try {
+      const handleMessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === "workflow_info") {
+            resolve(message.data);
+            window.removeEventListener("message", handleMessage);
+          }
+        } catch (error) {
+          console.error(error);
+          resolve(undefined);
+        }
+      };
+      window.addEventListener("message", handleMessage);
+      sendEventToCD("workflow_info");
+    } catch (error) {
+      console.error(error);
+      resolve(undefined);
+    }
+  });
+
+  return workflow_info_promise;
 }
 
 function setSelectedWorkflowInfo(info) {
@@ -105,6 +127,8 @@ function setSelectedWorkflowInfo(info) {
 const ext = {
   name: "BennyKok.ComfyUIDeploy",
 
+  native_mode: false,
+
   init(app) {
     addButton();
 
@@ -114,6 +138,7 @@ const ext = {
     const org_display = queryParams.get("org_display");
     const origin = queryParams.get("origin");
     const workspace_mode = queryParams.get("workspace_mode");
+    this.native_mode = queryParams.get("native_mode") === "true";
 
     if (workspace_mode) {
       document.querySelector(".comfy-menu").style.display = "none";
@@ -319,7 +344,10 @@ const ext = {
                 false,
               );
             } catch (error) {
-              console.warning("Error setting validation to false, is fine to ignore this", error);
+              console.warning(
+                "Error setting validation to false, is fine to ignore this",
+                error,
+              );
             }
             console.log("loadGraphData");
             app.loadGraphData(comfyUIWorkflow);
@@ -428,6 +456,27 @@ const ext = {
 
       //   }
     });
+
+    if (this.native_mode) {
+      // console.log("native mode", window, window.app);
+      try {
+        await app.ui.settings.setSettingValueAsync("Comfy.UseNewMenu", "Top");
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.Sidebar.Size",
+          "small"
+        );
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.Sidebar.Location",
+          "right"
+        );
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.MenuPosition.Docked",
+          true
+        );
+      } catch (error) {
+        console.error("Error setting validation to false", error);
+      }
+    }
 
     app.graph.onAfterChange = ((originalFunction) =>
       async function () {
@@ -1527,31 +1576,34 @@ async function loadWorkflowApi(versionId) {
 
 const orginal_fetch_api = api.fetchApi;
 api.fetchApi = async (route, options) => {
-  console.log("Fetch API called with args:", route, options);
+  console.log("Fetch API called with args:", route, options, ext.native_mode);
 
-  const info = getSelectedWorkflowInfo();
-  if (info && route.startsWith("/prompt")) {
-    const body = JSON.parse(options.body);
+  if (route.startsWith("/prompt") && ext.native_mode) {
+    const info = await getSelectedWorkflowInfo();
+    console.log("info", info);
+    if (info) {
+      const body = JSON.parse(options.body);
 
-    const data = {
-      client_id: body.client_id,
-      workflow_api_json: body.prompt,
-      workflow: body?.extra_data?.extra_pnginfo?.workflow,
-      is_native_run: true,
-      machine_id: info.machine_id,
-      workflow_id: info.workflow_id,
-      native_run_api_endpoint: info.native_run_api_endpoint,
-      gpu_event_id: info.gpu_event_id,
-    };
+      const data = {
+        client_id: body.client_id,
+        workflow_api_json: body.prompt,
+        workflow: body?.extra_data?.extra_pnginfo?.workflow,
+        is_native_run: true,
+        machine_id: info.machine_id,
+        workflow_id: info.workflow_id,
+        native_run_api_endpoint: info.native_run_api_endpoint,
+        gpu_event_id: info.gpu_event_id,
+      };
 
-    return await fetch("/comfyui-deploy/run", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${info.cd_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+      return await fetch("/comfyui-deploy/run", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${info.cd_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+    }
   }
 
   return await orginal_fetch_api.call(api, route, options);
