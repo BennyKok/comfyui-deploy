@@ -469,10 +469,8 @@ const ext = {
           "Comfy.Sidebar.Location",
           "right"
         );
-        await app.ui.settings.setSettingValueAsync(
-          "Comfy.MenuPosition.Docked",
-          true
-        );
+        localStorage.setItem("Comfy.MenuPosition.Docked", "true");
+        console.log("native mode manmanman");
       } catch (error) {
         console.error("Error setting validation to false", error);
       }
