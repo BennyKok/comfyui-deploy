@@ -40,12 +40,12 @@ class SimplePrompt(BaseModel):
     workflow_api: dict
     status: Status = Status.NOT_STARTED
     progress: set = set()
-    last_updated_node: Optional[str] = (None,)
+    last_updated_node: Optional[str] = None
     uploading_nodes: set = set()
     done: bool = False
-    is_realtime: bool = (False,)
-    start_time: Optional[float] = (None,)
-    gpu_event_id: Optional[str] = (None,)
+    is_realtime: bool = False
+    start_time: Optional[float] = None
+    gpu_event_id: Optional[str] = None
 
 
 sockets = dict()
