@@ -542,6 +542,7 @@ async def stream_prompt(data, token):
     prompt_id = data.get("prompt_id")
     inputs = data.get("inputs")
     workflow = data.get("workflow")
+    gpu_event_id = data.get("gpu_event_id", None)
 
     # Now it handles directly in here
     apply_random_seed_to_workflow(workflow_api)
@@ -559,6 +560,7 @@ async def stream_prompt(data, token):
         file_upload_endpoint=data.get("file_upload_endpoint"),
         workflow_api=workflow_api,
         token=token,
+        gpu_event_id=gpu_event_id,
     )
 
     # log('info', "Begin prompt", prompt=prompt)
