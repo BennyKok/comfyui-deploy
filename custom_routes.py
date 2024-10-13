@@ -296,7 +296,6 @@ def apply_random_seed_to_workflow(workflow_api):
     Args:
         workflow_api (dict): The workflow API dictionary to modify.
     """
-    print("workflow_api", workflow_api)
     for key in workflow_api:
         if "inputs" in workflow_api[key]:
             if "seed" in workflow_api[key]["inputs"]:
@@ -468,7 +467,6 @@ async def comfy_deploy_run(request):
             if len(parts) == 2 and parts[0].lower() == "bearer":
                 token = parts[1]
 
-    print("RECIEVED DATA", data)
     # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
     workflow_api = data.get("workflow_api_raw")
     # The prompt id generated from comfy deploy, can be None
@@ -1289,7 +1287,6 @@ async def update_run_ws_event(prompt_id: str, event: str, data: dict):
     if prompt_id not in prompt_metadata:
         return
 
-    # print("update_run_ws_event", prompt_id, event, data)
     status_endpoint = prompt_metadata[prompt_id].status_endpoint
 
     if status_endpoint is None:
@@ -1297,11 +1294,6 @@ async def update_run_ws_event(prompt_id: str, event: str, data: dict):
 
     token = prompt_metadata[prompt_id].token
     gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
-
-    print("prompt_metadata", prompt_metadata[prompt_id])
-    print("gpu_event_id", gpu_event_id)
-    print("event", event)
-    print("data", data)
 
     body = {
         "run_id": prompt_id,
