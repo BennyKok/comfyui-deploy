@@ -1235,10 +1235,10 @@ async def send_json_override(self, event, data, sid=None):
                     node_id=data.get("node"),
                     node_meta=node_meta,
                 )
-            if prompt_id in comfy_message_queues:
-                comfy_message_queues[prompt_id].put_nowait(
-                    {"event": "output_ready", "data": data}
-                )
+                if prompt_id in comfy_message_queues:
+                    comfy_message_queues[prompt_id].put_nowait(
+                        {"event": "output_ready", "data": data}
+                    )
             logger.info(f"Executed {class_type} {data}")
         else:
             logger.info(f"Executed {data}")
