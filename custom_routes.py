@@ -1768,7 +1768,7 @@ async def update_run_with_output(
             "images" in data
             and isinstance(data.get("images"), list)
             and len(data["images"]) > 0
-            and data["images"][0].get("type") == "output"
+            and data["images"][0].get("type") == "std_output"
         )
     if bypass_upload and have_upload_media:
         print(
