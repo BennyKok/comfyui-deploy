@@ -1226,10 +1226,9 @@ async def send_json_override(self, event, data, sid=None):
                 "node_id": node,
                 "node_class": class_type,
             }
-            # if class_type == "PreviewImage":
-            #     logger.info("Skipping preview image")
-            # else:
-            if class_type == "ComfyDeployStdOutputImage":
+            if class_type == "PreviewImage":
+                logger.info("Skipping preview image")
+            else:
                 await update_run_with_output(
                     prompt_id,
                     data.get("output"),
