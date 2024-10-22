@@ -1229,12 +1229,13 @@ async def send_json_override(self, event, data, sid=None):
             # if class_type == "PreviewImage":
             #     logger.info("Skipping preview image")
             # else:
-            await update_run_with_output(
-                prompt_id,
-                data.get("output"),
-                node_id=data.get("node"),
-                node_meta=node_meta,
-            )
+            if class_type == "ComfyDeployStdOutputImage":
+                await update_run_with_output(
+                    prompt_id,
+                    data.get("output"),
+                    node_id=data.get("node"),
+                    node_meta=node_meta,
+                )
             if prompt_id in comfy_message_queues:
                 comfy_message_queues[prompt_id].put_nowait(
                     {"event": "output_ready", "data": data}
@@ -1765,10 +1766,7 @@ async def update_run_with_output(
     have_upload_media = False
     if data is not None:
         have_upload_media = (
-            "images" in data
-            and isinstance(data.get("images"), list)
-            and len(data["images"]) > 0
-            and data["images"][0].get("type") == "std_output"
+            "images" in data or "files" in data or "gifs" in data or "mesh" in data
         )
     if bypass_upload and have_upload_media:
         print(

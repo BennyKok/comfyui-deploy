@@ -9,7 +9,7 @@ import folder_paths
 class ComfyDeployStdOutputImage:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
-        self.type = "std_output"
+        self.type = "output"
         self.prefix_append = ""
         self.compress_level = 4
 
@@ -36,7 +36,7 @@ class ComfyDeployStdOutputImage:
 
     OUTPUT_NODE = True
 
-    CATEGORY = "std_output"
+    CATEGORY = "output"
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
 
     def run(
