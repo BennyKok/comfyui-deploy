@@ -1217,7 +1217,7 @@ async def send_json_override(self, event, data, sid=None):
         await update_run(prompt_id, Status.FAILED)
         # await update_run_with_output(prompt_id, data)
 
-    if event == "executed" and "node" in data and "output" in data:
+    if event == "executed" and "node" in data and "std_output" in data:
         node_meta = None
         if prompt_id in prompt_metadata:
             node = data.get("node")
@@ -1226,19 +1226,19 @@ async def send_json_override(self, event, data, sid=None):
                 "node_id": node,
                 "node_class": class_type,
             }
-            if class_type == "PreviewImage":
-                logger.info("Skipping preview image")
-            else:
-                await update_run_with_output(
-                    prompt_id,
-                    data.get("output"),
-                    node_id=data.get("node"),
-                    node_meta=node_meta,
+            # if class_type == "PreviewImage":
+            #     logger.info("Skipping preview image")
+            # else:
+            await update_run_with_output(
+                prompt_id,
+                data.get("std_output"),
+                node_id=data.get("node"),
+                node_meta=node_meta,
+            )
+            if prompt_id in comfy_message_queues:
+                comfy_message_queues[prompt_id].put_nowait(
+                    {"event": "output_ready", "data": data}
                 )
-                if prompt_id in comfy_message_queues:
-                    comfy_message_queues[prompt_id].put_nowait(
-                        {"event": "output_ready", "data": data}
-                    )
             logger.info(f"Executed {class_type} {data}")
         else:
             logger.info(f"Executed {data}")
