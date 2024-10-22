@@ -1217,7 +1217,7 @@ async def send_json_override(self, event, data, sid=None):
         await update_run(prompt_id, Status.FAILED)
         # await update_run_with_output(prompt_id, data)
 
-    if event == "executed" and "node" in data and "std_output" in data:
+    if event == "executed" and "node" in data and "output" in data:
         node_meta = None
         if prompt_id in prompt_metadata:
             node = data.get("node")
@@ -1231,7 +1231,7 @@ async def send_json_override(self, event, data, sid=None):
             # else:
             await update_run_with_output(
                 prompt_id,
-                data.get("std_output"),
+                data.get("output"),
                 node_id=data.get("node"),
                 node_meta=node_meta,
             )
@@ -1765,7 +1765,10 @@ async def update_run_with_output(
     have_upload_media = False
     if data is not None:
         have_upload_media = (
-            "images" in data or "files" in data or "gifs" in data or "mesh" in data
+            "images" in data
+            and isinstance(data.get("images"), list)
+            and len(data["images"]) > 0
+            and data["images"][0].get("type") == "output"
         )
     if bypass_upload and have_upload_media:
         print(
