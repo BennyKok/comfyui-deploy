@@ -1,30 +1,19 @@
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle as neonDrizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "./schema";
 
-const isDevContainer = process.env.REMOTE_CONTAINERS !== undefined;
+// Initialize database connection with single connection string
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  // Optional: Enable SSL if needed (usually for production databases)
+  // ssl: { rejectUnauthorized: false }
+});
 
-// if we're running locally
-if (process.env.VERCEL_ENV !== "production") {
-  // Set the WebSocket proxy to work with the local instance
-  if (isDevContainer) {
-    // Running inside a VS Code devcontainer
-    neonConfig.wsProxy = (host) => "host.docker.internal:5481/v1";
-  } else {
-    // Not running inside a VS Code devcontainer
-    neonConfig.wsProxy = (host) => `${host}:5481/v1`;
-  }
-  // Disable all authentication and encryption
-  neonConfig.useSecureWebSocket = false;
-  neonConfig.pipelineTLS = false;
-  neonConfig.pipelineConnect = false;
-}
+// Export the database instance
+export const db = drizzle(pool, { schema });
 
-export const db = neonDrizzle(
-  new Pool({
-    connectionString: process.env.POSTGRES_URL,
-  }),
-  {
-    schema,
-  },
-);
+// Handle pool errors
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
+});
