@@ -16,6 +16,7 @@ class ComfyDeployStdOutputAny:
     def INPUT_TYPES(cls):  # pylint: disable = invalid-name, missing-function-docstring
         return {
             "required": {
+                "name": ("STRING", {"default": "ComfyUI"}),
                 "source": (any, {}),  # Use "*" to accept any input type
             },
         }
@@ -25,7 +26,7 @@ class ComfyDeployStdOutputAny:
     FUNCTION = "run"
     OUTPUT_NODE = True
 
-    def run(self, source=None):
+    def run(self, name, source=None):
         value = "None"
         if source is not None:
             try:
@@ -36,7 +37,7 @@ class ComfyDeployStdOutputAny:
                 except Exception:
                     value = "source exists, but could not be serialized."
 
-        return {"ui": {"text": (value,)}}
+        return {"ui": {name: (value,)}}
 
 
 NODE_CLASS_MAPPINGS = {"ComfyDeployStdOutputAny": ComfyDeployStdOutputAny}
