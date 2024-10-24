@@ -64,32 +64,42 @@ class ComfyUIDeployExternalLora:
         import os
         import uuid
 
-        if lora_url and lora_url.startswith("http"):
-            if lora_save_name:
-                existing_loras = folder_paths.get_filename_list("loras")
-                # Check if lora_save_name exists in the list
-                if lora_save_name in existing_loras:
-                    print(f"using lora: {lora_save_name}")
-                    return (lora_save_name,)
+        if lora_url:
+            if lora_url.startswith("http"):
+                if lora_save_name:
+                    existing_loras = folder_paths.get_filename_list("loras")
+                    # Check if lora_save_name exists in the list
+                    if lora_save_name in existing_loras:
+                        print(f"using lora: {lora_save_name}")
+                        return (lora_save_name,)
+                else:
+                    lora_save_name = str(uuid.uuid4()) + ".safetensors"
+                print(lora_save_name)
+                print(folder_paths.folder_names_and_paths["loras"][0][0])
+                destination_path = os.path.join(
+                    folder_paths.folder_names_and_paths["loras"][0][0], lora_save_name
+                )
+                print(destination_path)
+                print(
+                    "Downloading external lora - "
+                    + lora_url
+                    + " to "
+                    + destination_path
+                )
+                response = requests.get(
+                    lora_url,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    allow_redirects=True,
+                )
+                with open(destination_path, "wb") as out_file:
+                    out_file.write(response.content)
+                print(f"Ext Lora loading: {lora_url} to {lora_save_name}")
+                return (lora_save_name,)
             else:
-                lora_save_name = str(uuid.uuid4()) + ".safetensors"
-            print(lora_save_name)
-            print(folder_paths.folder_names_and_paths["loras"][0][0])
-            destination_path = os.path.join(
-                folder_paths.folder_names_and_paths["loras"][0][0], lora_save_name
-            )
-            print(destination_path)
-            print("Downloading external lora - " + lora_url + " to " + destination_path)
-            response = requests.get(
-                lora_url,
-                headers={"User-Agent": "Mozilla/5.0"},
-                allow_redirects=True,
-            )
-            with open(destination_path, "wb") as out_file:
-                out_file.write(response.content)
-            return (lora_save_name,)
+                print(f"Ext Lora loading: {lora_url}")
+                return (lora_url,)
         else:
-            print(f"using lora: {default_lora_name}")
+            print(f"Ext Lora loading: {default_lora_name}")
             return (default_lora_name,)
 
 
