@@ -1713,17 +1713,23 @@ async def upload_in_background(
         # await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
         # await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
         # await handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
-        upload_tasks = [
-            handle_upload(prompt_id, data, "images", "content_type", "image/png"),
-            handle_upload(prompt_id, data, "files", "content_type", "image/png"),
-            handle_upload(prompt_id, data, "gifs", "format", "image/gif"),
-            handle_upload(
-                prompt_id, data, "mesh", "format", "application/octet-stream"
-            ),
-        ]
+        
+        file_upload_endpoint = prompt_metadata[prompt_id].file_upload_endpoint
+        
+        if file_upload_endpoint is not None and file_upload_endpoint != "":
+            upload_tasks = [
+                handle_upload(prompt_id, data, "images", "content_type", "image/png"),
+                handle_upload(prompt_id, data, "files", "content_type", "image/png"),
+                handle_upload(prompt_id, data, "gifs", "format", "image/gif"),
+                handle_upload(
+                    prompt_id, data, "mesh", "format", "application/octet-stream"
+                ),
+            ]
 
-        await asyncio.gather(*upload_tasks)
-
+            await asyncio.gather(*upload_tasks)
+        else:
+            print("No file upload endpoint, skipping file upload")
+            
         status_endpoint = prompt_metadata[prompt_id].status_endpoint
         token = prompt_metadata[prompt_id].token
         gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
