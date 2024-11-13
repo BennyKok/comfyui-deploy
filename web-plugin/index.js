@@ -122,6 +122,144 @@ function setSelectedWorkflowInfo(info) {
   context.selectedWorkflowInfo = info;
 }
 
+const VALID_TYPES = [
+  "STRING",
+  "combo",
+  "number",
+  "toggle",
+  "BOOLEAN",
+  "text",
+  "string",
+];
+
+function hideWidget(node, widget, suffix = "") {
+  if (widget.type?.startsWith(CONVERTED_TYPE)) return;
+  widget.origType = widget.type;
+  widget.origComputeSize = widget.computeSize;
+  widget.origSerializeValue = widget.serializeValue;
+  widget.computeSize = () => [0, -4];
+  widget.type = CONVERTED_TYPE + suffix;
+  widget.serializeValue = () => {
+    if (!node.inputs) {
+      return void 0;
+    }
+    let node_input = node.inputs.find((i) => i.widget?.name === widget.name);
+    if (!node_input || !node_input.link) {
+      return void 0;
+    }
+    return widget.origSerializeValue
+      ? widget.origSerializeValue()
+      : widget.value;
+  };
+  if (widget.linkedWidgets) {
+    for (const w of widget.linkedWidgets) {
+      hideWidget(node, w, ":" + widget.name);
+    }
+  }
+}
+
+function getWidgetType(config) {
+  let type = config[0];
+  if (type instanceof Array) {
+    type = "COMBO";
+  }
+  return { type };
+}
+
+const GET_CONFIG = Symbol();
+
+function convertToInput(node, widget, config) {
+  console.log(node);
+  if (node.type == "LoadImage") {
+    var inputNode = LiteGraph.createNode("ComfyUIDeployExternalImage");
+    console.log(widget);
+
+    const currentOutputsLinks = node.outputs[0].links;
+
+    // const index = node.inputs.findIndex((x) => x.name == widget.name);
+    // console.log(node.widgets_values, index);
+    // inputNode.configure({
+    //   widgets_values: ["input_text", widget.value],
+    // });
+    inputNode.pos = node.pos;
+    // inputNode.pos[0] += node.size[0] + 40;
+    node.pos[0] -= inputNode.size[0] + 20;
+    console.log(inputNode);
+    console.log(app.graph);
+    app.graph.add(inputNode);
+
+    const links = app.graph.links
+
+    console.log(links);
+    
+
+    currentOutputsLinks.forEach((link) => {
+      const llink = links[link]
+      console.log(links[link]);
+      inputNode.connect(0, llink.target_id, llink.target_slot)
+      // const link = graph.links[link];
+      // console.log(link);
+      // inputNode.connect(0, )
+    });
+
+    node.connect(0, inputNode, 0);
+
+    return null;
+  }
+
+  hideWidget(node, widget);
+  const { type } = getWidgetType(config);
+  const sz = node.size;
+  const inputIsOptional = !!widget.options?.inputIsOptional;
+  const input = node.addInput(widget.name, type, {
+    widget: { name: widget.name, [GET_CONFIG]: () => config },
+    ...(inputIsOptional ? { shape: LiteGraph.SlotShape.HollowCircle } : {}),
+  });
+  for (const widget2 of node.widgets) {
+    widget2.last_y += LiteGraph.NODE_SLOT_HEIGHT;
+  }
+  node.setSize([Math.max(sz[0], node.size[0]), Math.max(sz[1], node.size[1])]);
+
+  if (type == "STRING") {
+    var inputNode = LiteGraph.createNode("ComfyUIDeployExternalText");
+    console.log(widget);
+    const index = node.inputs.findIndex((x) => x.name == widget.name);
+    console.log(node.widgets_values, index);
+    inputNode.configure({
+      widgets_values: ["input_text", widget.value],
+    });
+    inputNode.pos = node.pos;
+    inputNode.pos[0] -= node.size[0] + 40;
+    console.log(inputNode);
+    console.log(app.graph);
+    app.graph.add(inputNode);
+    inputNode.connect(0, node, index);
+  }
+
+  return input;
+}
+
+const CONVERTED_TYPE = "converted-widget";
+
+function getConfig(widgetName) {
+  const { nodeData } = this.constructor;
+  return (
+    nodeData?.input?.required?.[widgetName] ??
+    nodeData?.input?.optional?.[widgetName]
+  );
+}
+
+function isConvertibleWidget(widget, config) {
+  return (
+    (VALID_TYPES.includes(widget.type) || VALID_TYPES.includes(config[0])) &&
+    !widget.options?.forceInput
+  );
+}
+
+var __defProp = Object.defineProperty;
+var __name = (target, value) =>
+  __defProp(target, "name", { value, configurable: true });
+
 /** @typedef {import('../../../web/types/comfy.js').ComfyExtension} ComfyExtension*/
 /** @type {ComfyExtension} */
 const ext = {
@@ -230,6 +368,115 @@ const ext = {
           );
         });
     }
+  },
+
+  async beforeRegisterNodeDef(nodeType, nodeData, app2) {
+    const origGetExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
+    nodeType.prototype.getExtraMenuOptions = function (_, options) {
+      const r = origGetExtraMenuOptions
+        ? origGetExtraMenuOptions.apply(this, arguments)
+        : void 0;
+      if (this.widgets) {
+        let toInput = [];
+        let toWidget = [];
+        for (const w of this.widgets) {
+          if (w.options?.forceInput) {
+            continue;
+          }
+          if (w.type === CONVERTED_TYPE) {
+            toWidget.push({
+              content: `Convert ${w.name} to widget`,
+              callback: /* @__PURE__ */ __name(
+                () => convertToWidget(this, w),
+                "callback",
+              ),
+            });
+          } else {
+            const config = getConfig.call(this, w.name) ?? [
+              w.type,
+              w.options || {},
+            ];
+            if (isConvertibleWidget(w, config)) {
+              toInput.push({
+                content: `Convert ${w.name} to input`,
+                callback: /* @__PURE__ */ __name(
+                  () => convertToInput(this, w, config),
+                  "callback",
+                ),
+              });
+            }
+          }
+        }
+        if (toInput.length) {
+          if (true) {
+            options.push();
+
+            let optionIndex = options.findIndex((o) => o.content === "Outputs");
+            if (optionIndex === -1) optionIndex = options.length;
+            else optionIndex++;
+            options.splice(
+              0,
+              0,
+              {
+                content: "[ComfyDeploy] Convert to External Input",
+                submenu: {
+                  options: toInput,
+                },
+              },
+              null,
+            );
+          } else {
+            options.push(...toInput, null);
+          }
+        }
+        // if (toWidget.length) {
+        //   if (useConversionSubmenusSetting.value) {
+        //     options.push({
+        //       content: "Convert Input to Widget",
+        //       submenu: {
+        //         options: toWidget,
+        //       },
+        //     });
+        //   } else {
+        //     options.push(...toWidget, null);
+        //   }
+        // }
+      }
+      return r;
+    };
+
+    // const origonNodeCreated = nodeType.prototype.onNodeCreated;
+    // nodeType.prototype.onNodeCreated = function () {
+    //   const r = origonNodeCreated
+    //     ? origonNodeCreated.apply(this, arguments)
+    //     : void 0;
+
+    //   if (!this.widgets) {
+    //     return;
+    //   }
+
+    //   console.log(this.widgets);
+
+    //   this.widgets.forEach(element => {
+    //     if (element.type != "customtext") return
+
+    //     console.log(element.element);
+
+    //     const parent = element.element.parentElement
+
+    //     console.log(element.element.parentElement)
+    //     const btn = document.createElement("button");
+    //     // const div = document.createElement("div");
+    //     // parent.removeChild(element.element)
+    //     // div.appendChild(element.element)
+    //     // parent.appendChild(div)
+    //     // element.element = div
+    //     // console.log(element.element);
+    //     // btn.style = element.element.style
+    //   });
+
+    //   return r
+    // };
   },
 
   registerCustomNodes() {
@@ -463,11 +710,11 @@ const ext = {
         await app.ui.settings.setSettingValueAsync("Comfy.UseNewMenu", "Top");
         await app.ui.settings.setSettingValueAsync(
           "Comfy.Sidebar.Size",
-          "small"
+          "small",
         );
         await app.ui.settings.setSettingValueAsync(
           "Comfy.Sidebar.Location",
-          "right"
+          "right",
         );
         localStorage.setItem("Comfy.MenuPosition.Docked", "true");
         console.log("native mode manmanman");
