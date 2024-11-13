@@ -215,6 +215,7 @@ function convertToInput(node, widget, config) {
     //   widgets_values: ["input_text", widget.value],
     // });
     inputNode.pos = node.pos;
+    inputNode.id = ++app.graph.last_node_id;
     // inputNode.pos[0] += node.size[0] + 40;
     node.pos[0] -= inputNode.size[0] + 20;
     console.log(inputNode);
@@ -261,6 +262,7 @@ function convertToInput(node, widget, config) {
     inputNode.configure({
       widgets_values: ["input_text", widget.value],
     });
+    inputNode.id = ++app.graph.last_node_id;
     inputNode.pos = node.pos;
     inputNode.pos[0] -= node.size[0] + 40;
     console.log(inputNode);
