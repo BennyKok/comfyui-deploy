@@ -223,16 +223,17 @@ function convertToInput(node, widget, config) {
 
     const links = app.graph.links;
 
-    console.log(links);
+    console.log(currentOutputsLinks);
 
-    currentOutputsLinks.forEach((link) => {
+    for (let i = 0; i < currentOutputsLinks.length; i++) {
+      const link = currentOutputsLinks[i];
       const llink = links[link];
       console.log(links[link]);
-      inputNode.connect(0, llink.target_id, llink.target_slot);
-      // const link = graph.links[link];
-      // console.log(link);
-      // inputNode.connect(0, )
-    });
+      setTimeout(
+        () => inputNode.connect(0, llink.target_id, llink.target_slot),
+        100,
+      );
+    }
 
     node.connect(0, inputNode, 0);
 
