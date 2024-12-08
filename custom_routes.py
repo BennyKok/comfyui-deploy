@@ -26,6 +26,7 @@ import copy
 import struct
 from aiohttp import web, ClientSession, ClientError, ClientTimeout, ClientResponseError
 import atexit
+import perf_counter
 
 # Global session
 client_session = None
@@ -1227,7 +1228,8 @@ async def send_json_override(self, event, data, sid=None):
                 "node_class": class_type,
             }
             if class_type == "PreviewImage":
-                logger.info("Skipping preview image")
+                pass
+                # logger.info("Skipping preview image")
             else:
                 await update_run_with_output(
                     prompt_id,
@@ -1239,9 +1241,10 @@ async def send_json_override(self, event, data, sid=None):
                     comfy_message_queues[prompt_id].put_nowait(
                         {"event": "output_ready", "data": data}
                     )
-            logger.info(f"Executed {class_type} {data}")
+            # logger.info(f"Executed {class_type} {data}")
         else:
-            logger.info(f"Executed {data}")
+            pass
+            # logger.info(f"Executed {data}")
 
 
 # Global variable to keep track of the last read line number

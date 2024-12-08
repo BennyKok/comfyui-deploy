@@ -3,4 +3,5 @@ pydantic
 opencv-python
 imageio-ffmpeg
 brotli
+tabulate
 # logfire
