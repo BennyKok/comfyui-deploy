@@ -8,6 +8,12 @@ from tabulate import tabulate
 from model_management import get_torch_device
 import psutil
 
+
+from logging import basicConfig, getLogger
+
+logger = getLogger("comfy-deploy")
+basicConfig(level="INFO")  # You can adjust the logging level as needed
+
 prompt_server = server.PromptServer.instance
 
 NODE_EXECUTION_TIMES = {}  # New dictionary to store node execution times
@@ -131,7 +137,7 @@ def swizzle_send_sync(self, event, data, sid=None):
             ])
             
             # print("\n=== Node Execution Times ===")
-            print(tabulate(table_data, headers=headers, tablefmt="grid"))
+            logger.info(tabulate(table_data, headers=headers, tablefmt="grid"))
             # print("========================\n")
                 
             
