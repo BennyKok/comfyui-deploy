@@ -1251,8 +1251,6 @@ async def send_json_override(self, event, data, sid=None):
     asyncio.create_task(update_run_ws_event(prompt_id, event, data))
 
     if event == "execution_start":
-        await update_run(prompt_id, Status.RUNNING)
-
         if prompt_id in prompt_metadata:
             prompt_metadata[prompt_id].start_time = time.perf_counter()
             
@@ -1264,6 +1262,9 @@ async def send_json_override(self, event, data, sid=None):
             nodes_start_perf_time={},
             nodes_start_vram={},
         )
+        
+        await update_run(prompt_id, Status.RUNNING)
+        
         
     if event == "executing" and data and CURRENT_START_EXECUTION_DATA:
         if data.get("node") is None:
