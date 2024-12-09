@@ -1125,7 +1125,7 @@ async def proxy_to_comfydeploy(request):
 prompt_server = server.PromptServer.instance
 
 
-NODE_EXECUTION_TIMES = OrderedDict() # New dictionary to store node execution times
+NODE_EXECUTION_TIMES = {} # New dictionary to store node execution times
 CURRENT_START_EXECUTION_DATA = None
 
 def get_peak_memory():
@@ -1231,7 +1231,7 @@ def swizzle_send_sync(self, event, data, sid=None):
     global CURRENT_START_EXECUTION_DATA
     if event == "execution_start":
         global NODE_EXECUTION_TIMES
-        NODE_EXECUTION_TIMES = OrderedDict()  # Reset execution times at start
+        NODE_EXECUTION_TIMES = {}  # Reset execution times at start
         CURRENT_START_EXECUTION_DATA = dict(
             start_perf_time=time.perf_counter(),
             nodes_start_perf_time={},
@@ -1294,6 +1294,8 @@ async def send_json_override(self, event, data, sid=None):
             # Replace the print statements with tabulate
             headers = ["Node ID", "Type", "Time (s)", "VRAM (GB)"]
             table_data = []
+            node_execution_array = []  # New array to store execution data
+            
             for node_id, node_data in NODE_EXECUTION_TIMES.items():
                 vram_gb = node_data['vram_used'] / (1024**3)  # Convert bytes to GB
                 table_data.append([
@@ -1302,6 +1304,12 @@ async def send_json_override(self, event, data, sid=None):
                     f"{node_data['time']:.2f}",
                     f"{vram_gb:.2f}"
                 ])
+                
+                # Add to our new array format
+                node_execution_array.append({
+                    "id": node_id,
+                    **node_data,
+                })
             
             # Add total execution time as the last row
             table_data.append([
@@ -1314,8 +1322,10 @@ async def send_json_override(self, event, data, sid=None):
             prompt_id = data.get("prompt_id")
             await update_run_with_output(
                 prompt_id,
-                NODE_EXECUTION_TIMES,
+                node_execution_array,  # Send the array instead of the OrderedDict
             )
+            
+            print(node_execution_array)
             
             # print("\n=== Node Execution Times ===")
             logger.info("Printing Node Execution Times")
