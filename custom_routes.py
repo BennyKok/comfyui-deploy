@@ -29,6 +29,7 @@ import atexit
 from model_management import get_torch_device
 import torch
 import psutil
+from collections import OrderedDict
 # Global session
 client_session = None
 
@@ -1124,7 +1125,7 @@ async def proxy_to_comfydeploy(request):
 prompt_server = server.PromptServer.instance
 
 
-NODE_EXECUTION_TIMES = {}  # New dictionary to store node execution times
+NODE_EXECUTION_TIMES = OrderedDict() # New dictionary to store node execution times
 CURRENT_START_EXECUTION_DATA = None
 
 def get_peak_memory():
@@ -1230,7 +1231,7 @@ def swizzle_send_sync(self, event, data, sid=None):
     global CURRENT_START_EXECUTION_DATA
     if event == "execution_start":
         global NODE_EXECUTION_TIMES
-        NODE_EXECUTION_TIMES = {}  # Reset execution times at start
+        NODE_EXECUTION_TIMES = OrderedDict()  # Reset execution times at start
         CURRENT_START_EXECUTION_DATA = dict(
             start_perf_time=time.perf_counter(),
             nodes_start_perf_time={},
