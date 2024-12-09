@@ -93,6 +93,30 @@ except Exception as e:
 CURRENT_START_EXECUTION_DATA = None
 origin_func = server.PromptServer.send_sync
 
+def format_table(headers, data):
+    # Calculate column widths
+    widths = [len(h) for h in headers]
+    for row in data:
+        for i, cell in enumerate(row):
+            widths[i] = max(widths[i], len(str(cell)))
+    
+    # Create separator line
+    separator = '+' + '+'.join('-' * (w + 2) for w in widths) + '+'
+    
+    # Format header
+    result = [separator]
+    header_row = '|' + '|'.join(f' {h:<{w}} ' for w, h in zip(widths, headers)) + '|'
+    result.append(header_row)
+    result.append(separator)
+    
+    # Format data rows
+    for row in data:
+        data_row = '|' + '|'.join(f' {str(cell):<{w}} ' for w, cell in zip(widths, row)) + '|'
+        result.append(data_row)
+    
+    result.append(separator)
+    return '\n'.join(result)
+
 
 def swizzle_send_sync(self, event, data, sid=None):
     # print(f"swizzle_send_sync, event: {event}, data: {data}")
@@ -137,7 +161,8 @@ def swizzle_send_sync(self, event, data, sid=None):
             ])
             
             # print("\n=== Node Execution Times ===")
-            logger.info(tabulate(table_data, headers=headers, tablefmt="grid"))
+            logger.info("Printing Node Execution Times")
+            logger.info(format_table(headers, table_data))
             # print("========================\n")
                 
             
