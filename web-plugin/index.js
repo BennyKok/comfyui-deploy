@@ -755,6 +755,7 @@ const ext = {
           "right",
         );
         localStorage.setItem("Comfy.MenuPosition.Docked", "true");
+        window.location.reload();
         console.log("native mode manmanman");
       } catch (error) {
         console.error("Error setting validation to false", error);
