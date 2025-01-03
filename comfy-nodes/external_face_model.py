@@ -1,7 +1,15 @@
-from PIL import Image, ImageOps
-import numpy as np
-import torch
+import os
+import uuid
+import requests
 import folder_paths
+
+
+reactor_models_relative_path = "reactor/faces"
+reactor_face_models_path = os.path.join(folder_paths.models_dir, reactor_models_relative_path)
+os.makedirs(reactor_face_models_path, exist_ok=True)
+folder_paths.folder_names_and_paths[reactor_models_relative_path] = (
+    [reactor_face_models_path], folder_paths.supported_pt_extensions
+)
 
 
 class AnyType(str):
@@ -13,6 +21,7 @@ WILDCARD = AnyType("*")
 
 
 class ComfyUIDeployExternalFaceModel:
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -24,10 +33,11 @@ class ComfyUIDeployExternalFaceModel:
             },
             "optional": {
                 "default_face_model_name": (
-                    "STRING",
-                    {"multiline": False, "default": ""},
+                    folder_paths.get_filename_list(reactor_models_relative_path),
                 ),
-                "face_model_save_name": (  # if `default_face_model_name` is a link to download a file, we will attempt to save it with this name
+
+                # if `default_face_model_name` is a link to download a file, we will attempt to save it with this name
+                "face_model_save_name": (
                     "STRING",
                     {"multiline": False, "default": ""},
                 ),
@@ -48,9 +58,7 @@ class ComfyUIDeployExternalFaceModel:
 
     RETURN_TYPES = (WILDCARD,)
     RETURN_NAMES = ("path",)
-
     FUNCTION = "run"
-
     CATEGORY = "deploy"
 
     def run(
@@ -62,26 +70,27 @@ class ComfyUIDeployExternalFaceModel:
         description=None,
         face_model_url=None,
     ):
-        import requests
-        import os
-        import uuid
 
         if face_model_url and face_model_url.startswith("http"):
             if face_model_save_name:
-                existing_face_models = folder_paths.get_filename_list("reactor/faces")
+                existing_face_models = folder_paths.get_filename_list(reactor_models_relative_path)
                 # Check if face_model_save_name exists in the list
                 if face_model_save_name in existing_face_models:
                     print(f"using face model: {face_model_save_name}")
                     return (face_model_save_name,)
             else:
-                face_model_save_name = str(uuid.uuid4()) + ".safetensors"
-            print(face_model_save_name)
-            print(folder_paths.folder_names_and_paths["reactor/faces"][0][0])
+                file_name = face_model_url.split("?")[0].rsplit("/", maxsplit=1)[-1]
+                file_extensions = '.' + file_name.rsplit(".", maxsplit=1)[-1]
+                if file_extensions in folder_paths.supported_pt_extensions:
+                    face_model_save_name = file_name[:40]
+                else:
+                    face_model_save_name = "reactor_model_" + str(uuid.uuid4())[:8] + ".safetensors"
+                print(face_model_save_name)
+
             destination_path = os.path.join(
-                folder_paths.folder_names_and_paths["reactor/faces"][0][0],
+                reactor_face_models_path,
                 face_model_save_name,
             )
-
             print(destination_path)
             print(
                 "Downloading external face model - "
