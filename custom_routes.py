@@ -1280,7 +1280,7 @@ async def send_json_override(self, event, data, sid=None):
         if prompt_id in prompt_metadata:
             prompt_metadata[prompt_id].start_time = time.perf_counter()
             
-        await update_run(prompt_id, Status.RUNNING)
+        asyncio.create_task(update_run(prompt_id, Status.RUNNING))
         
         
     if event == "executing" and data and CURRENT_START_EXECUTION_DATA:
@@ -1320,10 +1320,10 @@ async def send_json_override(self, event, data, sid=None):
             ])
             
             prompt_id = data.get("prompt_id")
-            await update_run_with_output(
+            asyncio.create_task(update_run_with_output(
                 prompt_id,
                 node_execution_array,  # Send the array instead of the OrderedDict
-            )
+            ))
             
             print(node_execution_array)
             
@@ -1342,11 +1342,11 @@ async def send_json_override(self, event, data, sid=None):
                 if prompt_metadata[prompt_id].start_time is not None:
                     elapsed_time = current_time - prompt_metadata[prompt_id].start_time
                     logger.info(f"Elapsed time: {elapsed_time} seconds")
-                    await send(
+                    asyncio.create_task(send(
                         "elapsed_time",
                         {"prompt_id": prompt_id, "elapsed_time": elapsed_time},
                         sid=sid,
-                    )
+                    ))
 
     if event == "executing" and data.get("node") is not None:
         node = data.get("node")
@@ -1370,7 +1370,7 @@ async def send_json_override(self, event, data, sid=None):
             prompt_metadata[prompt_id].last_updated_node = node
             class_type = prompt_metadata[prompt_id].workflow_api[node]["class_type"]
             logger.info(f"At: {round(calculated_progress * 100)}% - {class_type}")
-            await send(
+            asyncio.create_task(send(
                 "live_status",
                 {
                     "prompt_id": prompt_id,
@@ -1378,10 +1378,10 @@ async def send_json_override(self, event, data, sid=None):
                     "progress": calculated_progress,
                 },
                 sid=sid,
-            )
-            await update_run_live_status(
+            ))
+            asyncio.create_task(update_run_live_status(
                 prompt_id, "Executing " + class_type, calculated_progress
-            )
+            ))
 
     if event == "execution_cached" and data.get("nodes") is not None:
         if prompt_id in prompt_metadata:
