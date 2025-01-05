@@ -1,8 +1,11 @@
-import { app } from "./app.js";
-import { api } from "./api.js";
-import { ComfyWidgets, LGraphNode } from "./widgets.js";
+import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
+// import { LGraphNode } from "../../scripts/widgets.js";
+LGraphNode = LiteGraph.LGraphNode;
+import { ComfyDialog, $el } from "../../scripts/ui.js";
+
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
-import { ComfyDeploy } from "https://esm.sh/comfydeploy@0.0.19-beta.30";
+import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
 
 const styles = `
 .comfydeploy-menu-item {
@@ -1286,8 +1289,6 @@ function addButton() {
 }
 
 app.registerExtension(ext);
-
-import { ComfyDialog, $el } from "../../scripts/ui.js";
 
 export class InfoDialog extends ComfyDialog {
   constructor() {
