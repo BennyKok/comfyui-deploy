@@ -50,6 +50,14 @@ function sendEventToCD(event, data) {
   window.parent.postMessage(JSON.stringify(message), "*");
 }
 
+function sendDirectEventToCD(event, data) {
+  const message = {
+    type: event,
+    data: data
+  }
+  window.parent.postMessage(message, '*')
+}
+
 function dispatchAPIEventData(data) {
   const msg = JSON.parse(data);
 
@@ -653,6 +661,8 @@ const ext = {
             console.warn("api.handlePromptGenerated is not a function");
           }
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
+        } else if (message.type === 'configure_queue_buttons') {
+          addQueueButtons(message.data)
         } else if (message.type === "get_prompt") {
           const prompt = await app.graphToPrompt();
           sendEventToCD("cd_plugin_onGetPrompt", prompt);
@@ -1892,3 +1902,118 @@ api.fetchApi = async (route, options) => {
 
   return await orginal_fetch_api.call(api, route, options);
 };
+
+
+
+// Intercept window drag and drop events
+const originalDropHandler = document.ondrop
+document.ondrop = async (e) => {
+  console.log('Drop event intercepted:', e)
+  
+  // Prevent default browser behavior
+  e.preventDefault()
+  
+  // Handle files if present
+  if (e.dataTransfer?.files?.length > 0) {
+    const files = Array.from(e.dataTransfer.files)
+    
+    // Send file data to parent directly as JSON
+    sendDirectEventToCD('file_drop', {
+      files: files,
+      x: e.clientX,
+      y: e.clientY,
+      timestamp: Date.now()
+    })
+  }
+
+  // Call original handler if exists
+  if (originalDropHandler) {
+    originalDropHandler(e)
+  }
+}
+
+const originalDragEnterHandler = document.ondragenter
+document.ondragenter = (e) => {
+  // Prevent default to allow drop
+  e.preventDefault()
+  
+  // Send dragenter event to parent directly as JSON
+  sendDirectEventToCD('file_dragenter', {
+    x: e.clientX,
+    y: e.clientY,
+    timestamp: Date.now()
+  })
+
+  if (originalDragEnterHandler) {
+    originalDragEnterHandler(e)
+  }
+}
+
+const originalDragLeaveHandler = document.ondragleave
+document.ondragleave = (e) => {
+  // Prevent default to allow drop
+  e.preventDefault()
+  
+  // Send dragleave event to parent directly as JSON
+  sendDirectEventToCD('file_dragleave', {
+    x: e.clientX,
+    y: e.clientY,
+    timestamp: Date.now()
+  })
+
+  if (originalDragLeaveHandler) {
+    originalDragLeaveHandler(e)
+  }
+}
+
+const originalDragOverHandler = document.ondragover 
+document.ondragover = (e) => {
+  // Prevent default to allow drop
+  e.preventDefault()
+  
+  // Send dragover event to parent directly as JSON
+  sendDirectEventToCD('file_dragover', {
+    x: e.clientX,
+    y: e.clientY,
+    timestamp: Date.now()
+  })
+
+  if (originalDragOverHandler) {
+    originalDragOverHandler(e)
+  }
+}
+
+// Function to create a single button
+function createQueueButton(config) {
+  const button = document.createElement('button')
+  button.id = `cd-button-${config.id}`
+  button.className = 'p-button p-component p-button-icon-only p-button-secondary p-button-text'
+  button.innerHTML = `
+    <span class="p-button-icon pi ${config.icon}"></span>
+    <span class="p-button-label">&nbsp;</span>
+  `
+  button.onclick = () => {
+    const eventData = typeof config.eventData === 'function' ? 
+      config.eventData() : 
+      config.eventData || {}
+    sendEventToCD(config.event, eventData)
+  }
+  button.setAttribute('data-pd-tooltip', config.tooltip)
+  return button
+}
+
+// Function to add buttons to queue group
+function addQueueButtons(buttonConfigs = DEFAULT_BUTTONS) {
+  const queueButtonGroup = document.querySelector('.queue-button-group.flex')
+  if (!queueButtonGroup) return
+
+  // Remove any existing CD buttons
+  const existingButtons = queueButtonGroup.querySelectorAll('[id^="cd-button-"]')
+  existingButtons.forEach(button => button.remove())
+
+  // Add new buttons
+  buttonConfigs.forEach(config => {
+    const button = createQueueButton(config)
+    queueButtonGroup.appendChild(button)
+  })
+}
