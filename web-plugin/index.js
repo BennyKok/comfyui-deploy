@@ -53,9 +53,9 @@ function sendEventToCD(event, data) {
 function sendDirectEventToCD(event, data) {
   const message = {
     type: event,
-    data: data
-  }
-  window.parent.postMessage(message, '*')
+    data: data,
+  };
+  window.parent.postMessage(message, "*");
 }
 
 function dispatchAPIEventData(data) {
@@ -494,6 +494,13 @@ const ext = {
       return r;
     };
 
+    if (
+      nodeData?.input?.optional?.default_value_url?.[1]?.image_preview === true
+    ) {
+      nodeData.input.optional.default_value_url = ["IMAGEPREVIEW"];
+      console.log(nodeData.input.optional.default_value_url);
+    }
+
     // const origonNodeCreated = nodeType.prototype.onNodeCreated;
     // nodeType.prototype.onNodeCreated = function () {
     //   const r = origonNodeCreated
@@ -620,6 +627,78 @@ const ext = {
     ComfyDeploy.category = "deploy";
   },
 
+  getCustomWidgets() {
+    return {
+      IMAGEPREVIEW(node, inputName, inputData) {
+        // Find or create the URL input widget
+        const urlWidget = node.addWidget(
+          "string",
+          inputName,
+          /* value=*/ "",
+          () => {},
+          { serialize: true },
+        );
+
+        const buttonWidget = node.addWidget(
+          "button",
+          "Open Assets Browser",
+          /* value=*/ "",
+          () => {
+            sendEventToCD("assets", {
+              node: node.id,
+              inputName: inputName,
+            })
+            // console.log("load image");
+          },
+          { serialize: false },
+        );
+
+        console.log(node.widgets);
+
+        console.log("urlWidget", urlWidget);
+
+        // Add image preview functionality
+        function showImage(url) {
+          const img = new Image();
+          img.onload = () => {
+            node.imgs = [img];
+            app.graph.setDirtyCanvas(true);
+            node.setSizeForImage?.();
+          };
+          img.onerror = () => {
+            node.imgs = [];
+            app.graph.setDirtyCanvas(true);
+          };
+          img.src = url;
+        }
+
+        // Set up URL widget value handling
+        let default_value = urlWidget.value;
+        Object.defineProperty(urlWidget, "value", {
+          set: function (value) {
+            this._real_value = value;
+            // Preview image when URL changes
+            if (value) {
+              showImage(value);
+            }
+          },
+          get: function () {
+            return this._real_value || default_value;
+          },
+        });
+
+        // Show initial image if URL exists
+        requestAnimationFrame(() => {
+          if (urlWidget.value) {
+            showImage(urlWidget.value);
+          }
+        });
+
+        return { widget: urlWidget };
+      },
+    };
+  },
+
   async setup() {
     // const graphCanvas = document.getElementById("graph-canvas");
 
@@ -661,8 +740,8 @@ const ext = {
             console.warn("api.handlePromptGenerated is not a function");
           }
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
-        } else if (message.type === 'configure_queue_buttons') {
-          addQueueButtons(message.data)
+        } else if (message.type === "configure_queue_buttons") {
+          addQueueButtons(message.data);
         } else if (message.type === "get_prompt") {
           const prompt = await app.graphToPrompt();
           sendEventToCD("cd_plugin_onGetPrompt", prompt);
@@ -1903,117 +1982,118 @@ api.fetchApi = async (route, options) => {
   return await orginal_fetch_api.call(api, route, options);
 };
 
-
-
 // Intercept window drag and drop events
-const originalDropHandler = document.ondrop
+const originalDropHandler = document.ondrop;
 document.ondrop = async (e) => {
-  console.log('Drop event intercepted:', e)
-  
+  console.log("Drop event intercepted:", e);
+
   // Prevent default browser behavior
-  e.preventDefault()
-  
+  e.preventDefault();
+
   // Handle files if present
   if (e.dataTransfer?.files?.length > 0) {
-    const files = Array.from(e.dataTransfer.files)
-    
+    const files = Array.from(e.dataTransfer.files);
+
     // Send file data to parent directly as JSON
-    sendDirectEventToCD('file_drop', {
+    sendDirectEventToCD("file_drop", {
       files: files,
       x: e.clientX,
       y: e.clientY,
-      timestamp: Date.now()
-    })
+      timestamp: Date.now(),
+    });
   }
 
   // Call original handler if exists
   if (originalDropHandler) {
-    originalDropHandler(e)
+    originalDropHandler(e);
   }
-}
+};
 
-const originalDragEnterHandler = document.ondragenter
+const originalDragEnterHandler = document.ondragenter;
 document.ondragenter = (e) => {
   // Prevent default to allow drop
-  e.preventDefault()
-  
+  e.preventDefault();
+
   // Send dragenter event to parent directly as JSON
-  sendDirectEventToCD('file_dragenter', {
+  sendDirectEventToCD("file_dragenter", {
     x: e.clientX,
     y: e.clientY,
-    timestamp: Date.now()
-  })
+    timestamp: Date.now(),
+  });
 
   if (originalDragEnterHandler) {
-    originalDragEnterHandler(e)
+    originalDragEnterHandler(e);
   }
-}
+};
 
-const originalDragLeaveHandler = document.ondragleave
+const originalDragLeaveHandler = document.ondragleave;
 document.ondragleave = (e) => {
   // Prevent default to allow drop
-  e.preventDefault()
-  
+  e.preventDefault();
+
   // Send dragleave event to parent directly as JSON
-  sendDirectEventToCD('file_dragleave', {
+  sendDirectEventToCD("file_dragleave", {
     x: e.clientX,
     y: e.clientY,
-    timestamp: Date.now()
-  })
+    timestamp: Date.now(),
+  });
 
   if (originalDragLeaveHandler) {
-    originalDragLeaveHandler(e)
+    originalDragLeaveHandler(e);
   }
-}
+};
 
-const originalDragOverHandler = document.ondragover 
+const originalDragOverHandler = document.ondragover;
 document.ondragover = (e) => {
   // Prevent default to allow drop
-  e.preventDefault()
-  
+  e.preventDefault();
+
   // Send dragover event to parent directly as JSON
-  sendDirectEventToCD('file_dragover', {
+  sendDirectEventToCD("file_dragover", {
     x: e.clientX,
     y: e.clientY,
-    timestamp: Date.now()
-  })
+    timestamp: Date.now(),
+  });
 
   if (originalDragOverHandler) {
-    originalDragOverHandler(e)
+    originalDragOverHandler(e);
   }
-}
+};
 
 // Function to create a single button
 function createQueueButton(config) {
-  const button = document.createElement('button')
-  button.id = `cd-button-${config.id}`
-  button.className = 'p-button p-component p-button-icon-only p-button-secondary p-button-text'
+  const button = document.createElement("button");
+  button.id = `cd-button-${config.id}`;
+  button.className =
+    "p-button p-component p-button-icon-only p-button-secondary p-button-text";
   button.innerHTML = `
     <span class="p-button-icon pi ${config.icon}"></span>
     <span class="p-button-label">&nbsp;</span>
-  `
+  `;
   button.onclick = () => {
-    const eventData = typeof config.eventData === 'function' ? 
-      config.eventData() : 
-      config.eventData || {}
-    sendEventToCD(config.event, eventData)
-  }
-  button.setAttribute('data-pd-tooltip', config.tooltip)
-  return button
+    const eventData =
+      typeof config.eventData === "function"
+        ? config.eventData()
+        : config.eventData || {};
+    sendEventToCD(config.event, eventData);
+  };
+  button.setAttribute("data-pd-tooltip", config.tooltip);
+  return button;
 }
 
 // Function to add buttons to queue group
 function addQueueButtons(buttonConfigs = DEFAULT_BUTTONS) {
-  const queueButtonGroup = document.querySelector('.queue-button-group.flex')
-  if (!queueButtonGroup) return
+  const queueButtonGroup = document.querySelector(".queue-button-group.flex");
+  if (!queueButtonGroup) return;
 
   // Remove any existing CD buttons
-  const existingButtons = queueButtonGroup.querySelectorAll('[id^="cd-button-"]')
-  existingButtons.forEach(button => button.remove())
+  const existingButtons =
+    queueButtonGroup.querySelectorAll('[id^="cd-button-"]');
+  existingButtons.forEach((button) => button.remove());
 
   // Add new buttons
-  buttonConfigs.forEach(config => {
-    const button = createQueueButton(config)
-    queueButtonGroup.appendChild(button)
-  })
+  buttonConfigs.forEach((config) => {
+    const button = createQueueButton(config);
+    queueButtonGroup.appendChild(button);
+  });
 }

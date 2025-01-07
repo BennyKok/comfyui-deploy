@@ -21,8 +21,9 @@ class ComfyUIDeployExternalImage:
                 ),
                 "description": (
                     "STRING",
-                    {"multiline": True, "default": ""},
+                    {"multiline": False, "default": ""},
                 ),
+                "default_value_url": ("STRING", {"image_preview": True, "default": ""}),
             }
         }
 
@@ -33,32 +34,44 @@ class ComfyUIDeployExternalImage:
 
     CATEGORY = "image"
 
-    def run(self, input_id, default_value=None, display_name=None, description=None):
+    def run(self, input_id, default_value=None, display_name=None, description=None, default_value_url=None):
         image = default_value
-        try:
-            if input_id.startswith('http'):
-                import requests
-                from io import BytesIO
-                print("Fetching image from url: ", input_id)
-                response = requests.get(input_id)
-                image = Image.open(BytesIO(response.content))
-            elif input_id.startswith('data:image/png;base64,') or input_id.startswith('data:image/jpeg;base64,') or input_id.startswith('data:image/jpg;base64,'):
-                import base64
-                from io import BytesIO
-                print("Decoding base64 image")
-                base64_image = input_id[input_id.find(",")+1:]
-                decoded_image = base64.b64decode(base64_image)
-                image = Image.open(BytesIO(decoded_image))
-            else:
-                raise ValueError("Invalid image url provided.")
-
-            image = ImageOps.exif_transpose(image)
-            image = image.convert("RGB")
-            image = np.array(image).astype(np.float32) / 255.0
-            image = torch.from_numpy(image)[None,]
-            return [image]
-        except:
-            return [image]
+        
+        # Try both input_id and default_value_url
+        urls_to_try = [url for url in [input_id, default_value_url] if url]
+        
+        print(default_value_url)
+        
+        for url in urls_to_try:
+            try:
+                if url.startswith('http'):
+                    import requests
+                    from io import BytesIO
+                    print(f"Fetching image from url: {url}")
+                    response = requests.get(url)
+                    image = Image.open(BytesIO(response.content))
+                    break
+                elif url.startswith(('data:image/png;base64,', 'data:image/jpeg;base64,', 'data:image/jpg;base64,')):
+                    import base64
+                    from io import BytesIO
+                    print("Decoding base64 image")
+                    base64_image = url[url.find(",")+1:]
+                    decoded_image = base64.b64decode(base64_image)
+                    image = Image.open(BytesIO(decoded_image))
+                    break
+            except:
+                continue
+        
+        if image is not None:
+            try:
+                image = ImageOps.exif_transpose(image)
+                image = image.convert("RGB")
+                image = np.array(image).astype(np.float32) / 255.0
+                image = torch.from_numpy(image)[None,]
+            except:
+                pass
+                
+        return [image]
 
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalImage": ComfyUIDeployExternalImage}
