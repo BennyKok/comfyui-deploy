@@ -647,7 +647,7 @@ const ext = {
             sendEventToCD("assets", {
               node: node.id,
               inputName: inputName,
-            })
+            });
             // console.log("load image");
           },
           { serialize: false },
@@ -747,6 +747,24 @@ const ext = {
           sendEventToCD("cd_plugin_onGetPrompt", prompt);
         } else if (message.type === "event") {
           dispatchAPIEventData(message.data);
+        } else if (message.type === "update_widget") {
+          // New handler for updating widget values
+          const { nodeId, widgetName, value } = message.data;
+          const node = app.graph.getNodeById(nodeId);
+
+          if (!node) {
+            console.warn(`Node with ID ${nodeId} not found`);
+            return;
+          }
+
+          const widget = node.widgets?.find((w) => w.name === widgetName);
+          if (!widget) {
+            console.warn(`Widget ${widgetName} not found in node ${nodeId}`);
+            return;
+          }
+
+          widget.value = value;
+          app.graph.setDirtyCanvas(true);
         } else if (message.type === "add_node") {
           console.log("add node", message.data);
           app.graph.beforeChange();
