@@ -742,6 +742,8 @@ const ext = {
           sendEventToCD("cd_plugin_onQueuePrompt", prompt);
         } else if (message.type === "configure_queue_buttons") {
           addQueueButtons(message.data);
+        } else if (message.type === "configure_menu_right_buttons") {
+          addMenuRightButtons(message.data);
         } else if (message.type === "get_prompt") {
           const prompt = await app.graphToPrompt();
           sendEventToCD("cd_plugin_onGetPrompt", prompt);
@@ -2114,4 +2116,42 @@ function addQueueButtons(buttonConfigs = DEFAULT_BUTTONS) {
     const button = createQueueButton(config);
     queueButtonGroup.appendChild(button);
   });
+}
+
+// Function to add butons to the menu right 
+function addMenuRightButtons(buttonConfigs) {
+  const menuRightButtons = document.querySelector('.comfyui-menu-right')
+
+  if (!menuRightButtons) return
+
+  // Remove any existing CD buttons
+  const existingButtons = document.querySelectorAll('.comfyui-menu-right [id^="cd-button-"]')
+  for (const button of existingButtons) {
+    button.remove()
+  }
+  
+  if (!menuRightButtons) return
+
+  for (const config of buttonConfigs) {
+    const button = createMenuRightButton(config)
+    menuRightButtons.appendChild(button)
+  }
+}
+
+function createMenuRightButton(config) {
+  const button = document.createElement('button')
+  button.id = `cd-button-${config.id}`
+  button.className = 'p-button p-component p-button-secondary p-button-md'
+  button.innerHTML = `
+    <span class="p-button-icon pi ${config.icon}"></span>
+    <span class="p-button-label">${config.label}</span>
+  `
+  button.onclick = () => {
+    const eventData = typeof config.eventData === 'function' ? 
+      config.eventData() : 
+      config.eventData || {}
+    sendEventToCD(config.event, eventData)
+  }
+  button.setAttribute('data-pd-tooltip', config.tooltip)
+  return button
 }
