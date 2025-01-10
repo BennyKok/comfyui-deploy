@@ -2120,7 +2120,7 @@ function addQueueButtons(buttonConfigs = DEFAULT_BUTTONS) {
 
 // Function to add butons to the menu right 
 function addMenuRightButtons(buttonConfigs) {
-  const menuRightButtons = document.querySelector('.comfyui-menu-right')
+  const menuRightButtons = document.querySelector('.comfyui-menu-right .flex')
 
   if (!menuRightButtons) return
 
@@ -2129,19 +2129,22 @@ function addMenuRightButtons(buttonConfigs) {
   for (const button of existingButtons) {
     button.remove()
   }
-  
-  if (!menuRightButtons) return
+
+  const container = document.createElement('div')
+  container.className = 'comfyui-button-group mx-2'
 
   for (const config of buttonConfigs) {
     const button = createMenuRightButton(config)
-    menuRightButtons.appendChild(button)
+    container.appendChild(button)
   }
+
+  menuRightButtons.appendChild(container)
 }
 
 function createMenuRightButton(config) {
   const button = document.createElement('button')
   button.id = `cd-button-${config.id}`
-  button.className = 'p-button p-component p-button-secondary p-button-md'
+  button.className = `p-button p-component p-button-secondary p-button-md ${config.btnClasses}`
   button.innerHTML = `
     <span class="p-button-icon pi ${config.icon}"></span>
     <span class="p-button-label">${config.label}</span>
