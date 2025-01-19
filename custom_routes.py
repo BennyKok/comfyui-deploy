@@ -1280,6 +1280,8 @@ async def send_json_override(self, event, data, sid=None):
         if prompt_id in prompt_metadata:
             prompt_metadata[prompt_id].start_time = time.perf_counter()
             
+        logger.info("Executing prompt: " + prompt_id)
+            
         asyncio.create_task(update_run(prompt_id, Status.RUNNING))
         
         
