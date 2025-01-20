@@ -1999,25 +1999,6 @@ api.fetchApi = async (route, options) => {
     }
   }
 
-  if (route.startsWith("/object_info") && ext.native_mode) {
-    const info = await getSelectedWorkflowInfo();
-    console.log("info, ", info);  
-    if (info) {
-      const data = {
-        refresh_private: true,
-        refresh_public: true
-      }
-      await fetch("/comfyui-deploy/refresh-models", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${info.cd_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-    }
-  }
-
   return await orginal_fetch_api.call(api, route, options);
 };
 
