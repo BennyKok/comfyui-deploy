@@ -744,6 +744,8 @@ const ext = {
           addQueueButtons(message.data);
         } else if (message.type === "configure_menu_right_buttons") {
           addMenuRightButtons(message.data);
+        } else if (message.type === "configure_menu_buttons") {
+          addMenuButtons(message.data);
         } else if (message.type === "get_prompt") {
           const prompt = await app.graphToPrompt();
           sendEventToCD("cd_plugin_onGetPrompt", prompt);
@@ -864,9 +866,9 @@ const ext = {
         );
         await app.ui.settings.setSettingValueAsync(
           "Comfy.Sidebar.Location",
-          "right",
+          "left",
         );
-        localStorage.setItem("Comfy.MenuPosition.Docked", "true");
+        // localStorage.setItem("Comfy.MenuPosition.Docked", "true");
         console.log("native mode manmanman");
       } catch (error) {
         console.error("Error setting validation to false", error);
@@ -1869,7 +1871,7 @@ app.extensionManager.registerSidebarTab({
       <div style="padding: 20px;">
         <h3>Comfy Deploy</h3>
         <div id="deploy-container" style="margin-bottom: 20px;"></div>
-        <div id="workflows-container">
+        <div id="workflows-container" style="display: none;">
           <h4>Your Workflows</h4>
           <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
             ${loadingIcon}
@@ -1969,7 +1971,7 @@ async function loadWorkflowApi(versionId) {
 
 const orginal_fetch_api = api.fetchApi;
 api.fetchApi = async (route, options) => {
-  console.log("Fetch API called with args:", route, options, ext.native_mode);
+  // console.log("Fetch API called with args:", route, options, ext.native_mode);
 
   if (route.startsWith("/prompt") && ext.native_mode) {
     const info = await getSelectedWorkflowInfo();
@@ -2118,43 +2120,189 @@ function addQueueButtons(buttonConfigs = DEFAULT_BUTTONS) {
   });
 }
 
-// Function to add butons to the menu right 
-function addMenuRightButtons(buttonConfigs) {
-  const menuRightButtons = document.querySelector('.comfyui-menu-right .flex')
+// addMenuRightButtons([
+//   {
+//     id: "cd-button-save-image",
+//     icon: "pi-save",
+//     label: "Snapshot",
+//     tooltip: "Save the current image to your output directory.",
+//     event: "save_image",
+//     eventData: () => ({}),
+//   },
+// ]);
 
-  if (!menuRightButtons) return
+// addMenuLeftButtons([
+//   {
+//     id: "cd-button-back",
+//     icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+//       <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+//     </svg>`,
+//     tooltip: "Go back to the previous page.",
+//     event: "back",
+//     eventData: () => ({}),
+//   },
+// ]);
+
+// addMenuButtons({
+//   containerSelector: "body > div.comfyui-body-top > div",
+//   buttonConfigs: [
+//     {
+//       id: "cd-button-workflow-1",
+//       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 3l4 4l-4 4m-6-4h10M8 13l-4 4l4 4m-4-4h9"/></svg>`,
+//       label: "Workflow",
+//       tooltip: "Go to Workflow 1",
+//       event: "workflow_1",
+//       // btnClasses: "",
+//       eventData: () => ({}),
+//     },
+//     {
+//       id: "cd-button-workflow-3",
+//       // icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 3l4 4l-4 4m-6-4h10M8 13l-4 4l4 4m-4-4h9"/></svg>`,
+//       label: "v1",
+//       tooltip: "Go to Workflow 1",
+//       event: "workflow_1",
+//       // btnClasses: "",
+//       eventData: () => ({}),
+//     },
+//     {
+//       id: "cd-button-workflow-2",
+//       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3v6"/><circle cx="12" cy="12" r="3"/><path d="M12 15v6"/></g></svg>`,
+//       label: "Commit",
+//       tooltip: "Commit the current workflow",
+//       event: "commit",
+//       style: {
+//         backgroundColor: "oklch(.476 .114 61.907)",
+//       },
+//       eventData: () => ({}),
+//     },
+//   ],
+//   buttonIdPrefix: "cd-button-workflow-",
+//   insertBefore:
+//     "body > div.comfyui-body-top > div > div.flex-grow.min-w-0.app-drag.h-full",
+//   // containerStyle: { order: "3" }
+// });
+
+// addMenuButtons({
+//   containerSelector:
+//     "body > div.comfyui-body-top > div > div.flex-grow.min-w-0.app-drag.h-full",
+//   clearContainer: true,
+//   buttonConfigs: [],
+//   buttonIdPrefix: "cd-button-p-",
+//   containerStyle: { order: "-1" },
+// });
+
+// Function to add buttons to a menu container
+function addMenuButtons(options) {
+  const {
+    containerSelector,
+    buttonConfigs,
+    buttonIdPrefix = "cd-button-",
+    containerClass = "comfyui-button-group",
+    containerStyle = {},
+    clearContainer = false,
+    insertBefore = null, // New option to specify selector for insertion point
+  } = options;
+
+  const menuContainer = document.querySelector(containerSelector);
+
+  if (!menuContainer) return;
 
   // Remove any existing CD buttons
-  const existingButtons = document.querySelectorAll('.comfyui-menu-right [id^="cd-button-"]')
-  for (const button of existingButtons) {
-    button.remove()
+  const existingButtons = document.querySelectorAll(
+    `[id^="${buttonIdPrefix}"]`,
+  );
+  existingButtons.forEach((button) => button.remove());
+
+  const container = document.createElement("div");
+  container.className = containerClass;
+
+  // Apply container styles
+  Object.assign(container.style, containerStyle);
+
+  // Clear existing content if specified
+  if (clearContainer) {
+    menuContainer.innerHTML = "";
   }
 
-  const container = document.createElement('div')
-  container.className = 'comfyui-button-group mx-2'
+  // Create and add buttons
+  buttonConfigs.forEach((config) => {
+    const button = createMenuButton({
+      ...config,
+      idPrefix: buttonIdPrefix,
+    });
+    container.appendChild(button);
+  });
 
-  for (const config of buttonConfigs) {
-    const button = createMenuRightButton(config)
-    container.appendChild(button)
+  // Insert before specified element if provided, otherwise append
+  if (insertBefore) {
+    const targetElement = menuContainer.querySelector(insertBefore);
+    if (targetElement) {
+      menuContainer.insertBefore(container, targetElement);
+    } else {
+      menuContainer.appendChild(container);
+    }
+  } else {
+    menuContainer.appendChild(container);
   }
-
-  menuRightButtons.appendChild(container)
 }
 
-function createMenuRightButton(config) {
-  const button = document.createElement('button')
-  button.id = `cd-button-${config.id}`
-  button.className = `p-button p-component p-button-secondary p-button-md ${config.btnClasses}`
+function createMenuButton(config) {
+  const {
+    id,
+    icon,
+    label,
+    btnClasses = "",
+    tooltip,
+    event,
+    eventData,
+    idPrefix,
+    style = {},
+  } = config;
+
+  const button = document.createElement("button");
+  button.id = `${idPrefix}${id}`;
+  button.className = `comfyui-button ${btnClasses}`;
+  Object.assign(button.style, style);
+
+  // Only add icon if provided
+  const iconHtml = icon
+    ? icon.startsWith("<svg")
+      ? icon
+      : `<span class="p-button-icon pi ${icon}"></span>`
+    : "";
+
   button.innerHTML = `
-    <span class="p-button-icon pi ${config.icon}"></span>
-    <span class="p-button-label">${config.label}</span>
-  `
+    ${iconHtml}
+    ${label ? `<span class="p-button-label text-sm">${label}</span>` : ""}
+  `;
+
   button.onclick = () => {
-    const eventData = typeof config.eventData === 'function' ? 
-      config.eventData() : 
-      config.eventData || {}
-    sendEventToCD(config.event, eventData)
+    const data =
+      typeof eventData === "function" ? eventData() : eventData || {};
+    sendEventToCD(event, data);
+  };
+
+  if (tooltip) {
+    button.setAttribute("data-pd-tooltip", tooltip);
   }
-  button.setAttribute('data-pd-tooltip', config.tooltip)
-  return button
+  return button;
+}
+
+// Refactored menu button functions
+function addMenuLeftButtons(buttonConfigs) {
+  addMenuButtons({
+    containerSelector: "body > div.comfyui-body-top > div",
+    buttonConfigs,
+    buttonIdPrefix: "cd-button-left-",
+    containerStyle: { order: "-1" },
+  });
+}
+
+function addMenuRightButtons(buttonConfigs) {
+  addMenuButtons({
+    containerSelector: ".comfyui-menu-right .flex",
+    buttonConfigs,
+    buttonIdPrefix: "cd-button-",
+    containerStyle: {},
+  });
 }
