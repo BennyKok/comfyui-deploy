@@ -1976,6 +1976,12 @@ api.fetchApi = async (route, options) => {
 
   if (route.startsWith("/prompt") && ext.native_mode) {
     const info = await getSelectedWorkflowInfo();
+
+    if (!info.workflow_id) {
+      console.log("No workflow id found, fallback to original fetch");
+      return await orginal_fetch_api.call(api, route, options);
+    }
+
     console.log("info", info);
     if (info) {
       const body = JSON.parse(options.body);
