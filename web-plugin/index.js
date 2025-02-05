@@ -726,6 +726,7 @@ const ext = {
             }
             console.log("loadGraphData");
             app.loadGraphData(comfyUIWorkflow);
+            sendEventToCD("graph_loaded");
           }
         } else if (message.type === "deploy") {
           // deployWorkflow();
