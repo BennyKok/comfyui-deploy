@@ -386,6 +386,9 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 if value["class_type"] == "ComfyUIDeployExternalFaceModel":
                     value["inputs"]["face_model_url"] = new_value
 
+                if value["class_type"] == "ComfyUIDeployExternalAudio":
+                    value["inputs"]["audio_file"] = new_value
+
 
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
