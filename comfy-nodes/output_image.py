@@ -49,6 +49,7 @@ class ComfyDeployOutputImage:
         filename_prefix="ComfyUI",
         file_type="png",
         quality=80,
+        output_id="output_images",
         prompt=None,
         extra_pnginfo=None,
     ):
@@ -83,7 +84,12 @@ class ComfyDeployOutputImage:
                 img.save(file_path, quality=quality)
 
             results.append(
-                {"filename": file, "subfolder": subfolder, "type": self.type}
+                {
+                    "filename": file,
+                    "subfolder": subfolder,
+                    "type": self.type,
+                    "output_id": output_id,
+                }
             )
             counter += 1
 
@@ -91,6 +97,4 @@ class ComfyDeployOutputImage:
 
 
 NODE_CLASS_MAPPINGS = {"ComfyDeployOutputImage": ComfyDeployOutputImage}
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "ComfyDeployOutputImage": "Image Output (ComfyDeploy)"
-}
+NODE_DISPLAY_NAME_MAPPINGS = {"ComfyDeployOutputImage": "Image Output (ComfyDeploy)"}
