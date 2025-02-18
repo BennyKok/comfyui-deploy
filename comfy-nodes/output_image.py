@@ -83,12 +83,7 @@ class ComfyDeployOutputImage:
                 img.save(file_path, quality=quality)
 
             results.append(
-                {
-                    "filename": file,
-                    "subfolder": subfolder,
-                    "type": self.type,
-                    "output_id": self.output_id,
-                }
+                {"filename": file, "subfolder": subfolder, "type": self.type}
             )
             counter += 1
 
