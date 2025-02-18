@@ -17,10 +17,6 @@ class ComfyDeployOutputImage:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "output_id": (
-                    "STRING",
-                    {"multiline": False, "default": "output_images"},
-                ),
                 "images": ("IMAGE", {"tooltip": "The images to save."}),
                 "filename_prefix": (
                     "STRING",
@@ -31,6 +27,10 @@ class ComfyDeployOutputImage:
                 ),
                 "file_type": (["png", "jpg", "webp"], {"default": "webp"}),
                 "quality": ("INT", {"default": 80, "min": 1, "max": 100, "step": 1}),
+                "output_id": (
+                    "STRING",
+                    {"multiline": False, "default": "output_images"},
+                ),
             },
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
