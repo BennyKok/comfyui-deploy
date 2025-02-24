@@ -30,6 +30,7 @@ from model_management import get_torch_device
 import torch
 import psutil
 from collections import OrderedDict
+
 # Global session
 client_session = None
 
@@ -302,6 +303,7 @@ def apply_random_seed_to_workflow(workflow_api):
     for key in workflow_api:
         if "inputs" in workflow_api[key]:
             if "seed" in workflow_api[key]["inputs"]:
+                # If seed is a list, it's an input from another node (generally `external number int`)
                 if isinstance(workflow_api[key]["inputs"]["seed"], list):
                     continue
                 if workflow_api[key]["class_type"] == "PromptExpansion":
@@ -316,6 +318,9 @@ def apply_random_seed_to_workflow(workflow_api):
                 )
 
             if "noise_seed" in workflow_api[key]["inputs"]:
+                # If noise_seed is a list, it's an input from another node (generally `external number int`)
+                if isinstance(workflow_api[key]["inputs"]["noise_seed"], list):
+                    continue
                 if workflow_api[key]["class_type"] == "RandomNoise":
                     workflow_api[key]["inputs"]["noise_seed"] = randomSeed()
                     logger.info(
@@ -1080,7 +1085,7 @@ async def send(event, data, sid=None):
 @server.PromptServer.instance.routes.post("/comfydeploy/{tail:.*}")
 async def proxy_to_comfydeploy(request):
     # Get the base URL
-    base_url = f'https://www.comfydeploy.com/{request.match_info["tail"]}'
+    base_url = f"https://www.comfydeploy.com/{request.match_info['tail']}"
 
     # Get all query parameters
     query_params = request.query_string
@@ -1131,14 +1136,15 @@ async def proxy_to_comfydeploy(request):
 prompt_server = server.PromptServer.instance
 
 
-NODE_EXECUTION_TIMES = {} # New dictionary to store node execution times
+NODE_EXECUTION_TIMES = {}  # New dictionary to store node execution times
 CURRENT_START_EXECUTION_DATA = None
+
 
 def get_peak_memory():
     device = get_torch_device()
-    if device.type == 'cuda':
+    if device.type == "cuda":
         return torch.cuda.max_memory_allocated(device)
-    elif device.type == 'mps':
+    elif device.type == "mps":
         # Return system memory usage for MPS devices
         return psutil.Process().memory_info().rss
     return 0
@@ -1146,7 +1152,7 @@ def get_peak_memory():
 
 def reset_peak_memory_record():
     device = get_torch_device()
-    if device.type == 'cuda':
+    if device.type == "cuda":
         torch.cuda.reset_max_memory_allocated(device)
     # MPS doesn't need reset as we're not tracking its memory
 
@@ -1167,7 +1173,7 @@ def handle_execute(class_type, last_node_id, prompt_id, server, unique_id):
         NODE_EXECUTION_TIMES[unique_id] = {
             "time": execution_time,
             "class_type": class_type,
-            "vram_used": vram_used
+            "vram_used": vram_used,
         }
         # print(f"#{unique_id} [{class_type}]: {execution_time:.2f}s - vram {vram_used}b")
 
@@ -1207,31 +1213,37 @@ try:
 except Exception as e:
     pass
 
+
 def format_table(headers, data):
     # Calculate column widths
     widths = [len(h) for h in headers]
     for row in data:
         for i, cell in enumerate(row):
             widths[i] = max(widths[i], len(str(cell)))
-    
+
     # Create separator line
-    separator = '+' + '+'.join('-' * (w + 2) for w in widths) + '+'
-    
+    separator = "+" + "+".join("-" * (w + 2) for w in widths) + "+"
+
     # Format header
     result = [separator]
-    header_row = '|' + '|'.join(f' {h:<{w}} ' for w, h in zip(widths, headers)) + '|'
+    header_row = "|" + "|".join(f" {h:<{w}} " for w, h in zip(widths, headers)) + "|"
     result.append(header_row)
     result.append(separator)
-    
+
     # Format data rows
     for row in data:
-        data_row = '|' + '|'.join(f' {str(cell):<{w}} ' for w, cell in zip(widths, row)) + '|'
+        data_row = (
+            "|" + "|".join(f" {str(cell):<{w}} " for w, cell in zip(widths, row)) + "|"
+        )
         result.append(data_row)
-    
+
     result.append(separator)
-    return '\n'.join(result)
+    return "\n".join(result)
+
 
 origin_func = server.PromptServer.send_sync
+
+
 def swizzle_send_sync(self, event, data, sid=None):
     # print(f"swizzle_send_sync, event: {event}, data: {data}")
     global CURRENT_START_EXECUTION_DATA
@@ -1257,9 +1269,11 @@ def swizzle_send_sync(self, event, data, sid=None):
                 get_peak_memory()
             )
 
+
 server.PromptServer.send_sync = swizzle_send_sync
 
 send_json = prompt_server.send_json
+
 
 async def send_json_override(self, event, data, sid=None):
     # logger.info("INTERNAL:", event, data, sid)
@@ -1285,12 +1299,11 @@ async def send_json_override(self, event, data, sid=None):
     if event == "execution_start":
         if prompt_id in prompt_metadata:
             prompt_metadata[prompt_id].start_time = time.perf_counter()
-            
+
         logger.info("Executing prompt: " + prompt_id)
-            
+
         asyncio.create_task(update_run(prompt_id, Status.RUNNING))
-        
-        
+
     if event == "executing" and data and CURRENT_START_EXECUTION_DATA:
         if data.get("node") is None:
             start_perf_time = CURRENT_START_EXECUTION_DATA.get("start_perf_time")
@@ -1298,43 +1311,44 @@ async def send_json_override(self, event, data, sid=None):
             if start_perf_time is not None:
                 execution_time = time.perf_counter() - start_perf_time
                 new_data["execution_time"] = int(execution_time * 1000)
-                
+
             # Replace the print statements with tabulate
             headers = ["Node ID", "Type", "Time (s)", "VRAM (GB)"]
             table_data = []
             node_execution_array = []  # New array to store execution data
-            
+
             for node_id, node_data in NODE_EXECUTION_TIMES.items():
-                vram_gb = node_data['vram_used'] / (1024**3)  # Convert bytes to GB
-                table_data.append([
-                    f"#{node_id}",
-                    node_data['class_type'],
-                    f"{node_data['time']:.2f}",
-                    f"{vram_gb:.2f}"
-                ])
-                
+                vram_gb = node_data["vram_used"] / (1024**3)  # Convert bytes to GB
+                table_data.append(
+                    [
+                        f"#{node_id}",
+                        node_data["class_type"],
+                        f"{node_data['time']:.2f}",
+                        f"{vram_gb:.2f}",
+                    ]
+                )
+
                 # Add to our new array format
-                node_execution_array.append({
-                    "id": node_id,
-                    **node_data,
-                })
-            
+                node_execution_array.append(
+                    {
+                        "id": node_id,
+                        **node_data,
+                    }
+                )
+
             # Add total execution time as the last row
-            table_data.append([
-                "TOTAL",
-                "-",
-                f"{execution_time:.2f}",
-                "-"
-            ])
-            
+            table_data.append(["TOTAL", "-", f"{execution_time:.2f}", "-"])
+
             prompt_id = data.get("prompt_id")
-            asyncio.create_task(update_run_with_output(
-                prompt_id,
-                node_execution_array,  # Send the array instead of the OrderedDict
-            ))
-            
+            asyncio.create_task(
+                update_run_with_output(
+                    prompt_id,
+                    node_execution_array,  # Send the array instead of the OrderedDict
+                )
+            )
+
             print(node_execution_array)
-            
+
             # print("\n=== Node Execution Times ===")
             logger.info("Printing Node Execution Times")
             logger.info(format_table(headers, table_data))
@@ -1350,11 +1364,13 @@ async def send_json_override(self, event, data, sid=None):
                 if prompt_metadata[prompt_id].start_time is not None:
                     elapsed_time = current_time - prompt_metadata[prompt_id].start_time
                     logger.info(f"Elapsed time: {elapsed_time} seconds")
-                    asyncio.create_task(send(
-                        "elapsed_time",
-                        {"prompt_id": prompt_id, "elapsed_time": elapsed_time},
-                        sid=sid,
-                    ))
+                    asyncio.create_task(
+                        send(
+                            "elapsed_time",
+                            {"prompt_id": prompt_id, "elapsed_time": elapsed_time},
+                            sid=sid,
+                        )
+                    )
 
     if event == "executing" and data.get("node") is not None:
         node = data.get("node")
@@ -1378,18 +1394,22 @@ async def send_json_override(self, event, data, sid=None):
             prompt_metadata[prompt_id].last_updated_node = node
             class_type = prompt_metadata[prompt_id].workflow_api[node]["class_type"]
             logger.info(f"At: {round(calculated_progress * 100)}% - {class_type}")
-            asyncio.create_task(send(
-                "live_status",
-                {
-                    "prompt_id": prompt_id,
-                    "current_node": class_type,
-                    "progress": calculated_progress,
-                },
-                sid=sid,
-            ))
-            asyncio.create_task(update_run_live_status(
-                prompt_id, "Executing " + class_type, calculated_progress
-            ))
+            asyncio.create_task(
+                send(
+                    "live_status",
+                    {
+                        "prompt_id": prompt_id,
+                        "current_node": class_type,
+                        "progress": calculated_progress,
+                    },
+                    sid=sid,
+                )
+            )
+            asyncio.create_task(
+                update_run_live_status(
+                    prompt_id, "Executing " + class_type, calculated_progress
+                )
+            )
 
     if event == "execution_cached" and data.get("nodes") is not None:
         if prompt_id in prompt_metadata:
@@ -1905,9 +1925,9 @@ async def upload_in_background(
         # await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
         # await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
         # await handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
-        
+
         file_upload_endpoint = prompt_metadata[prompt_id].file_upload_endpoint
-        
+
         if file_upload_endpoint is not None and file_upload_endpoint != "":
             upload_tasks = [
                 handle_upload(prompt_id, data, "images", "content_type", "image/png"),
@@ -1921,7 +1941,7 @@ async def upload_in_background(
             await asyncio.gather(*upload_tasks)
         else:
             print("No file upload endpoint, skipping file upload")
-            
+
         status_endpoint = prompt_metadata[prompt_id].status_endpoint
         token = prompt_metadata[prompt_id].token
         gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
