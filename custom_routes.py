@@ -1992,6 +1992,16 @@ async def upload_in_background(
                 items = data.get(file_type, [])
 
                 for item in items:
+                    # if is model_file, just add it to the data
+                    if file_type == "model_file":
+                        if isinstance(item, str):
+                            filename = os.path.basename(item)
+                            item = {
+                                "filename": filename,
+                                "subfolder": "",
+                                "type": "output",
+                            }
+
                     # Skip temp files
                     if item.get("type") == "temp":
                         continue
