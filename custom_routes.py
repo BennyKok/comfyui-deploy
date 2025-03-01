@@ -485,7 +485,7 @@ async def comfy_deploy_run(request):
                 },
             ) as response:
                 data = await response.json()
-                print(data)
+                # print(data)
 
     if "cd_token" in data:
         token = data["cd_token"]
