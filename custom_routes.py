@@ -2007,20 +2007,20 @@ async def upload_in_background(
             logger.info("No file upload endpoint, skipping file upload")
 
         # Still update the API with the output data even if we're not uploading files
-        status_endpoint = prompt_metadata[prompt_id].status_endpoint
-        token = prompt_metadata[prompt_id].token
-        gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
+        # status_endpoint = prompt_metadata[prompt_id].status_endpoint
+        # token = prompt_metadata[prompt_id].token
+        # gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
 
-        if have_upload and status_endpoint is not None:
-            body = {
-                "run_id": prompt_id,
-                "output_data": data,
-                "node_meta": node_meta,
-                "gpu_event_id": gpu_event_id,
-            }
-            await async_request_with_retry(
-                "POST", status_endpoint, token=token, json=body
-            )
+        # if have_upload and status_endpoint is not None:
+        #     body = {
+        #         "run_id": prompt_id,
+        #         "output_data": data,
+        #         "node_meta": node_meta,
+        #         "gpu_event_id": gpu_event_id,
+        #     }
+        #     await async_request_with_retry(
+        #         "POST", status_endpoint, token=token, json=body
+        #     )
 
         # If no uploads are needed, update file status immediately
         if (
