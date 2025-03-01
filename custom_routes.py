@@ -30,6 +30,7 @@ from model_management import get_torch_device
 import torch
 import psutil
 from collections import OrderedDict
+import io
 
 # Global session
 client_session = None
@@ -43,7 +44,22 @@ client_session = None
 async def ensure_client_session():
     global client_session
     if client_session is None:
-        client_session = aiohttp.ClientSession()
+        # Configure TCP connection pooling for better performance
+        connector = aiohttp.TCPConnector(
+            limit=30,  # Maximum number of connections in the pool
+            limit_per_host=10,  # Maximum number of connections per host
+            enable_cleanup_closed=True,  # Clean up closed connections
+            force_close=False,  # Keep connections alive when possible
+            ttl_dns_cache=300,  # Cache DNS results for 5 minutes
+        )
+
+        # Create the session with the connector
+        client_session = aiohttp.ClientSession(
+            connector=connector,
+            timeout=ClientTimeout(total=None, connect=5, sock_read=60, sock_connect=5),
+            raise_for_status=False,  # We'll handle status manually
+        )
+        logger.info("Created global client session with optimized connection pooling")
 
 
 async def cleanup():
@@ -1347,10 +1363,10 @@ async def send_json_override(self, event, data, sid=None):
                 )
             )
 
-            print(node_execution_array)
+            # print(node_execution_array)
 
             # print("\n=== Node Execution Times ===")
-            logger.info("Printing Node Execution Times")
+            # logger.info("Printing Node Execution Times")
             logger.info(format_table(headers, table_data))
             # print("========================\n")
 
@@ -1622,40 +1638,75 @@ async def file_sender(file_object, chunk_size):
 chunk_size = 1024 * 1024  # 1MB chunks, adjust as needed
 
 
+class ProgressTracker:
+    def __init__(self, data, callback):
+        self.data = data
+        self.callback = callback
+        self.total = len(data)
+        self.uploaded = 0
+        self._cursor = 0
+
+    async def read(self, n=-1):
+        if n == -1:
+            chunk = self.data[self._cursor :]
+            self._cursor = len(self.data)
+        else:
+            chunk = self.data[self._cursor : self._cursor + n]
+            self._cursor += len(chunk)
+
+        if chunk:
+            self.uploaded += len(chunk)
+            if self.callback:
+                await self.callback(self.uploaded, self.total)
+
+        return chunk
+
+
 async def upload_with_retry(
-    session, url, headers, data, max_retries=3, initial_delay=1
+    session,
+    url,
+    headers,
+    data,
+    max_retries=5,
+    initial_delay=1,
+    timeout=300,
+    progress_callback=None,
 ):
-    start_time = time.time()  # Start timing here
-    for attempt in range(max_retries):
+    """Upload data with retry logic and progress tracking"""
+    retries = 0
+    total_size = len(data)
+
+    while True:
         try:
-            async with session.put(url, headers=headers, data=data) as response:
-                upload_duration = time.time() - start_time
-                logger.info(
-                    f"Upload attempt {attempt + 1} completed in {upload_duration:.2f} seconds"
-                )
-                logger.info(f"Upload response status: {response.status}")
+            async with session.put(
+                url,
+                headers=headers,
+                data=data,
+                timeout=aiohttp.ClientTimeout(total=timeout),
+            ) as response:
+                if progress_callback:
+                    await progress_callback(
+                        total_size, total_size
+                    )  # Mark as complete since we can't track progress
 
-                response.raise_for_status()  # This will raise an exception for 4xx and 5xx status codes
+                if response.status >= 200 and response.status < 300:
+                    return response
+                else:
+                    raise aiohttp.ClientError(
+                        f"Upload failed with status {response.status}"
+                    )
 
-                response_text = await response.text()
-                # logger.info(f"Response body: {response_text[:1000]}...")
-
-                logger.info("Upload successful")
-                return response  # Successful upload, exit the retry loop
-
-        except (ClientError, ClientResponseError) as e:
-            logger.error(f"Upload attempt {attempt + 1} failed: {str(e)}")
-            if attempt < max_retries - 1:  # If it's not the last attempt
-                delay = initial_delay * (2**attempt)  # Exponential backoff
-                logger.info(f"Retrying in {delay} seconds...")
-                await asyncio.sleep(delay)
-            else:
-                logger.error("Max retries reached. Upload failed.")
-                raise  # Re-raise the last exception if all retries are exhausted
         except Exception as e:
-            logger.error(f"Unexpected error during upload: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise  # Re-raise unexpected exceptions immediately
+            retries += 1
+            if retries > max_retries:
+                raise
+
+            # Calculate delay with exponential backoff
+            delay = initial_delay * (2 ** (retries - 1))
+            logger.warning(
+                f"Upload attempt {retries} failed: {str(e)}. Retrying in {delay}s..."
+            )
+            await asyncio.sleep(delay)
 
 
 async def upload_file(
@@ -1834,7 +1885,7 @@ async def update_file_status(
         else:
             prompt_metadata[prompt_id].uploading_nodes.discard(node_id)
 
-    logger.info(f"Remaining uploads: {prompt_metadata[prompt_id].uploading_nodes}")
+    # logger.info(f"Remaining uploads: {prompt_metadata[prompt_id].uploading_nodes}")
     # Update the remote status
 
     if have_error:
@@ -1921,42 +1972,58 @@ async def upload_in_background(
     prompt_id: str, data, node_id=None, have_upload=True, node_meta=None
 ):
     try:
-        # await handle_upload(prompt_id, data, 'images', "content_type", "image/png")
-        # await handle_upload(prompt_id, data, 'files', "content_type", "image/png")
-        # await handle_upload(prompt_id, data, 'gifs', "format", "image/gif")
-        # await handle_upload(prompt_id, data, 'mesh', "format", "application/octet-stream")
-
         file_upload_endpoint = prompt_metadata[prompt_id].file_upload_endpoint
 
         if file_upload_endpoint is not None and file_upload_endpoint != "":
-            upload_tasks = [
-                handle_upload(prompt_id, data, "images", "content_type", "image/png"),
-                handle_upload(prompt_id, data, "files", "content_type", "image/png"),
-                handle_upload(prompt_id, data, "gifs", "format", "image/gif"),
-                handle_upload(
-                    prompt_id, data, "mesh", "format", "application/octet-stream"
-                ),
-            ]
+            # Flag to track if we need to update status after uploads
+            has_uploads = False
 
-            await asyncio.gather(*upload_tasks)
+            # Flatten all file types into a single list of uploads
+            for file_type, content_type_key, default_content_type in [
+                ("images", "content_type", "image/png"),
+                ("files", "content_type", "image/png"),
+                ("gifs", "format", "image/gif"),
+                ("mesh", "format", "application/octet-stream"),
+            ]:
+                items = data.get(file_type, [])
+
+                for item in items:
+                    # Skip temp files
+                    if item.get("type") == "temp":
+                        continue
+
+                    # Add to the upload queue instead of uploading immediately
+                    await upload_queue.add_upload(prompt_id, item, node_id)
+                    has_uploads = True
+
+            # Mark the prompt as needing uploads but still report data immediately
+            if has_uploads:
+                await update_file_status(prompt_id, data, True, node_id=node_id)
         else:
-            print("No file upload endpoint, skipping file upload")
+            logger.info("No file upload endpoint, skipping file upload")
 
+        # Still update the API with the output data even if we're not uploading files
         status_endpoint = prompt_metadata[prompt_id].status_endpoint
         token = prompt_metadata[prompt_id].token
         gpu_event_id = prompt_metadata[prompt_id].gpu_event_id or None
-        if have_upload:
-            if status_endpoint is not None:
-                body = {
-                    "run_id": prompt_id,
-                    "output_data": data,
-                    "node_meta": node_meta,
-                    "gpu_event_id": gpu_event_id,
-                }
-                # pprint(body)
-                await async_request_with_retry(
-                    "POST", status_endpoint, token=token, json=body
-                )
+
+        if have_upload and status_endpoint is not None:
+            body = {
+                "run_id": prompt_id,
+                "output_data": data,
+                "node_meta": node_meta,
+                "gpu_event_id": gpu_event_id,
+            }
+            await async_request_with_retry(
+                "POST", status_endpoint, token=token, json=body
+            )
+
+        # If no uploads are needed, update file status immediately
+        if (
+            not have_upload
+            or file_upload_endpoint is None
+            or file_upload_endpoint == ""
+        ):
             await update_file_status(prompt_id, data, False, node_id=node_id)
     except Exception as e:
         await handle_error(prompt_id, data, e)
@@ -2033,7 +2100,7 @@ async def watch_file_changes(file_path, callback):
     global last_read_line
     last_modified_time = os.stat(file_path).st_mtime
     while True:
-        time.sleep(1)  # sleep for a while to reduce CPU usage
+        await asyncio.sleep(1)  # Use asyncio.sleep instead of time.sleep
         modified_time = os.stat(file_path).st_mtime
         if modified_time != last_modified_time:
             last_modified_time = modified_time
@@ -2073,9 +2140,596 @@ if cd_enable_log:
     run_in_new_thread(watch_file_changes(log_file_path, send_logs_to_websocket))
 
 
+# Initialize the upload queue when the module loads
+async def initialize_upload_queue(app=None):
+    """Initialize the upload queue and start the worker process"""
+    logger.info("Initializing upload queue system...")
+    await upload_queue.ensure_worker_running()
+    logger.info(
+        "Upload queue system initialized with max_concurrent=%d",
+        upload_queue.max_concurrent,
+    )
+
+    # Start the queue monitoring task in the same event loop
+    asyncio.create_task(monitor_upload_queue())
+
+
+# Get the server's event loop and initialize there
+server.PromptServer.instance.app.on_startup.append(initialize_upload_queue)
+
+
+async def monitor_upload_queue():
+    """Monitor the upload queue and log statistics periodically"""
+    while True:
+        try:
+            queue_size = upload_queue.queue.qsize()
+            pending_uploads_count = sum(
+                len(uploads) for uploads in upload_queue.pending_uploads.values()
+            )
+            pending_prompts = len(upload_queue.pending_uploads)
+
+            if queue_size > 0 or pending_uploads_count > 0:
+                logger.info(
+                    f"Upload queue status: {queue_size} queued, {pending_uploads_count} pending "
+                    f"uploads across {pending_prompts} prompts"
+                )
+
+                # If queue is getting big, log a warning
+                if queue_size > 20:
+                    logger.warning(
+                        f"Upload queue is large ({queue_size} items). Check for bottlenecks."
+                    )
+
+                # More detailed logging for large queue
+                if queue_size > 50:
+                    for prompt_id, uploads in upload_queue.pending_uploads.items():
+                        logger.warning(
+                            f"Prompt {prompt_id[:8]}... has {len(uploads)} pending uploads"
+                        )
+        except Exception as e:
+            logger.error(f"Error in upload queue monitor: {str(e)}")
+
+        # Check every 30 seconds
+        await asyncio.sleep(30)
+
+
 # use after calling GET /object_info (it populates the `filename_list_cache` variable)
 @server.PromptServer.instance.routes.get("/comfyui-deploy/filename_list_cache")
 async def get_filename_list_cache(_):
     from folder_paths import filename_list_cache
 
     return web.json_response({"filename_list": filename_list_cache})
+
+
+@server.PromptServer.instance.routes.get("/comfyui-deploy/upload-queue-status")
+async def get_upload_queue_status(request):
+    """Get the current status of the upload queue"""
+    prompt_id = request.rel_url.query.get("prompt_id", None)
+
+    queue_size = upload_queue.queue.qsize()
+    pending_uploads_count = sum(
+        len(uploads) for uploads in upload_queue.pending_uploads.values()
+    )
+
+    status_data = {
+        "queue_size": queue_size,
+        "pending_uploads": pending_uploads_count,
+        "max_concurrent": upload_queue.max_concurrent,
+    }
+
+    # If prompt_id is provided, add specific data for that prompt
+    if prompt_id and prompt_id in upload_queue.pending_uploads:
+        prompt_pending = len(upload_queue.pending_uploads[prompt_id])
+        status_data["prompt_pending"] = prompt_pending
+        status_data["prompt_id"] = prompt_id
+
+    return web.json_response(status_data)
+
+
+@server.PromptServer.instance.routes.post("/comfyui-deploy/cancel-uploads")
+async def cancel_prompt_uploads(request):
+    """Cancel all pending uploads for a specific prompt"""
+    data = await request.json()
+    prompt_id = data.get("prompt_id")
+
+    if not prompt_id:
+        return web.json_response({"error": "prompt_id is required"}, status=400)
+
+    success = await upload_queue.cancel_uploads_for_prompt(prompt_id)
+
+    if success:
+        # Also update the prompt status
+        if prompt_id in prompt_metadata:
+            # Mark as SUCCESS since we're not waiting for uploads anymore
+            await update_run(prompt_id, Status.SUCCESS)
+            return web.json_response(
+                {
+                    "success": True,
+                    "message": f"Cancelled pending uploads for prompt {prompt_id}",
+                }
+            )
+
+    return web.json_response(
+        {
+            "success": False,
+            "message": f"No pending uploads found for prompt {prompt_id}",
+        },
+        status=404,
+    )
+
+
+class UploadQueue:
+    def __init__(self, max_concurrent=3):
+        self.queue = asyncio.Queue()
+        self.max_concurrent = max_concurrent
+        self.active_uploads = 0
+        self.worker_task = None
+        self.lock = asyncio.Lock()
+        self.pending_uploads = {}  # prompt_id -> set of pending upload tasks
+        self.node_uploads = {}  # prompt_id -> {node_id -> set of pending upload tasks}
+        self.node_output_data = {}  # prompt_id -> {node_id -> output data}
+        self.upload_stats = {}  # prompt_id -> {filename: {stats}}
+        self.upload_timeline = {}  # prompt_id -> list of upload events with timing
+        self.last_status_update = 0
+        self.status_update_interval = 5
+        self.upload_lock = asyncio.Lock()  # Add lock for upload coordination
+        self.last_upload_time = 0  # Track the last upload start time
+        self.STAGGER_DELAY = 0.5  # Stagger delay in seconds
+
+    def _log_upload_stats(self, prompt_id):
+        """Log upload statistics in a formatted table with waterfall timing"""
+        if prompt_id not in self.upload_stats or not self.upload_stats[prompt_id]:
+            return
+
+        stats = self.upload_stats[prompt_id]
+        timeline = self.upload_timeline[prompt_id]
+
+        # Sort timeline by start time
+        timeline.sort(key=lambda x: x["start_time"])
+        first_start = min(event["start_time"] for event in timeline)
+
+        headers = [
+            "Node",
+            "File",
+            "Size",
+            "Start Time",
+            "Duration",
+            "Speed",
+            "Timeline",
+        ]
+        data = []
+
+        # Calculate timeline scale (80 chars wide)
+        total_duration = max(event["end_time"] for event in timeline) - first_start
+        scale = 80.0 / total_duration if total_duration > 0 else 1.0
+
+        for event in timeline:
+            filename = event["filename"]
+            file_stats = stats[filename]
+
+            # Calculate timeline bar position and width
+            start_offset = event["start_time"] - first_start
+            duration = event["end_time"] - event["start_time"]
+            bar_start = int(start_offset * scale)
+            bar_width = max(1, int(duration * scale))
+
+            # Create timeline bar
+            timeline_bar = " " * bar_start + "=" * bar_width
+
+            # Format size and speed
+            size_mb = file_stats["size"] / (1024 * 1024)
+            speed_mb = file_stats["size"] / (file_stats["upload_time"] * 1024 * 1024)
+
+            # Format relative time
+            start_time = f"+{start_offset:.2f}s"
+
+            data.append(
+                [
+                    event["node_name"] or "-",
+                    filename,
+                    f"{size_mb:.2f}MB",
+                    start_time,
+                    f"{duration:.2f}s",
+                    f"{speed_mb:.2f}MB/s",
+                    timeline_bar,
+                ]
+            )
+
+        logger.info("\nUpload Performance Summary:")
+        logger.info(format_table(headers, data))
+
+        # Calculate and show totals
+        total_size = sum(s["size"] for s in stats.values())
+        total_time = total_duration
+        avg_speed = total_size / (total_time * 1024 * 1024) if total_time > 0 else 0
+
+        logger.info(f"\nTotal Stats:")
+        logger.info(f"Total Size: {total_size / (1024 * 1024):.2f}MB")
+        logger.info(f"Total Time: {total_time:.2f}s")
+        logger.info(f"Average Speed: {avg_speed:.2f}MB/s")
+
+    async def _process_upload(self, prompt_id, file_info, node_id):
+        """Process a single file upload"""
+        if prompt_id not in prompt_metadata:
+            logger.warning(f"Cannot upload for unknown prompt ID: {prompt_id}")
+            return
+
+        file_upload_endpoint = prompt_metadata[prompt_id].file_upload_endpoint
+        token = prompt_metadata[prompt_id].token
+
+        if not file_upload_endpoint:
+            logger.warning(f"No upload endpoint for prompt ID: {prompt_id}")
+            return
+
+        filename = file_info.get("filename")
+        subfolder = file_info.get("subfolder")
+        file_type = file_info.get("type", "output")
+
+        # Initialize tracking for this prompt if needed
+        if prompt_id not in self.upload_stats:
+            self.upload_stats[prompt_id] = {}
+            self.upload_timeline[prompt_id] = []
+
+        # Determine content type based on file extension
+        file_extension = os.path.splitext(filename)[1]
+        if file_extension in [".jpg", ".jpeg"]:
+            content_type = "image/jpeg"
+        elif file_extension == ".png":
+            content_type = "image/png"
+        elif file_extension == ".webp":
+            content_type = "image/webp"
+        elif file_extension == ".gif":
+            content_type = "image/gif"
+        else:
+            content_type = file_info.get("content_type", "application/octet-stream")
+
+        # Get node name from metadata if available
+        node_name = None
+        if node_id and prompt_id in prompt_metadata:
+            workflow_api = prompt_metadata[prompt_id].workflow_api
+            node = workflow_api.get(node_id)
+            if node:
+                node_name = node.get("class_type", "")
+
+        # Get the full file path and validate
+        filename, output_dir = folder_paths.annotated_filepath(filename)
+        if filename[0] == "/" or ".." in filename:
+            logger.warning(f"Insecure filename path: {filename}")
+            return
+
+        if output_dir is None:
+            output_dir = folder_paths.get_directory_by_type(file_type)
+
+        if output_dir is None:
+            logger.warning(f"{filename} Upload failed: output_dir is None")
+            return
+
+        if subfolder is not None:
+            full_output_dir = os.path.join(output_dir, subfolder)
+            if (
+                os.path.commonpath((os.path.abspath(full_output_dir), output_dir))
+                != output_dir
+            ):
+                logger.warning(f"Insecure subfolder path: {subfolder}")
+                return
+            output_dir = full_output_dir
+
+        filename_base = os.path.basename(filename)
+        file_path = os.path.join(output_dir, filename_base)
+
+        # Record start time
+        start_time = time.perf_counter()
+
+        try:
+            # Get the signed upload URL
+            filename_quoted = quote(filename_base)
+            prompt_id_quoted = quote(prompt_id)
+            content_type_quoted = quote(content_type)
+            target_url = f"{file_upload_endpoint}?file_name={filename_quoted}&run_id={prompt_id_quoted}&type={content_type_quoted}&version=v2"
+
+            result = await async_request_with_retry(
+                "GET", target_url, disable_timeout=True, token=token
+            )
+            signed_url_data = await result.json()
+
+            # Read and upload the file
+            async with aiofiles.open(file_path, "rb") as f:
+                data = await f.read()
+                size = len(data)
+
+                headers = {
+                    "Content-Type": content_type,
+                    "Content-Length": str(size),
+                }
+
+                if signed_url_data.get("include_acl") is True:
+                    headers["x-amz-acl"] = "public-read"
+
+                async with aiohttp.ClientSession() as session:
+                    response = await upload_with_retry(
+                        session,
+                        signed_url_data.get("url"),
+                        headers,
+                        data,
+                    )
+
+                    # Record upload success and timing
+                    end_time = time.perf_counter()
+                    upload_time = end_time - start_time
+
+                    # Store upload statistics
+                    self.upload_stats[prompt_id][filename_base] = {
+                        "size": size,
+                        "type": content_type,
+                        "upload_time": upload_time,
+                    }
+
+                    # Store timeline event
+                    self.upload_timeline[prompt_id].append(
+                        {
+                            "filename": filename_base,
+                            "node_id": node_id,
+                            "node_name": node_name,
+                            "start_time": start_time
+                            - prompt_metadata[prompt_id].start_time,
+                            "end_time": end_time
+                            - prompt_metadata[prompt_id].start_time,
+                        }
+                    )
+
+                    # Update the file_info with download URL and timing
+                    file_info["url"] = signed_url_data.get("download_url")
+                    file_info["upload_duration"] = upload_time
+                    if signed_url_data.get("is_public") is not None:
+                        file_info["is_public"] = signed_url_data.get("is_public")
+
+                    # Update node output data if this upload is associated with a node
+                    if (
+                        node_id
+                        and prompt_id in self.node_output_data
+                        and node_id in self.node_output_data[prompt_id]
+                    ):
+                        node_data = self.node_output_data[prompt_id][node_id]
+                        file_type_key = (
+                            "images" if content_type.startswith("image/") else "files"
+                        )
+                        if file_type_key not in node_data["data"]:
+                            node_data["data"][file_type_key] = []
+                        node_data["data"][file_type_key].append(file_info)
+
+                    # Send success status to clients
+                    await send(
+                        "upload_success",
+                        {
+                            "prompt_id": prompt_id,
+                            "filename": filename_base,
+                            "url": file_info["url"],
+                            "node_id": node_id,
+                        },
+                    )
+
+                    # If this was the last file for this prompt, show the stats summary
+                    if (
+                        prompt_id in self.pending_uploads
+                        and len(self.pending_uploads[prompt_id]) == 1
+                    ):
+                        self._log_upload_stats(prompt_id)
+                        # Clean up stats
+                        del self.upload_stats[prompt_id]
+                        del self.upload_timeline[prompt_id]
+
+        except Exception as e:
+            logger.error(f"\nUpload failed for {filename_base}: {str(e)}")
+            await send(
+                "upload_failed",
+                {
+                    "prompt_id": prompt_id,
+                    "filename": filename_base,
+                    "error": str(e),
+                    "node_id": node_id,
+                },
+            )
+            raise
+
+    async def add_upload(self, prompt_id, file_info, node_id=None):
+        """Add a file to the upload queue"""
+        # Initialize the pending uploads set for this prompt if needed
+        if prompt_id not in self.pending_uploads:
+            self.pending_uploads[prompt_id] = set()
+            self.node_uploads[prompt_id] = {}
+            self.node_output_data[prompt_id] = {}
+
+        # Initialize node tracking if needed
+        if node_id and node_id not in self.node_uploads[prompt_id]:
+            self.node_uploads[prompt_id][node_id] = set()
+            self.node_output_data[prompt_id][node_id] = {"data": {}}
+
+        # Add a unique identifier for this upload
+        upload_id = str(uuid.uuid4())
+        self.pending_uploads[prompt_id].add(upload_id)
+
+        # Track upload for specific node if provided
+        if node_id:
+            self.node_uploads[prompt_id][node_id].add(upload_id)
+
+        # Add to the queue
+        await self.queue.put(
+            {
+                "prompt_id": prompt_id,
+                "file_info": file_info,
+                "node_id": node_id,
+                "upload_id": upload_id,
+            }
+        )
+
+        # Send status update to clients
+        await self.update_queue_status(prompt_id)
+
+        # Ensure worker is running
+        await self.ensure_worker_running()
+
+        return upload_id
+
+    async def ensure_worker_running(self):
+        """Ensure the worker task is running"""
+        async with self.lock:
+            if self.worker_task is None or self.worker_task.done():
+                self.worker_task = asyncio.create_task(self.worker())
+
+    async def update_queue_status(self, prompt_id=None):
+        """Send queue status updates to clients"""
+        # Throttle updates to avoid flooding clients
+        current_time = time.time()
+        if current_time - self.last_status_update < self.status_update_interval:
+            return
+
+        self.last_status_update = current_time
+
+        queue_size = self.queue.qsize()
+        pending_uploads_count = sum(
+            len(uploads) for uploads in self.pending_uploads.values()
+        )
+
+        status_data = {
+            "queue_size": queue_size,
+            "pending_uploads": pending_uploads_count,
+            "max_concurrent": self.max_concurrent,
+        }
+
+        # If prompt_id is provided, add specific data for that prompt
+        if prompt_id and prompt_id in self.pending_uploads:
+            prompt_pending = len(self.pending_uploads[prompt_id])
+            status_data["prompt_pending"] = prompt_pending
+            status_data["prompt_id"] = prompt_id
+
+            # Send targeted status update to relevant clients
+            await send("upload_queue_status", status_data, prompt_id)
+        else:
+            # Send global update to all clients
+            await send("upload_queue_status", status_data)
+
+    async def worker(self):
+        """Worker process that manages the upload queue"""
+        # Start multiple worker tasks within concurrency limits
+        workers = [
+            asyncio.create_task(self.upload_worker())
+            for _ in range(self.max_concurrent)
+        ]
+
+        # Wait for all workers to complete (should only happen on shutdown)
+        await asyncio.gather(*workers)
+
+    async def upload_worker(self):
+        """Individual worker that processes uploads from the queue"""
+        loop = asyncio.get_event_loop()
+
+        while True:
+            try:
+                # Get next upload task first
+                upload_task = await self.queue.get()
+
+                prompt_id = upload_task["prompt_id"]
+                file_info = upload_task["file_info"]
+                node_id = upload_task["node_id"]
+                upload_id = upload_task["upload_id"]
+
+                try:
+                    # Coordinate the actual start of the upload
+                    async with self.upload_lock:
+                        current_time = time.time()
+                        time_since_last = current_time - self.last_upload_time
+                        if time_since_last < self.STAGGER_DELAY:
+                            await asyncio.sleep(self.STAGGER_DELAY - time_since_last)
+                        self.last_upload_time = time.time()
+                        # Start the actual upload while holding the lock
+                    # to ensure true staggering
+                    await self._process_upload(prompt_id, file_info, node_id)
+                except Exception as e:
+                    logger.error(f"Upload failed: {str(e)}")
+                    logger.error(traceback.format_exc())
+                finally:
+                    # Remove this upload from tracking
+                    if prompt_id in self.pending_uploads:
+                        self.pending_uploads[prompt_id].discard(upload_id)
+                        # Remove from node tracking if applicable
+                        if (
+                            node_id
+                            and prompt_id in self.node_uploads
+                            and node_id in self.node_uploads[prompt_id]
+                        ):
+                            self.node_uploads[prompt_id][node_id].discard(upload_id)
+
+                            # If this was the last upload for this node, clean up node data
+                            if not self.node_uploads[prompt_id][node_id]:
+                                del self.node_uploads[prompt_id][node_id]
+                                if self.node_output_data[prompt_id][node_id]["data"]:
+                                    # Send final node data to API before cleanup
+                                    if prompt_metadata[prompt_id].status_endpoint:
+                                        body = {
+                                            "run_id": prompt_id,
+                                            "output_data": self.node_output_data[
+                                                prompt_id
+                                            ][node_id]["data"],
+                                            "node_meta": {"node_id": node_id},
+                                        }
+                                        try:
+                                            await async_request_with_retry(
+                                                "POST",
+                                                prompt_metadata[
+                                                    prompt_id
+                                                ].status_endpoint,
+                                                token=prompt_metadata[prompt_id].token,
+                                                json=body,
+                                            )
+                                        except Exception as e:
+                                            logger.error(
+                                                f"Failed to send final node data: {str(e)}"
+                                            )
+                                del self.node_output_data[prompt_id][node_id]
+
+                        # Send status update
+                        await self.update_queue_status(prompt_id)
+
+                        # If no more pending uploads for this prompt and it's done, update status
+                        if not self.pending_uploads[prompt_id] and is_prompt_done(
+                            prompt_id
+                        ):
+                            # Clean up all data for this prompt
+                            if prompt_id in self.node_uploads:
+                                del self.node_uploads[prompt_id]
+                            if prompt_id in self.node_output_data:
+                                del self.node_output_data[prompt_id]
+                            del self.pending_uploads[prompt_id]
+
+                            # Use the same event loop for these tasks
+                            loop.create_task(update_run(prompt_id, Status.SUCCESS))
+                            loop.create_task(send("success", {"prompt_id": prompt_id}))
+
+                    # Mark task as done
+                    self.queue.task_done()
+
+            except Exception as e:
+                logger.error(f"Error in upload worker: {str(e)}")
+                logger.error(traceback.format_exc())
+                # Brief pause to prevent tight loop in case of persistent errors
+                await asyncio.sleep(0.5)
+
+    async def cancel_uploads_for_prompt(self, prompt_id):
+        """Cancel all pending uploads for a prompt"""
+        if prompt_id in self.pending_uploads:
+            # Remove all pending uploads for this prompt
+            self.pending_uploads[prompt_id].clear()
+            self.node_uploads[prompt_id].clear()
+            self.node_output_data[prompt_id].clear()
+
+            # Clean up
+            del self.pending_uploads[prompt_id]
+            del self.node_uploads[prompt_id]
+            del self.node_output_data[prompt_id]
+
+            # Send status update
+            await self.update_queue_status(prompt_id)
+
+
+# Create a global instance of the upload queue
+upload_queue = UploadQueue(max_concurrent=3)  # Limit to 3 concurrent uploads
