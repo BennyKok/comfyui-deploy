@@ -1370,6 +1370,10 @@ async def send_json_override(self, event, data, sid=None):
             logger.info(format_table(headers, table_data))
             # print("========================\n")
 
+            timeline = format_execution_timeline(NODE_EXECUTION_TIMES)
+            logger.info(f"\nNode Execution Timeline:\n{timeline}")
+            # Clear the execution times for the next run
+
     # the last executing event is none, then the workflow is finished
     if event == "executing" and data.get("node") is None:
         mark_prompt_done(prompt_id=prompt_id)
@@ -2733,3 +2737,48 @@ class UploadQueue:
 
 # Create a global instance of the upload queue
 upload_queue = UploadQueue(max_concurrent=3)  # Limit to 3 concurrent uploads
+
+
+def format_execution_timeline(execution_times):
+    """Format node execution times into a table with timeline visualization"""
+    if not execution_times:
+        return "No execution data available"
+
+    # Calculate total time and start times for each node
+    sorted_nodes = sorted(execution_times.items(), key=lambda x: x[1]["time"])
+    total_duration = sum(node["time"] for _, node in execution_times.items())
+
+    # Prepare table data
+    headers = ["Node", "Type", "Duration", "VRAM", "Timeline"]
+    rows = []
+    current_time = 0
+
+    # Calculate timeline width (e.g., 80 chars)
+    TIMELINE_WIDTH = 80
+
+    for node_id, data in sorted_nodes:
+        # Calculate the start position and width for the timeline
+        duration = data["time"]
+        vram_mb = data["vram_used"] / (1024 * 1024)  # Convert to MB
+        start_pos = int((current_time / total_duration) * TIMELINE_WIDTH)
+        width = max(1, int((duration / total_duration) * TIMELINE_WIDTH))
+
+        # Create the timeline visualization
+        timeline = (
+            " " * start_pos + "=" * width + " " * (TIMELINE_WIDTH - start_pos - width)
+        )
+
+        # Add the row
+        rows.append(
+            [
+                f"#{node_id}",
+                data["class_type"],
+                f"{duration:.2f}s",
+                f"{vram_mb:.1f}MB",
+                timeline,
+            ]
+        )
+
+        current_time += duration
+
+    return format_table(headers, rows)
