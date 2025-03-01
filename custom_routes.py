@@ -2278,7 +2278,7 @@ class UploadQueue:
         self.status_update_interval = 5
         self.upload_lock = asyncio.Lock()  # Add lock for upload coordination
         self.last_upload_time = 0  # Track the last upload start time
-        self.STAGGER_DELAY = 0.5  # Stagger delay in seconds
+        self.STAGGER_DELAY = 0.05  # Stagger delay in seconds
 
     def _log_upload_stats(self, prompt_id):
         """Log upload statistics in a formatted table with waterfall timing"""
