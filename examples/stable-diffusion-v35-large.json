@@ -1,0 +1,409 @@
+{
+  "extra": {
+    "ds": {
+      "scale": 0.620921323059155,
+      "offset": [1535.1422819333457, 285.0502099350181]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.12",
+      "comfyui-deploy": "171a227856bd5f31e97828d89f83f3741004d05e"
+    }
+  },
+  "links": [
+    [7, 3, 0, 8, 0, "LATENT"],
+    [21, 16, 0, 3, 1, "CONDITIONING"],
+    [51, 8, 0, 9, 0, "IMAGE"],
+    [53, 4, 2, 8, 1, "VAE"],
+    [80, 40, 0, 3, 2, "CONDITIONING"],
+    [99, 4, 0, 3, 0, "MODEL"],
+    [100, 53, 0, 3, 3, "LATENT"],
+    [103, 43, 0, 16, 0, "CLIP"],
+    [104, 43, 0, 40, 0, "CLIP"],
+    [105, 54, 0, 16, 1, "STRING"],
+    [106, 55, 0, 40, 1, "STRING"],
+    [107, 56, 0, 53, 0, "INT"],
+    [108, 57, 0, 53, 1, "INT"]
+  ],
+  "nodes": [
+    {
+      "id": 8,
+      "pos": [1200, 96],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 14,
+      "inputs": [
+        { "link": 7, "name": "samples", "type": "LATENT" },
+        { "link": 53, "name": "vae", "type": "VAE", "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [51], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "pos": [1440, 96],
+      "mode": 0,
+      "size": [952.5112915039062, 1007.9328002929688],
+      "type": "SaveImage",
+      "flags": {},
+      "order": 15,
+      "inputs": [
+        { "link": 51, "name": "images", "type": "IMAGE", "slot_index": 0 }
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI"]
+    },
+    {
+      "id": 53,
+      "pos": [480, 576],
+      "mode": 0,
+      "size": [315, 106],
+      "type": "EmptySD3LatentImage",
+      "flags": {},
+      "order": 10,
+      "inputs": [
+        {
+          "link": 107,
+          "name": "width",
+          "type": "INT",
+          "widget": { "name": "width" }
+        },
+        {
+          "link": 108,
+          "name": "height",
+          "type": "INT",
+          "widget": { "name": "height" }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [100],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "EmptySD3LatentImage" },
+      "widgets_values": [1024, 1024, 1]
+    },
+    {
+      "id": 50,
+      "pos": [-384, 144],
+      "mode": 0,
+      "size": [223.34756469726562, 254.37765502929688],
+      "type": "Note",
+      "color": "#432",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "text": "" },
+      "widgets_values": [
+        "SD3 supports different text encoder configurations, you can see how to load them here.\n\n\nMake sure to put these files:\nclip_g.safetensors\nclip_l.safetensors\nt5xxl_fp16.safetensors\n\n\nIn the ComfyUI/models/clip directory"
+      ]
+    },
+    {
+      "id": 41,
+      "pos": [-96, 0],
+      "mode": 0,
+      "size": [315, 82],
+      "type": "CLIPLoader",
+      "flags": {},
+      "order": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPLoader" },
+      "widgets_values": ["t5xxl_fp16.safetensors", "sd3", "default"]
+    },
+    {
+      "id": 4,
+      "pos": [-96, 480],
+      "mode": 0,
+      "size": [384.75592041015625, 98],
+      "type": "CheckpointLoaderSimple",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [99], "slot_index": 0 },
+        { "name": "CLIP", "type": "CLIP", "links": [], "slot_index": 1 },
+        { "name": "VAE", "type": "VAE", "links": [53], "slot_index": 2 }
+      ],
+      "properties": { "Node name for S&R": "CheckpointLoaderSimple" },
+      "widgets_values": ["sd3.5_large.safetensors"]
+    },
+    {
+      "id": 3,
+      "pos": [864, 96],
+      "mode": 0,
+      "size": [315, 474],
+      "type": "KSampler",
+      "flags": {},
+      "order": 13,
+      "inputs": [
+        { "link": 99, "name": "model", "type": "MODEL", "slot_index": 0 },
+        { "link": 21, "name": "positive", "type": "CONDITIONING" },
+        { "link": 80, "name": "negative", "type": "CONDITIONING" },
+        { "link": 100, "name": "latent_image", "type": "LATENT" }
+      ],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [7], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [
+        797639488625463,
+        "randomize",
+        20,
+        5.45,
+        "euler",
+        "sgm_uniform",
+        1
+      ]
+    },
+    {
+      "id": 51,
+      "pos": [-96, 624],
+      "mode": 0,
+      "size": [384, 192],
+      "type": "Note",
+      "color": "#432",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "text": "" },
+      "widgets_values": [
+        "sd3.5_large.safetensors and sd3.5_medium.safetensors are files that do not contain any CLIP/text encoder weights so you need to load them separately.\n\nThey go in the ComfyUI/models/checkpoints directory."
+      ]
+    },
+    {
+      "id": 43,
+      "pos": [-96, 288],
+      "mode": 0,
+      "size": [315, 106],
+      "type": "TripleCLIPLoader",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [103, 104],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "TripleCLIPLoader" },
+      "widgets_values": [
+        "clip_l.safetensors",
+        "clip_g.safetensors",
+        "t5xxl_fp16.safetensors"
+      ]
+    },
+    {
+      "id": 42,
+      "pos": [-96, 144],
+      "mode": 0,
+      "size": [315, 106],
+      "type": "DualCLIPLoader",
+      "flags": {},
+      "order": 5,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "DualCLIPLoader" },
+      "widgets_values": [
+        "clip_l.safetensors",
+        "clip_g.safetensors",
+        "sd3",
+        "default"
+      ]
+    },
+    {
+      "id": 40,
+      "pos": [399.0046081542969, 337.009765625],
+      "mode": 0,
+      "size": [397.45977783203125, 151.2898406982422],
+      "type": "CLIPTextEncode",
+      "color": "#322",
+      "flags": {},
+      "order": 11,
+      "title": "Negative Prompt",
+      "inputs": [
+        { "link": 104, "name": "clip", "type": "CLIP" },
+        {
+          "link": 106,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#533",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [80],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [""]
+    },
+    {
+      "id": 16,
+      "pos": [398.5880432128906, 108.27188110351562],
+      "mode": 0,
+      "size": [397.21484375, 158.671875],
+      "type": "CLIPTextEncode",
+      "color": "#232",
+      "flags": {},
+      "order": 12,
+      "title": "Positive Prompt",
+      "inputs": [
+        { "link": 103, "name": "clip", "type": "CLIP" },
+        {
+          "link": 105,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#353",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [21],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "a bottle with a rainbow galaxy inside it on top of a wooden table on a snowy mountain top with the ocean and clouds in the background with a shot glass beside containing darkness beside a snow sculpture in the shape of a fox"
+      ]
+    },
+    {
+      "id": 57,
+      "pos": [-1015.1683349609375, 980.396240234375],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 6,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [108], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["height", 1024, "Height", "The height of the image. "]
+    },
+    {
+      "id": 56,
+      "pos": [-1014.532470703125, 732.8568725585938],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 7,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [107], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["width", 1024, "Width", "The width of the image. "]
+    },
+    {
+      "id": 55,
+      "pos": [-1010.8035278320312, 487.404052734375],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 8,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [106] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": ["negative_prompt", "", "Negative Prompt", ""]
+    },
+    {
+      "id": 54,
+      "pos": [-1059.1072998046875, 127.12823486328125],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 9,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [105] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "prompt",
+        "a bottle with a rainbow galaxy inside it on top of a wooden table on a snowy mountain top with the ocean and clouds in the background with a shot glass beside containing darkness beside a snow sculpture in the shape of a fox",
+        "Prompt",
+        "The prompt to generate an image from."
+      ]
+    }
+  ],
+  "config": {},
+  "groups": [
+    {
+      "id": 1,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Different Text Encoder Configurations",
+      "bounding": [-144, -96, 480, 528],
+      "font_size": 24
+    },
+    {
+      "id": 2,
+      "color": "#b06634",
+      "flags": {},
+      "title": "Additional",
+      "bounding": [
+        -1194.5233154296875, 388.3871154785156, 722.5393676757812,
+        824.6746215820312
+      ],
+      "font_size": 24
+    },
+    {
+      "id": 3,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Input",
+      "bounding": [
+        -1148.487060546875, 30.449382781982422, 552.3358764648438,
+        329.3829040527344
+      ],
+      "font_size": 24
+    }
+  ],
+  "version": 0.4,
+  "last_link_id": 108,
+  "last_node_id": 57
+}

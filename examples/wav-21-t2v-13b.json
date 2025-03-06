@@ -1,0 +1,359 @@
+{
+  "extra": {
+    "ds": {
+      "scale": 0.8390545288824369,
+      "offset": [814.3725295729478, -347.90757575249455]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.18",
+      "comfyui-deploy": "b3df94d1affcf7ce05ee7eeda99989194bcd9159"
+    }
+  },
+  "links": [
+    [35, 3, 0, 8, 0, "LATENT"],
+    [46, 6, 0, 3, 1, "CONDITIONING"],
+    [52, 7, 0, 3, 2, "CONDITIONING"],
+    [56, 8, 0, 28, 0, "IMAGE"],
+    [74, 38, 0, 6, 0, "CLIP"],
+    [75, 38, 0, 7, 0, "CLIP"],
+    [76, 39, 0, 8, 1, "VAE"],
+    [91, 40, 0, 3, 3, "LATENT"],
+    [93, 8, 0, 47, 0, "IMAGE"],
+    [94, 37, 0, 48, 0, "MODEL"],
+    [95, 48, 0, 3, 0, "MODEL"],
+    [96, 49, 0, 6, 1, "STRING"],
+    [97, 50, 0, 7, 1, "STRING"],
+    [99, 52, 0, 40, 1, "INT"],
+    [100, 51, 0, 40, 0, "INT"]
+  ],
+  "nodes": [
+    {
+      "id": 8,
+      "pos": [1210, 190],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 12,
+      "inputs": [
+        { "link": 35, "name": "samples", "type": "LATENT" },
+        { "link": 76, "name": "vae", "type": "VAE" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [56, 93], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 39,
+      "pos": [866.3932495117188, 499.18597412109375],
+      "mode": 0,
+      "size": [306.36004638671875, 58],
+      "type": "VAELoader",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "VAE", "type": "VAE", "links": [76], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAELoader" },
+      "widgets_values": ["wan_2.1_vae.safetensors"]
+    },
+    {
+      "id": 47,
+      "pos": [2367.213134765625, 193.6114959716797],
+      "mode": 4,
+      "size": [315, 130],
+      "type": "SaveWEBM",
+      "flags": {},
+      "order": 14,
+      "inputs": [{ "link": 93, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": { "Node name for S&R": "SaveWEBM" },
+      "widgets_values": ["ComfyUI", "vp9", 24, 32]
+    },
+    {
+      "id": 3,
+      "pos": [863, 187],
+      "mode": 0,
+      "size": [315, 262],
+      "type": "KSampler",
+      "flags": {},
+      "order": 11,
+      "inputs": [
+        { "link": 95, "name": "model", "type": "MODEL" },
+        { "link": 46, "name": "positive", "type": "CONDITIONING" },
+        { "link": 52, "name": "negative", "type": "CONDITIONING" },
+        { "link": 91, "name": "latent_image", "type": "LATENT" }
+      ],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [35], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [
+        577746309562741,
+        "randomize",
+        30,
+        6,
+        "uni_pc",
+        "simple",
+        1
+      ]
+    },
+    {
+      "id": 48,
+      "pos": [440, 50],
+      "mode": 0,
+      "size": [210, 58],
+      "type": "ModelSamplingSD3",
+      "flags": {},
+      "order": 7,
+      "inputs": [{ "link": 94, "name": "model", "type": "MODEL" }],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [95], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ModelSamplingSD3" },
+      "widgets_values": [8]
+    },
+    {
+      "id": 37,
+      "pos": [20, 40],
+      "mode": 0,
+      "size": [346.7470703125, 82],
+      "type": "UNETLoader",
+      "flags": {},
+      "order": 1,
+      "inputs": [],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [94], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "UNETLoader" },
+      "widgets_values": ["wan2.1_t2v_1.3B_fp16.safetensors", "default"]
+    },
+    {
+      "id": 6,
+      "pos": [415, 186],
+      "mode": 0,
+      "size": [422.84503173828125, 164.31304931640625],
+      "type": "CLIPTextEncode",
+      "color": "#232",
+      "flags": {},
+      "order": 8,
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "inputs": [
+        { "link": 74, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 96,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#353",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [46],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "a fox moving quickly in a beautiful winter scenery nature trees mountains daytime tracking camera"
+      ]
+    },
+    {
+      "id": 7,
+      "pos": [413, 389],
+      "mode": 0,
+      "size": [425.27801513671875, 180.6060791015625],
+      "type": "CLIPTextEncode",
+      "color": "#322",
+      "flags": {},
+      "order": 9,
+      "title": "CLIP Text Encode (Negative Prompt)",
+      "inputs": [
+        { "link": 75, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 97,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#533",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [52],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+      ]
+    },
+    {
+      "id": 38,
+      "pos": [-10.047812461853027, 187.37384033203125],
+      "mode": 0,
+      "size": [390, 98],
+      "type": "CLIPLoader",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "outputs": [
+        { "name": "CLIP", "type": "CLIP", "links": [74, 75], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "CLIPLoader" },
+      "widgets_values": [
+        "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "wan",
+        "default"
+      ]
+    },
+    {
+      "id": 49,
+      "pos": [-535.2967529296875, 342.3277587890625],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [96] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "positive_prompt",
+        "a fox moving quickly in a beautiful winter scenery nature trees mountains daytime tracking camera",
+        "Prompt",
+        "The text prompt to guide video generation. "
+      ]
+    },
+    {
+      "id": 50,
+      "pos": [-526.2716064453125, 703.8343505859375],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [97] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "negative_prompt",
+        "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+        "Negative Prompt",
+        "The negative prompt to use. Use it to address details that you don't want in the image. This could be colors, objects, scenery and even the small details (e.g. moustache, blurry, low resolution). "
+      ]
+    },
+    {
+      "id": 40,
+      "pos": [516.926513671875, 619.59716796875],
+      "mode": 0,
+      "size": [315, 150],
+      "type": "EmptyHunyuanLatentVideo",
+      "flags": {},
+      "order": 10,
+      "inputs": [
+        {
+          "pos": [10, 36],
+          "link": 100,
+          "name": "width",
+          "type": "INT",
+          "widget": { "name": "width" }
+        },
+        {
+          "pos": [10, 60],
+          "link": 99,
+          "name": "height",
+          "type": "INT",
+          "widget": { "name": "height" }
+        }
+      ],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [91], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "EmptyHunyuanLatentVideo" },
+      "widgets_values": [832, 480, 33, 1]
+    },
+    {
+      "id": 28,
+      "pos": [1460, 190],
+      "mode": 0,
+      "size": [870.8511352539062, 643.7430419921875],
+      "type": "SaveAnimatedWEBP",
+      "flags": {},
+      "order": 13,
+      "inputs": [{ "link": 56, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI", 16, false, 90, "default"]
+    },
+    {
+      "id": 51,
+      "pos": [-522.7415161132812, 959.3386840820312],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 5,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [100], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["width", 832, "Width", "The Width of the Video. "]
+    },
+    {
+      "id": 52,
+      "pos": [-518.9917602539062, 1207.9444580078125],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 6,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [99], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["height", 480, "Height", "The Height of the Video. "]
+    }
+  ],
+  "config": {},
+  "groups": [
+    {
+      "id": 1,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Inputs",
+      "bounding": [
+        -560.9110717773438, 255.1485595703125, 500.94989013671875,
+        333.4786682128906
+      ],
+      "font_size": 24
+    },
+    {
+      "id": 2,
+      "color": "#b06634",
+      "flags": {},
+      "title": "Additional",
+      "bounding": [
+        -556.5305786132812, 619.87548828125, 761.2673950195312,
+        811.6837768554688
+      ],
+      "font_size": 24
+    }
+  ],
+  "version": 0.4,
+  "last_link_id": 100,
+  "last_node_id": 52
+}

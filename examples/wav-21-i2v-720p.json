@@ -1,0 +1,452 @@
+{
+  "extra": {
+    "ds": {
+      "scale": 0.6303940863128795,
+      "offset": [-209.31226203277674, -32.62073943929215]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.18",
+      "comfyui-deploy": "b3df94d1affcf7ce05ee7eeda99989194bcd9159"
+    }
+  },
+  "links": [
+    [1, 6, 0, 1, 0, "LATENT"],
+    [2, 2, 0, 1, 1, "VAE"],
+    [3, 1, 0, 3, 0, "IMAGE"],
+    [4, 1, 0, 4, 0, "IMAGE"],
+    [5, 9, 0, 5, 0, "CONDITIONING"],
+    [6, 18, 0, 5, 1, "CONDITIONING"],
+    [7, 2, 0, 5, 2, "VAE"],
+    [8, 7, 0, 5, 3, "CLIP_VISION_OUTPUT"],
+    [9, 11, 0, 5, 4, "IMAGE"],
+    [10, 13, 0, 5, 5, "INT"],
+    [11, 14, 0, 5, 6, "INT"],
+    [12, 8, 0, 6, 0, "MODEL"],
+    [13, 5, 0, 6, 1, "CONDITIONING"],
+    [14, 5, 1, 6, 2, "CONDITIONING"],
+    [15, 5, 2, 6, 3, "LATENT"],
+    [16, 17, 0, 7, 0, "CLIP_VISION"],
+    [17, 11, 0, 7, 1, "IMAGE"],
+    [18, 15, 0, 8, 0, "MODEL"],
+    [19, 16, 0, 9, 0, "CLIP"],
+    [20, 10, 0, 9, 1, "STRING"],
+    [21, 16, 0, 18, 0, "CLIP"],
+    [22, 12, 0, 18, 1, "STRING"]
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "pos": [1823.98876953125, 702.6244506835938],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 15,
+      "inputs": [
+        { "link": 1, "name": "samples", "type": "LATENT" },
+        { "link": 2, "name": "vae", "type": "VAE" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [3, 4], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "pos": [1480.382080078125, 1011.8104248046875],
+      "mode": 0,
+      "size": [306.36004638671875, 58],
+      "type": "VAELoader",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "VAE", "type": "VAE", "links": [2, 7], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAELoader" },
+      "widgets_values": ["wan_2.1_vae.safetensors"]
+    },
+    {
+      "id": 3,
+      "pos": [2073.98876953125, 702.6244506835938],
+      "mode": 0,
+      "size": [870.8511352539062, 643.7430419921875],
+      "type": "SaveAnimatedWEBP",
+      "flags": {},
+      "order": 16,
+      "inputs": [{ "link": 3, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI", 16, false, 90, "default", ""]
+    },
+    {
+      "id": 4,
+      "pos": [2981.201904296875, 706.2359008789062],
+      "mode": 4,
+      "size": [315, 130],
+      "type": "SaveWEBM",
+      "flags": {},
+      "order": 17,
+      "inputs": [{ "link": 4, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": { "Node name for S&R": "SaveWEBM" },
+      "widgets_values": ["ComfyUI", "vp9", 24, 32]
+    },
+    {
+      "id": 5,
+      "pos": [1287.03955078125, 1139.8970947265625],
+      "mode": 0,
+      "size": [342.5999755859375, 250],
+      "type": "WanImageToVideo",
+      "flags": {},
+      "order": 13,
+      "inputs": [
+        { "link": 5, "name": "positive", "type": "CONDITIONING" },
+        { "link": 6, "name": "negative", "type": "CONDITIONING" },
+        { "link": 7, "name": "vae", "type": "VAE" },
+        {
+          "link": 8,
+          "name": "clip_vision_output",
+          "type": "CLIP_VISION_OUTPUT",
+          "shape": 7
+        },
+        { "link": 9, "name": "start_image", "type": "IMAGE", "shape": 7 },
+        {
+          "pos": [10, 116],
+          "link": 10,
+          "name": "width",
+          "type": "INT",
+          "widget": { "name": "width" }
+        },
+        {
+          "pos": [10, 140],
+          "link": 11,
+          "name": "height",
+          "type": "INT",
+          "widget": { "name": "height" }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [13],
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [14],
+          "slot_index": 1
+        },
+        { "name": "latent", "type": "LATENT", "links": [15], "slot_index": 2 }
+      ],
+      "properties": { "Node name for S&R": "WanImageToVideo" },
+      "widgets_values": [512, 512, 33, 1]
+    },
+    {
+      "id": 6,
+      "pos": [1476.98876953125, 699.6244506835938],
+      "mode": 0,
+      "size": [315, 262],
+      "type": "KSampler",
+      "flags": {},
+      "order": 14,
+      "inputs": [
+        { "link": 12, "name": "model", "type": "MODEL" },
+        { "link": 13, "name": "positive", "type": "CONDITIONING" },
+        { "link": 14, "name": "negative", "type": "CONDITIONING" },
+        { "link": 15, "name": "latent_image", "type": "LATENT" }
+      ],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [1], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [
+        625624384968868,
+        "randomize",
+        20,
+        6,
+        "uni_pc",
+        "simple",
+        1
+      ]
+    },
+    {
+      "id": 7,
+      "pos": [973.98876953125, 1152.6243896484375],
+      "mode": 0,
+      "size": [253.60000610351562, 78],
+      "type": "CLIPVisionEncode",
+      "flags": {},
+      "order": 10,
+      "inputs": [
+        { "link": 16, "name": "clip_vision", "type": "CLIP_VISION" },
+        { "link": 17, "name": "image", "type": "IMAGE" }
+      ],
+      "outputs": [
+        {
+          "name": "CLIP_VISION_OUTPUT",
+          "type": "CLIP_VISION_OUTPUT",
+          "links": [8],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPVisionEncode" },
+      "widgets_values": ["none"]
+    },
+    {
+      "id": 8,
+      "pos": [1123.98876953125, 582.6244506835938],
+      "mode": 0,
+      "size": [315, 58],
+      "type": "ModelSamplingSD3",
+      "flags": {},
+      "order": 11,
+      "inputs": [{ "link": 18, "name": "model", "type": "MODEL" }],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [12], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ModelSamplingSD3" },
+      "widgets_values": [8]
+    },
+    {
+      "id": 9,
+      "pos": [1028.98876953125, 698.6244506835938],
+      "mode": 0,
+      "size": [422.84503173828125, 164.31304931640625],
+      "type": "CLIPTextEncode",
+      "color": "#232",
+      "flags": {},
+      "order": 12,
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "inputs": [
+        { "link": 19, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 20,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#353",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [5],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "a cute anime girl with massive fennec ears and a big fluffy tail wearing a maid outfit turning around"
+      ]
+    },
+    {
+      "id": 11,
+      "pos": [-50.3940315246582, 918.1358032226562],
+      "mode": 0,
+      "size": [390.5999755859375, 366],
+      "type": "ComfyUIDeployExternalImage",
+      "flags": {},
+      "order": 1,
+      "inputs": [
+        { "link": null, "name": "default_value", "type": "IMAGE", "shape": 7 }
+      ],
+      "outputs": [{ "name": "image", "type": "IMAGE", "links": [9, 17] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalImage" },
+      "widgets_values": [
+        "image_url",
+        "Image Url",
+        "URL of the input image.",
+        "https://comfy-deploy-output.s3.us-east-2.amazonaws.com/assets/img_GZMJYXDnLbYjWybu.png",
+        ""
+      ]
+    },
+    {
+      "id": 12,
+      "pos": [-60.4345588684082, 1465.6741943359375],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [22] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "negative_prompt",
+        "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+        "Negative Prompt",
+        "The negative prompt to use. Use it to address details that you don't want in the video. This could be colors, objects, scenery and even the small details (e.g. moustache, blurry, low resolution). "
+      ]
+    },
+    {
+      "id": 13,
+      "pos": [-54.3256721496582, 1720.8292236328125],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [10], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["width", 512, "Width", "The width of the video. "]
+    },
+    {
+      "id": 14,
+      "pos": [-51.8943977355957, 1973.8795166015625],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [11], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["height", 512, "Height", "The Height of the video."]
+    },
+    {
+      "id": 16,
+      "pos": [610.257080078125, 743.389404296875],
+      "mode": 0,
+      "size": [390, 98],
+      "type": "CLIPLoader",
+      "flags": {},
+      "order": 5,
+      "inputs": [],
+      "outputs": [
+        { "name": "CLIP", "type": "CLIP", "links": [19, 21], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "CLIPLoader" },
+      "widgets_values": [
+        "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "wan",
+        "default"
+      ]
+    },
+    {
+      "id": 17,
+      "pos": [630.5606079101562, 1152.8475341796875],
+      "mode": 0,
+      "size": [315, 58],
+      "type": "CLIPVisionLoader",
+      "flags": {},
+      "order": 6,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP_VISION",
+          "type": "CLIP_VISION",
+          "links": [16],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPVisionLoader" },
+      "widgets_values": ["clip_vision_h.safetensors"]
+    },
+    {
+      "id": 18,
+      "pos": [1028.169921875, 906.5068969726562],
+      "mode": 0,
+      "size": [425.27801513671875, 180.6060791015625],
+      "type": "CLIPTextEncode",
+      "color": "#322",
+      "flags": {},
+      "order": 9,
+      "title": "CLIP Text Encode (Negative Prompt)",
+      "inputs": [
+        { "link": 21, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 22,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#533",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [6],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+      ]
+    },
+    {
+      "id": 15,
+      "pos": [610.6187744140625, 594.3209838867188],
+      "mode": 0,
+      "size": [346.7470703125, 82],
+      "type": "UNETLoader",
+      "flags": {},
+      "order": 7,
+      "inputs": [],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [18], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "UNETLoader" },
+      "widgets_values": ["wan2.1_i2v_720p_14B_bf16.safetensors", "default"]
+    },
+    {
+      "id": 10,
+      "pos": [-60.696964263916016, 649.5515747070312],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 8,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [20] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "positive_prompt",
+        "a cute anime girl with massive fennec ears and a big fluffy tail wearing a maid outfit running towards front happily",
+        "Prompt",
+        "The text prompt to guide video generation."
+      ]
+    }
+  ],
+  "config": {},
+  "groups": [
+    {
+      "id": 1,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Input",
+      "bounding": [
+        -94.30522155761719, 560.1735229492188, 617.7969360351562,
+        761.303955078125
+      ],
+      "font_size": 24
+    },
+    {
+      "id": 2,
+      "color": "#b06634",
+      "flags": {},
+      "title": "Additional",
+      "bounding": [
+        -89.63090515136719, 1373.9351806640625, 625.998779296875,
+        845.0675048828125
+      ],
+      "font_size": 24
+    }
+  ],
+  "version": 0.4,
+  "last_link_id": 22,
+  "last_node_id": 18
+}

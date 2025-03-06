@@ -1,0 +1,359 @@
+{
+  "extra": {
+    "ds": {
+      "scale": 0.6010518407212623,
+      "offset": [815.5938895649746, 84.94304700477853]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.19",
+      "comfyui-deploy": "b3df94d1affcf7ce05ee7eeda99989194bcd9159"
+    }
+  },
+  "links": [
+    [9, 8, 0, 9, 0, "IMAGE"],
+    [45, 30, 1, 6, 0, "CLIP"],
+    [46, 30, 2, 8, 1, "VAE"],
+    [47, 30, 0, 31, 0, "MODEL"],
+    [51, 27, 0, 31, 3, "LATENT"],
+    [52, 31, 0, 8, 0, "LATENT"],
+    [54, 30, 1, 33, 0, "CLIP"],
+    [55, 33, 0, 31, 2, "CONDITIONING"],
+    [56, 6, 0, 35, 0, "CONDITIONING"],
+    [57, 35, 0, 31, 1, "CONDITIONING"],
+    [58, 38, 0, 6, 1, "STRING"],
+    [59, 40, 0, 27, 0, "INT"],
+    [60, 39, 0, 27, 1, "INT"]
+  ],
+  "nodes": [
+    {
+      "id": 6,
+      "pos": [384, 192],
+      "mode": 0,
+      "size": [422.8500061035156, 164.30999755859375],
+      "type": "CLIPTextEncode",
+      "color": "#232",
+      "flags": {},
+      "order": 7,
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "inputs": [
+        { "link": 45, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 58,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#353",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [56],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress and a white apron mouth open placing a fancy black forest cake with candles on top of a dinner table of an old dark Victorian mansion lit by candlelight with a bright window to the foggy forest and very expensive stuff everywhere there are paintings on the walls"
+      ]
+    },
+    {
+      "id": 8,
+      "pos": [1151, 195],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 11,
+      "inputs": [
+        { "link": 52, "name": "samples", "type": "LATENT" },
+        { "link": 46, "name": "vae", "type": "VAE" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [9], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "pos": [1375, 194],
+      "mode": 0,
+      "size": [985.2999877929688, 1060.3800048828125],
+      "type": "SaveImage",
+      "flags": {},
+      "order": 12,
+      "inputs": [{ "link": 9, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI"]
+    },
+    {
+      "id": 31,
+      "pos": [816, 192],
+      "mode": 0,
+      "size": [315, 262],
+      "type": "KSampler",
+      "flags": {},
+      "order": 10,
+      "inputs": [
+        { "link": 47, "name": "model", "type": "MODEL" },
+        { "link": 57, "name": "positive", "type": "CONDITIONING" },
+        { "link": 55, "name": "negative", "type": "CONDITIONING" },
+        { "link": 51, "name": "latent_image", "type": "LATENT" }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [52],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [
+        1024035737089801,
+        "randomize",
+        20,
+        1,
+        "euler",
+        "simple",
+        1
+      ]
+    },
+    {
+      "id": 35,
+      "pos": [576, 96],
+      "mode": 0,
+      "size": [211.60000610351562, 58],
+      "type": "FluxGuidance",
+      "flags": {},
+      "order": 9,
+      "inputs": [
+        { "link": 56, "name": "conditioning", "type": "CONDITIONING" }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [57],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "FluxGuidance" },
+      "widgets_values": [3.5]
+    },
+    {
+      "id": 37,
+      "pos": [60, 345],
+      "mode": 0,
+      "size": [225, 88],
+      "type": "MarkdownNote",
+      "color": "#432",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "🛈 [Learn more about this workflow](https://comfyanonymous.github.io/ComfyUI_examples/flux/#flux-dev-1)"
+      ]
+    },
+    {
+      "id": 34,
+      "pos": [825, 510],
+      "mode": 0,
+      "size": [282.8599853515625, 164.0800018310547],
+      "type": "Note",
+      "color": "#432",
+      "flags": {},
+      "order": 1,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "text": "" },
+      "widgets_values": [
+        "Note that Flux dev and schnell do not have any negative prompt so CFG should be set to 1.0. Setting CFG to 1.0 means the negative prompt is ignored."
+      ]
+    },
+    {
+      "id": 30,
+      "pos": [48, 192],
+      "mode": 0,
+      "size": [315, 98],
+      "type": "CheckpointLoaderSimple",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [47],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [45, 54],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [46],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": { "Node name for S&R": "CheckpointLoaderSimple" },
+      "widgets_values": ["FLUX1/flux1-dev-fp8.safetensors"]
+    },
+    {
+      "id": 33,
+      "pos": [390, 400],
+      "mode": 0,
+      "size": [422.8500061035156, 164.30999755859375],
+      "type": "CLIPTextEncode",
+      "color": "#322",
+      "flags": { "collapsed": true },
+      "order": 6,
+      "title": "CLIP Text Encode (Negative Prompt)",
+      "inputs": [
+        { "link": 54, "name": "clip", "type": "CLIP", "slot_index": 0 }
+      ],
+      "bgcolor": "#533",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [55],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [""]
+    },
+    {
+      "id": 27,
+      "pos": [461.8629455566406, 460.2491149902344],
+      "mode": 0,
+      "size": [315, 126],
+      "type": "EmptySD3LatentImage",
+      "color": "#323",
+      "flags": {},
+      "order": 8,
+      "inputs": [
+        {
+          "pos": [10, 60],
+          "link": 59,
+          "name": "height",
+          "type": "INT",
+          "widget": { "name": "height" }
+        },
+        {
+          "pos": [10, 36],
+          "link": 60,
+          "name": "width",
+          "type": "INT",
+          "widget": { "name": "width" }
+        }
+      ],
+      "bgcolor": "#535",
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [51],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "EmptySD3LatentImage" },
+      "widgets_values": [1024, 1024, 1]
+    },
+    {
+      "id": 38,
+      "pos": [-497.3238525390625, 306.5517578125],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [58] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "prompt",
+        "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress and a white apron mouth open placing a fancy black forest cake with candles on top of a dinner table of an old dark Victorian mansion lit by candlelight with a bright window to the foggy forest and very expensive stuff everywhere there are paintings on the walls",
+        "Prompt",
+        "The prompt to generate an image from."
+      ]
+    },
+    {
+      "id": 39,
+      "pos": [-507.4543762207031, 612.9552001953125],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [60], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["width", 1024, "Width", "The width of the image."]
+    },
+    {
+      "id": 40,
+      "pos": [-497.8695068359375, 864.68994140625],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 5,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [59], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["height", 1024, "Height", "The height of the image."]
+    }
+  ],
+  "config": {},
+  "groups": [
+    {
+      "id": 1,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Input",
+      "bounding": [
+        -508.010986328125, 186.76593017578125, 453.23040771484375,
+        334.3218994140625
+      ],
+      "font_size": 24
+    },
+    {
+      "id": 2,
+      "color": "#A88",
+      "flags": {},
+      "title": "Additional",
+      "bounding": [
+        -517.1227416992188, 537.53759765625, 644.4954223632812,
+        599.2609252929688
+      ],
+      "font_size": 24
+    }
+  ],
+  "version": 0.4,
+  "last_link_id": 60,
+  "last_node_id": 40
+}

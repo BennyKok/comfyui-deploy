@@ -1,0 +1,240 @@
+{
+  "extra": {
+    "ds": { "scale": 1, "offset": { "0": 0, "1": 0 } },
+    "node_versions": {
+      "comfy-core": "0.3.12",
+      "comfyui-deploy": "171a227856bd5f31e97828d89f83f3741004d05e"
+    }
+  },
+  "links": [
+    [1, 4, 0, 3, 0, "MODEL"],
+    [2, 5, 0, 3, 3, "LATENT"],
+    [3, 4, 1, 6, 0, "CLIP"],
+    [4, 6, 0, 3, 1, "CONDITIONING"],
+    [5, 4, 1, 7, 0, "CLIP"],
+    [6, 7, 0, 3, 2, "CONDITIONING"],
+    [7, 3, 0, 8, 0, "LATENT"],
+    [8, 4, 2, 8, 1, "VAE"],
+    [9, 8, 0, 9, 0, "IMAGE"],
+    [10, 12, 0, 6, 1, "STRING"],
+    [11, 13, 0, 7, 1, "STRING"]
+  ],
+  "nodes": [
+    {
+      "id": 5,
+      "pos": [473, 609],
+      "mode": 0,
+      "size": [315, 106],
+      "type": "EmptyLatentImage",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [2], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "EmptyLatentImage" },
+      "widgets_values": [512, 512, 1]
+    },
+    {
+      "id": 3,
+      "pos": [863, 186],
+      "mode": 0,
+      "size": [315, 262],
+      "type": "KSampler",
+      "flags": {},
+      "order": 7,
+      "inputs": [
+        { "link": 1, "name": "model", "type": "MODEL" },
+        { "link": 4, "name": "positive", "type": "CONDITIONING" },
+        { "link": 6, "name": "negative", "type": "CONDITIONING" },
+        { "link": 2, "name": "latent_image", "type": "LATENT" }
+      ],
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [7], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [
+        156680208700286,
+        "randomize",
+        20,
+        8,
+        "euler",
+        "normal",
+        1
+      ]
+    },
+    {
+      "id": 8,
+      "pos": [1209, 188],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 8,
+      "inputs": [
+        { "link": 7, "name": "samples", "type": "LATENT" },
+        { "link": 8, "name": "vae", "type": "VAE" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [9], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "pos": [1451, 189],
+      "mode": 0,
+      "size": [210, 58],
+      "type": "SaveImage",
+      "flags": {},
+      "order": 9,
+      "inputs": [{ "link": 9, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI"]
+    },
+    {
+      "id": 4,
+      "pos": [26, 474],
+      "mode": 0,
+      "size": [315, 98],
+      "type": "CheckpointLoaderSimple",
+      "flags": {},
+      "order": 1,
+      "inputs": [],
+      "outputs": [
+        { "name": "MODEL", "type": "MODEL", "links": [1], "slot_index": 0 },
+        { "name": "CLIP", "type": "CLIP", "links": [3, 5], "slot_index": 1 },
+        { "name": "VAE", "type": "VAE", "links": [8], "slot_index": 2 }
+      ],
+      "properties": { "Node name for S&R": "CheckpointLoaderSimple" },
+      "widgets_values": ["v1-5-pruned-emaonly.ckpt"]
+    },
+    {
+      "id": 6,
+      "pos": [415, 186],
+      "mode": 0,
+      "size": [422.84503173828125, 164.31304931640625],
+      "type": "CLIPTextEncode",
+      "flags": {},
+      "order": 6,
+      "inputs": [
+        { "link": 3, "name": "clip", "type": "CLIP" },
+        {
+          "link": 10,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [4],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,"
+      ]
+    },
+    {
+      "id": 7,
+      "pos": [413, 389],
+      "mode": 0,
+      "size": [425.27801513671875, 180.6060791015625],
+      "type": "CLIPTextEncode",
+      "flags": {},
+      "order": 5,
+      "inputs": [
+        { "link": 5, "name": "clip", "type": "CLIP" },
+        {
+          "link": 11,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [6],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": ["text, watermark"]
+    },
+    {
+      "id": 13,
+      "pos": [-70, -60],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [11],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": ["negative_prompt", "text, watermark", "", ""]
+    },
+    {
+      "id": 12,
+      "pos": [-72, 193],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [10],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "positive_prompt",
+        "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
+        "",
+        ""
+      ]
+    },
+    {
+      "id": 14,
+      "pos": [419, 23],
+      "mode": 0,
+      "size": [210, 96],
+      "type": "ComfyDeploy",
+      "color": "#432",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "version": "", "workflow_id": "", "workflow_name": "" },
+      "widgets_values": ["", "", "1"]
+    }
+  ],
+  "config": {},
+  "groups": [],
+  "version": 0.4,
+  "last_link_id": 11,
+  "last_node_id": 14
+}

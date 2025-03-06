@@ -1,0 +1,423 @@
+{
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650709,
+      "offset": [750.2474149300585, 120.48924647647146]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.19",
+      "comfyui-deploy": "171a227856bd5f31e97828d89f83f3741004d05e"
+    }
+  },
+  "links": [
+    [9, 8, 0, 9, 0, "IMAGE"],
+    [10, 11, 0, 6, 0, "CLIP"],
+    [12, 10, 0, 8, 1, "VAE"],
+    [19, 16, 0, 13, 2, "SAMPLER"],
+    [20, 17, 0, 13, 3, "SIGMAS"],
+    [23, 5, 0, 13, 4, "LATENT"],
+    [24, 13, 0, 8, 0, "LATENT"],
+    [30, 22, 0, 13, 1, "GUIDER"],
+    [37, 25, 0, 13, 0, "NOISE"],
+    [38, 12, 0, 17, 0, "MODEL"],
+    [39, 12, 0, 22, 0, "MODEL"],
+    [40, 6, 0, 22, 1, "CONDITIONING"],
+    [41, 28, 0, 6, 1, "STRING"],
+    [44, 29, 0, 5, 0, "INT"],
+    [45, 30, 0, 5, 1, "INT"]
+  ],
+  "nodes": [
+    {
+      "id": 13,
+      "pos": [842, 215],
+      "mode": 0,
+      "size": [355.20001220703125, 106],
+      "type": "SamplerCustomAdvanced",
+      "flags": {},
+      "order": 14,
+      "inputs": [
+        { "link": 37, "name": "noise", "type": "NOISE", "slot_index": 0 },
+        { "link": 30, "name": "guider", "type": "GUIDER", "slot_index": 1 },
+        { "link": 19, "name": "sampler", "type": "SAMPLER", "slot_index": 2 },
+        { "link": 20, "name": "sigmas", "type": "SIGMAS", "slot_index": 3 },
+        {
+          "link": 23,
+          "name": "latent_image",
+          "type": "LATENT",
+          "slot_index": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "LATENT",
+          "links": [24],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "denoised_output",
+          "type": "LATENT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": { "Node name for S&R": "SamplerCustomAdvanced" },
+      "widgets_values": []
+    },
+    {
+      "id": 8,
+      "pos": [1248, 192],
+      "mode": 0,
+      "size": [210, 46],
+      "type": "VAEDecode",
+      "flags": {},
+      "order": 15,
+      "inputs": [
+        { "link": 24, "name": "samples", "type": "LATENT" },
+        { "link": 12, "name": "vae", "type": "VAE" }
+      ],
+      "outputs": [
+        { "name": "IMAGE", "type": "IMAGE", "links": [9], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 22,
+      "pos": [559, 125],
+      "mode": 0,
+      "size": [241.79998779296875, 46],
+      "type": "BasicGuider",
+      "flags": {},
+      "order": 13,
+      "inputs": [
+        { "link": 39, "name": "model", "type": "MODEL", "slot_index": 0 },
+        {
+          "link": 40,
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GUIDER",
+          "type": "GUIDER",
+          "links": [30],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "BasicGuider" },
+      "widgets_values": []
+    },
+    {
+      "id": 16,
+      "pos": [480, 720],
+      "mode": 0,
+      "size": [315, 58],
+      "type": "KSamplerSelect",
+      "flags": {},
+      "order": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "SAMPLER", "type": "SAMPLER", "links": [19], "shape": 3 }
+      ],
+      "properties": { "Node name for S&R": "KSamplerSelect" },
+      "widgets_values": ["euler"]
+    },
+    {
+      "id": 17,
+      "pos": [480, 816],
+      "mode": 0,
+      "size": [315, 106],
+      "type": "BasicScheduler",
+      "flags": {},
+      "order": 10,
+      "inputs": [
+        { "link": 38, "name": "model", "type": "MODEL", "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "SIGMAS", "type": "SIGMAS", "links": [20], "shape": 3 }
+      ],
+      "properties": { "Node name for S&R": "BasicScheduler" },
+      "widgets_values": ["simple", 4, 1]
+    },
+    {
+      "id": 27,
+      "pos": [480, 960],
+      "mode": 0,
+      "size": [311.3529052734375, 131.16229248046875],
+      "type": "Note",
+      "color": "#432",
+      "flags": {},
+      "order": 1,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "text": "" },
+      "widgets_values": [
+        "The schnell model is a distilled model that can generate a good image with only 4 steps."
+      ]
+    },
+    {
+      "id": 9,
+      "pos": [1488, 192],
+      "mode": 0,
+      "size": [985.3012084960938, 1060.3828125],
+      "type": "SaveImage",
+      "flags": {},
+      "order": 16,
+      "inputs": [{ "link": 9, "name": "images", "type": "IMAGE" }],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI"]
+    },
+    {
+      "id": 25,
+      "pos": [480, 587.7890625],
+      "mode": 0,
+      "size": [315, 82],
+      "type": "RandomNoise",
+      "color": "#2a363b",
+      "flags": {},
+      "order": 2,
+      "inputs": [],
+      "bgcolor": "#3f5159",
+      "outputs": [
+        { "name": "NOISE", "type": "NOISE", "links": [37], "shape": 3 }
+      ],
+      "properties": { "Node name for S&R": "RandomNoise" },
+      "widgets_values": [393845863554716, "randomize"]
+    },
+    {
+      "id": 5,
+      "pos": [471.7746276855469, 423.91571044921875],
+      "mode": 0,
+      "size": [315, 126],
+      "type": "EmptyLatentImage",
+      "color": "#323",
+      "flags": {},
+      "order": 12,
+      "inputs": [
+        {
+          "pos": [10, 36],
+          "link": 44,
+          "name": "width",
+          "type": "INT",
+          "widget": { "name": "width" }
+        },
+        {
+          "pos": [10, 60],
+          "link": 45,
+          "name": "height",
+          "type": "INT",
+          "widget": { "name": "height" }
+        }
+      ],
+      "bgcolor": "#535",
+      "outputs": [
+        { "name": "LATENT", "type": "LATENT", "links": [23], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "EmptyLatentImage" },
+      "widgets_values": [1024, 1024, 1]
+    },
+    {
+      "id": 26,
+      "pos": [41.60395812988281, 517.059326171875],
+      "mode": 0,
+      "size": [336, 288],
+      "type": "Note",
+      "color": "#432",
+      "flags": {},
+      "order": 3,
+      "inputs": [],
+      "bgcolor": "#653",
+      "outputs": [],
+      "properties": { "text": "" },
+      "widgets_values": [
+        "If you get an error in any of the nodes above make sure the files are in the correct directories.\n\nSee the top of the examples page for the links : https://comfyanonymous.github.io/ComfyUI_examples/flux/\n\nflux1-schnell.safetensors goes in: ComfyUI/models/unet/\n\nt5xxl_fp16.safetensors and clip_l.safetensors go in: ComfyUI/models/clip/\n\nae.safetensors goes in: ComfyUI/models/vae/\n\n\nTip: You can set the weight_dtype above to one of the fp8 types if you have memory issues."
+      ]
+    },
+    {
+      "id": 11,
+      "pos": [45.584651947021484, 229.13525390625],
+      "mode": 0,
+      "size": [315, 122],
+      "type": "DualCLIPLoader",
+      "flags": {},
+      "order": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [10],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "DualCLIPLoader" },
+      "widgets_values": [
+        "t5xxl_fp16.safetensors",
+        "clip_l.safetensors",
+        "flux",
+        "default"
+      ]
+    },
+    {
+      "id": 12,
+      "pos": [45.92215347290039, 95.6536865234375],
+      "mode": 0,
+      "size": [315, 82],
+      "type": "UNETLoader",
+      "color": "#223",
+      "flags": { "pinned": true },
+      "order": 5,
+      "inputs": [],
+      "bgcolor": "#335",
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [38, 39],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "UNETLoader" },
+      "widgets_values": ["flux1-schnell.safetensors", "default"]
+    },
+    {
+      "id": 6,
+      "pos": [385.87054443359375, 216.75625610351562],
+      "mode": 0,
+      "size": [422.84503173828125, 164.31304931640625],
+      "type": "CLIPTextEncode",
+      "color": "#232",
+      "flags": {},
+      "order": 11,
+      "inputs": [
+        { "link": 10, "name": "clip", "type": "CLIP" },
+        {
+          "pos": [10, 36],
+          "link": 41,
+          "name": "text",
+          "type": "STRING",
+          "widget": { "name": "text" }
+        }
+      ],
+      "bgcolor": "#353",
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [40],
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "a bottle with a beautiful rainbow galaxy inside it on top of a wooden table in the middle of a modern kitchen beside a plate of vegetables and mushrooms and a wine glasse that contains a planet earth with a plate with a half eaten apple pie on it"
+      ]
+    },
+    {
+      "id": 10,
+      "pos": [42.45906066894531, 405.2187805175781],
+      "mode": 0,
+      "size": [315, 58],
+      "type": "VAELoader",
+      "flags": {},
+      "order": 6,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [12],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": { "Node name for S&R": "VAELoader" },
+      "widgets_values": ["ae.sft"]
+    },
+    {
+      "id": 28,
+      "pos": [-620.3922119140625, 199.8013916015625],
+      "mode": 0,
+      "size": [400, 200],
+      "type": "ComfyUIDeployExternalText",
+      "flags": {},
+      "order": 7,
+      "inputs": [],
+      "outputs": [{ "name": "text", "type": "STRING", "links": [41] }],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalText" },
+      "widgets_values": [
+        "prompt",
+        "a bottle with a beautiful rainbow galaxy inside it on top of a wooden table in the middle of a modern kitchen beside a plate of vegetables and mushrooms and a wine glasse that contains a planet earth with a plate with a half eaten apple pie on it",
+        "Prompt",
+        "The prompt to generate an image from."
+      ]
+    },
+    {
+      "id": 29,
+      "pos": [-677.4290161132812, 597.3389282226562],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 8,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [44], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["width", 1024, "Width", "The width of the image."]
+    },
+    {
+      "id": 30,
+      "pos": [-670.0703735351562, 848.3707885742188],
+      "mode": 0,
+      "size": [453.5999755859375, 200],
+      "type": "ComfyUIDeployExternalNumberInt",
+      "flags": {},
+      "order": 9,
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "type": "INT", "links": [45], "slot_index": 0 }
+      ],
+      "properties": { "Node name for S&R": "ComfyUIDeployExternalNumberInt" },
+      "widgets_values": ["height", 1024, "Height", "The height of the image."]
+    }
+  ],
+  "config": {},
+  "groups": [
+    {
+      "id": 1,
+      "color": "#3f789e",
+      "flags": {},
+      "title": "Input",
+      "bounding": [
+        -652.184326171875, 99.11231994628906, 565.7923583984375,
+        362.8800354003906
+      ],
+      "font_size": 24
+    },
+    {
+      "id": 2,
+      "color": "#A88",
+      "flags": {},
+      "title": "Additional",
+      "bounding": [
+        -720.3274536132812, 508.1206970214844, 703.0422973632812,
+        576.5584716796875
+      ],
+      "font_size": 24
+    }
+  ],
+  "version": 0.4,
+  "last_link_id": 45,
+  "last_node_id": 30
+}
