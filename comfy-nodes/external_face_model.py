@@ -48,10 +48,8 @@ class ComfyUIDeployExternalFaceModel:
 
     RETURN_TYPES = (WILDCARD,)
     RETURN_NAMES = ("path",)
-
     FUNCTION = "run"
-
-    CATEGORY = "deploy"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(
         self,

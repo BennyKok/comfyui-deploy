@@ -36,10 +36,11 @@ class ComfyUIDeployExternalCheckpoint:
 
     RETURN_TYPES = (WILDCARD,)
     RETURN_NAMES = ("path",)
+    
 
     FUNCTION = "run"
 
-    CATEGORY = "deploy"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, input_id, default_value=None, display_name=None, description=None):
         import requests

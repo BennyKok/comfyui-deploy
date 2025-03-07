@@ -10,6 +10,7 @@ class ComfyUIDeployExternalEXR:
     RETURN_TYPES = ("IMAGE", "MASK")
     RETURN_NAMES = ("image", "mask") 
     FUNCTION = "load_exr"
+    CATEGORY = "🔗ComfyDeploy"
     
     @classmethod
     def INPUT_TYPES(cls):

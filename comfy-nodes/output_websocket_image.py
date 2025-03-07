@@ -33,10 +33,8 @@ class ComfyDeployWebscoketImageOutput:
 
     RETURN_TYPES = ()
     RETURN_NAMES = ("text",)
-
     FUNCTION = "run"
-
-    CATEGORY = "output"
+    CATEGORY = "🔗ComfyDeploy"
     
     @classmethod
     def VALIDATE_INPUTS(s, output_id):

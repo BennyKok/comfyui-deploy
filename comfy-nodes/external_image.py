@@ -29,10 +29,8 @@ class ComfyUIDeployExternalImage:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
-
     FUNCTION = "run"
-
-    CATEGORY = "image"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, input_id, default_value=None, display_name=None, description=None, default_value_url=None):
         image = default_value

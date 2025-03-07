@@ -23,8 +23,9 @@ class ComfyUIDeployExternalBoolean:
 
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("bool_value",)
-    
+        
     FUNCTION = "run"
+    CATEGORY = "🔗ComfyDeploy"
     
     def run(self, input_id, default_value=None, display_name=None, description=None):
         print(f"Node '{input_id}' processing with switch set to {default_value}")

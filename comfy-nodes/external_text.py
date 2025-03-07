@@ -34,7 +34,7 @@ class ComfyUIDeployExternalText:
 
     FUNCTION = "run"
 
-    CATEGORY = "text"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, input_id, default_value=None, display_name=None, description=None):
         return [default_value]

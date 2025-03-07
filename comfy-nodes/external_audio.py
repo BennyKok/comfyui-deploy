@@ -7,6 +7,7 @@ class ComfyUIDeployExternalAudio:
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "load_audio"
+    CATEGORY = "🔗ComfyDeploy"
     
     @classmethod
     def INPUT_TYPES(cls):

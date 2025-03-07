@@ -39,8 +39,7 @@ class ComfyDeployOutputImage:
     FUNCTION = "run"
 
     OUTPUT_NODE = True
-
-    CATEGORY = "output"
+    CATEGORY = "🔗ComfyDeploy"
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
 
     def run(

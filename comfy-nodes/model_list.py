@@ -48,7 +48,7 @@ class ComfyUIDeployModalList:
 
     FUNCTION = "run"
 
-    CATEGORY = "model"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, model=""):
         # Split the model path by '/' and select the last item
