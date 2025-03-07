@@ -36,6 +36,7 @@ class ComfyUIDeployExternalVideo:
     RETURN_NAMES = ("video")
 
     FUNCTION = "load_video"
+    CATEGORY = "🔗ComfyDeploy"
 
     def load_video(self, input_id, default_value):
         input_dir = folder_paths.get_input_directory()

@@ -791,6 +791,7 @@ class ComfyUIDeployExternalVideo:
     )
 
     FUNCTION = "load_video"
+    CATEGORY = "🔗ComfyDeploy"
 
     def load_video(self, **kwargs):
         input_id = kwargs.get("input_id")

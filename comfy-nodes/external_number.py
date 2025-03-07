@@ -31,10 +31,8 @@ class ComfyUIDeployExternalNumber:
 
     RETURN_TYPES = ("FLOAT",)
     RETURN_NAMES = ("value",)
-
     FUNCTION = "run"
-
-    CATEGORY = "number"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, input_id, default_value=None, display_name=None, description=None):
         try:

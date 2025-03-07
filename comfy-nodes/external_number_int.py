@@ -31,10 +31,8 @@ class ComfyUIDeployExternalNumberInt:
 
     RETURN_TYPES = ("INT",)
     RETURN_NAMES = ("value",)
-
     FUNCTION = "run"
-
-    CATEGORY = "number"
+    CATEGORY = "🔗ComfyDeploy"
 
     def run(self, input_id, default_value=None, display_name=None, description=None):
         if not input_id or (isinstance(input_id, str) and not input_id.strip().isdigit()):

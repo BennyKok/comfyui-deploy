@@ -34,10 +34,8 @@ class ComfyUIDeployExternalImageBatch:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
-
     FUNCTION = "run"
-
-    CATEGORY = "image"
+    CATEGORY = "🔗ComfyDeploy"
     
     def process_image(self, image):
         image = ImageOps.exif_transpose(image)
