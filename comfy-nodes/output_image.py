@@ -27,6 +27,8 @@ class ComfyDeployOutputImage:
                 ),
                 "file_type": (["png", "jpg", "webp"], {"default": "webp"}),
                 "quality": ("INT", {"default": 80, "min": 1, "max": 100, "step": 1}),
+            },
+            "optional": {
                 "output_id": (
                     "STRING",
                     {"multiline": False, "default": "output_images"},
