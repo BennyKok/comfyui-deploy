@@ -516,6 +516,8 @@ async def comfy_deploy_run(request):
         "extra_data": {"extra_pnginfo": {"workflow": workflow}},
     }
 
+    print("prompt", prompt)
+
     prompt_metadata[prompt_id] = SimplePrompt(
         status_endpoint=data.get("status_endpoint"),
         file_upload_endpoint=data.get("file_upload_endpoint"),
