@@ -485,7 +485,7 @@ async def comfy_deploy_run(request):
                 },
             ) as response:
                 data = await response.json()
-                print("data 123", data)
+                logger.info("data 123", data)
 
     if "cd_token" in data:
         token = data["cd_token"]
@@ -516,7 +516,7 @@ async def comfy_deploy_run(request):
         "extra_data": {"extra_pnginfo": {"workflow": workflow}},
     }
 
-    print("prompt", prompt)
+    logger.info("prompt", prompt)
 
     prompt_metadata[prompt_id] = SimplePrompt(
         status_endpoint=data.get("status_endpoint"),
