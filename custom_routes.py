@@ -67,6 +67,18 @@ async def cleanup():
     if client_session:
         await client_session.close()
 
+    # Cancel the monitor task if it exists
+    if hasattr(upload_queue, "monitor_task") and upload_queue.monitor_task:
+        upload_queue.monitor_task.cancel()
+        try:
+            await upload_queue.monitor_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("Upload queue monitor task cancelled")
+
+    # # Clean up the upload queue
+    # await upload_queue.cleanup()
+
 
 def exit_handler():
     print("Exiting the application. Initiating cleanup...")
@@ -2167,8 +2179,8 @@ async def initialize_upload_queue(app=None):
         upload_queue.max_concurrent,
     )
 
-    # Start the queue monitoring task in the same event loop
-    asyncio.create_task(monitor_upload_queue())
+    # Store the monitor task reference
+    upload_queue.monitor_task = asyncio.create_task(monitor_upload_queue())
 
 
 # Get the server's event loop and initialize there
