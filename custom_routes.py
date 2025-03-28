@@ -64,26 +64,43 @@ async def ensure_client_session():
 
 async def cleanup():
     global client_session
-    if client_session:
-        await client_session.close()
+    try:
+        # Cancel the monitor task if it exists
+        if hasattr(upload_queue, "monitor_task") and upload_queue.monitor_task:
+            if not upload_queue.monitor_task.done():
+                upload_queue.monitor_task.cancel()
+                try:
+                    await upload_queue.monitor_task
+                except asyncio.CancelledError:
+                    pass
+                except RuntimeError as e:
+                    # Handle case where event loop is closed
+                    if "Event loop is closed" in str(e):
+                        logger.info("Event loop closed during cleanup")
+                    else:
+                        raise
+                logger.info("Upload queue monitor task cancelled")
 
-    # Cancel the monitor task if it exists
-    if hasattr(upload_queue, "monitor_task") and upload_queue.monitor_task:
-        upload_queue.monitor_task.cancel()
-        try:
-            await upload_queue.monitor_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("Upload queue monitor task cancelled")
+        # Clean up the client session
+        if client_session:
+            await client_session.close()
 
-    # # Clean up the upload queue
-    # await upload_queue.cleanup()
+        # Clean up the upload queue
+        # await upload_queue.cleanup()
+    except Exception as e:
+        logger.error(f"Error during cleanup: {str(e)}")
 
 
 def exit_handler():
     print("Exiting the application. Initiating cleanup...")
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(cleanup())
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            logger.warning("Event loop is already closed during exit")
+            return
+        loop.run_until_complete(cleanup())
+    except Exception as e:
+        print(f"Error during exit cleanup: {str(e)}")
 
 
 atexit.register(exit_handler)
@@ -151,7 +168,9 @@ async def async_request_with_retry(
                 logger.error(f"Error response body: {error_body}")
 
             if attempt == max_retries - 1:
-                logger.error(f"Request {method} : {url} failed after {max_retries} attempts: {e}")
+                logger.error(
+                    f"Request {method} : {url} failed after {max_retries} attempts: {e}"
+                )
                 raise
 
         await asyncio.sleep(retry_delay)
