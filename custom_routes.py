@@ -304,6 +304,11 @@ def post_prompt(json_data):
 
 
 def randomSeed(num_digits=15):
+    # Special case for SONICSampler which uses np.int32
+    if num_digits == "sonic":
+        return random.randint(0, 2147483647)  # np.iinfo(np.int32).max
+
+    # Original logic for other cases
     range_start = 10 ** (num_digits - 1)
     range_end = (10**num_digits) - 1
     return random.randint(range_start, range_end)
@@ -321,6 +326,13 @@ def apply_random_seed_to_workflow(workflow_api):
             if "seed" in workflow_api[key]["inputs"]:
                 # If seed is a list, it's an input from another node (generally `external number int`)
                 if isinstance(workflow_api[key]["inputs"]["seed"], list):
+                    continue
+                # Special case for SONICSampler
+                if workflow_api[key]["class_type"] == "SONICSampler":
+                    workflow_api[key]["inputs"]["seed"] = randomSeed("sonic")
+                    logger.info(
+                        f"Applied random seed {workflow_api[key]['inputs']['seed']} to SONICSampler"
+                    )
                     continue
                 if workflow_api[key]["class_type"] == "PromptExpansion":
                     workflow_api[key]["inputs"]["seed"] = randomSeed(8)
