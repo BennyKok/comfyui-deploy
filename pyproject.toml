@@ -1,9 +1,9 @@
 [project]
 name = "comfyui-deploy"
 description = "Open source comfyui deployment platform, a vercel for generative workflow infra."
-version = "2.0.0"
+version = "2.1.0"
 license = { file = "LICENSE" }
-dependencies = ["aiofiles", "pydantic", "opencv-python", "imageio-ffmpeg"]
+dependencies = ["aiofiles", "pydantic", "opencv-python", "imageio-ffmpeg", "tabulate", "brotli"]
 
 [project.urls]
 Repository = "https://github.com/BennyKok/comfyui-deploy"
