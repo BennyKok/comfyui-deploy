@@ -367,6 +367,12 @@ def apply_random_seed_to_workflow(workflow_api):
                         f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to SamplerCustom"
                     )
                     continue
+                if workflow_api[key]["class_type"] == "XlabsSampler":
+                    workflow_api[key]["inputs"]["noise_seed"] = randomSeed()
+                    logger.info(
+                        f"Applied random noise_seed {workflow_api[key]['inputs']['noise_seed']} to SamplerCustom"
+                    )
+                    continue
 
 
 def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
