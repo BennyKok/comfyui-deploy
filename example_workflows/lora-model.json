@@ -1,0 +1,152 @@
+{
+  "id": "ed93ac94-4f26-4ed3-a57b-73cd8f4d3494",
+  "revision": 0,
+  "last_node_id": 5,
+  "last_link_id": 1,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "LoraLoader",
+      "pos": [
+        736.646728515625,
+        628.3823852539062
+      ],
+      "size": [
+        315,
+        126
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "lora_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_name"
+          },
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": null
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.27",
+        "Node name for S&R": "LoraLoader"
+      },
+      "widgets_values": [
+        "1-292.safetensors",
+        1,
+        1
+      ]
+    },
+    {
+      "id": 1,
+      "type": "ComfyUIDeployExternalLora",
+      "pos": [
+        299.6898498535156,
+        624.7929077148438
+      ],
+      "size": [
+        400,
+        208
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "path",
+          "type": "*",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-deploy",
+        "ver": "cd3a2ff5471828f9c840e746551592e882c05aa4",
+        "Node name for S&R": "ComfyUIDeployExternalLora"
+      },
+      "widgets_values": [
+        "input_lora",
+        "HyperSD\\FLUX.1\\Hyper-FLUX.1-dev-16steps-lora.safetensors",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "id": 5,
+      "type": "Note",
+      "pos": [
+        302.09033203125,
+        401.2951965332031
+      ],
+      "size": [
+        479.4894104003906,
+        161.61924743652344
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "\"External Lora\" node will let you to use different loras from the Comfy Deploy UI or even via API.\n\n- lora_url:\n  url that will be used to download your LoRA model in execution time\n\n- lora_save_name:\n  when we download your model, this will be saved in your private storage, \n  give it a good name :D"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      2,
+      "COMBO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.167184107045006,
+      "offset": [
+        298.431389807788,
+        -207.58877445762934
+      ]
+    },
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
