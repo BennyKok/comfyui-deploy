@@ -301,6 +301,8 @@ function convertToInput(node, widget, config) {
   app.graph.add(inputNode);
   inputNode.connect(0, node, index);
 
+  app.graph.setDirtyCanvas(true);
+
   return input;
 }
 
