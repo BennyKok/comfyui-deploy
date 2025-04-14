@@ -267,6 +267,8 @@ function convertToInput(node, widget, config) {
   let externalNode = "";
   let inputId = "";
 
+  console.log(type);
+
   if (type === "INT") {
     externalNode = "ComfyUIDeployExternalNumberInt";
     inputId = "input_number";
@@ -277,7 +279,7 @@ function convertToInput(node, widget, config) {
     inputId = "input_number";
   }
   
-  if (type === "String") {
+  if (type === "STRING") {
     externalNode = "ComfyUIDeployExternalText";
     inputId = "input_text";
   }
