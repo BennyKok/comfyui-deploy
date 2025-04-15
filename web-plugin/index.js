@@ -211,10 +211,35 @@ function getWidgetType(config) {
   return { type };
 }
 
-const GET_CONFIG = Symbol();
+async function convertToInput(node, widget, config) {
+  const { type } = getWidgetType(config);
 
-function convertToInput(node, widget, config) {
-  console.log(node);
+  const result = await app.extensionManager.dialog.prompt(
+    {
+      title: "Convert " + widget.name + " to external input",
+      message: "Input name",
+      defaultValue: widget.name,
+    }
+  );
+
+  if (!result) return;
+
+  // Check for duplicate input IDs across existing external input nodes
+  const existingInputIds = Object.values(app.graph.nodes)
+    .filter(n => n.type.startsWith("ComfyUIDeployExternal"))
+    .map(n => n.widgets_values?.[0])
+    .filter(Boolean);
+
+  if (existingInputIds.includes(result)) {
+    app.extensionManager.toast.add({
+      severity: 'error',
+      summary: 'Input ID already exists',
+      detail: 'Please choose a different name.',
+      life: 3000
+    });
+    return;
+  }
+
   if (node.type == "LoadImage") {
     var inputNode = LiteGraph.createNode("ComfyUIDeployExternalImage");
     console.log(widget);
@@ -254,37 +279,22 @@ function convertToInput(node, widget, config) {
     return null;
   }
 
-  // hideWidget(node, widget);
-  const { type } = getWidgetType(config);
-  // const sz = node.size;
-  // const inputIsOptional = !!widget.options?.inputIsOptional;
-  // const input = node.addInput(widget.name, type, {
-  //   widget: { name: widget.name, [GET_CONFIG]: () => config },
-  //   ...(inputIsOptional ? { shape: LiteGraph.SlotShape.HollowCircle } : {}),
-  // });
-  // for (const widget2 of node.widgets) {
-  //   widget2.last_y += LiteGraph.NODE_SLOT_HEIGHT;
-  // }
-  // node.setSize([Math.max(sz[0], node.size[0]), Math.max(sz[1], node.size[1])]);
-
   let externalNode = "";
-  let inputId = "";
-
-  // console.log(type);
+  let inputId = result;
 
   if (type === "INT") {
     externalNode = "ComfyUIDeployExternalNumberInt";
-    inputId = "input_number";
+    // inputId = "input_number";
   }
 
   if (type === "FLOAT") {
     externalNode = "ComfyUIDeployExternalNumberSlider";
-    inputId = "input_number";
+    // inputId = "input_number";
   }
   
   if (type === "STRING") {
     externalNode = "ComfyUIDeployExternalText";
-    inputId = "input_text";
+    // inputId = "input_text";
   }
 
   if (!externalNode || !inputId) return;
@@ -292,19 +302,14 @@ function convertToInput(node, widget, config) {
   node.convertWidgetToInput(widget);
 
   var inputNode = LiteGraph.createNode(externalNode);
-  // console.log(widget);
   const index = node.inputs.findIndex((x) => x.name == widget.name);
-  // console.log(node.widgets_values, index);
   inputNode.configure({
     widgets_values: [inputId, widget.value],
   });
   inputNode.id = ++app.graph.last_node_id;
   inputNode.pos = node.pos;
   inputNode.pos[0] -= node.size[0] + 160;
-  // console.log(node, widget);
-  // console.log(app.graph);
   app.graph.add(inputNode);
-  // inputNode.connect(0, node, index);
   inputNode.connect(0, node, index);
 
   app.graph.setDirtyCanvas(true, true);
@@ -478,7 +483,7 @@ const ext = {
               toInput.push({
                 content: `Convert ${w.name} to external input`,
                 callback: /* @__PURE__ */ __name(
-                  () => convertToInput(this, w, config),
+                  async () => convertToInput(this, w, config),
                   "callback",
                 ),
                 className: "comfydeploy-menu-item",
