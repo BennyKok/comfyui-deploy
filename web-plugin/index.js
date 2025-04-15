@@ -180,7 +180,9 @@ function hideWidget(node, widget, suffix = "") {
   widget.origType = widget.type;
   widget.origComputeSize = widget.computeSize;
   widget.origSerializeValue = widget.serializeValue;
-  widget.computeSize = () => [0, -4];
+  // console.log(widget.origComputeSize);
+  // console.log(LiteGraph.NODE_SLOT_HEIGHT);
+  // widget.computeSize = () => [0, 0];
   widget.type = CONVERTED_TYPE + suffix;
   widget.serializeValue = () => {
     if (!node.inputs) {
@@ -234,40 +236,41 @@ function convertToInput(node, widget, config) {
 
     const links = app.graph.links;
 
-    console.log(currentOutputsLinks);
+    // console.log(currentOutputsLinks);
 
-    for (let i = 0; i < currentOutputsLinks.length; i++) {
-      const link = currentOutputsLinks[i];
-      const llink = links[link];
-      console.log(links[link]);
-      setTimeout(
-        () => inputNode.connect(0, llink.target_id, llink.target_slot),
-        100,
-      );
-    }
+    if (currentOutputsLinks)
+      for (let i = 0; i < currentOutputsLinks.length; i++) {
+        const link = currentOutputsLinks[i];
+        const llink = links[link];
+        console.log(links[link]);
+        setTimeout(
+          () => inputNode.connect(0, llink.target_id, llink.target_slot),
+          100,
+        );
+      }
 
     node.connect(0, inputNode, 0);
 
     return null;
   }
 
-  hideWidget(node, widget);
+  // hideWidget(node, widget);
   const { type } = getWidgetType(config);
-  const sz = node.size;
-  const inputIsOptional = !!widget.options?.inputIsOptional;
-  const input = node.addInput(widget.name, type, {
-    widget: { name: widget.name, [GET_CONFIG]: () => config },
-    ...(inputIsOptional ? { shape: LiteGraph.SlotShape.HollowCircle } : {}),
-  });
-  for (const widget2 of node.widgets) {
-    widget2.last_y += LiteGraph.NODE_SLOT_HEIGHT;
-  }
-  node.setSize([Math.max(sz[0], node.size[0]), Math.max(sz[1], node.size[1])]);
+  // const sz = node.size;
+  // const inputIsOptional = !!widget.options?.inputIsOptional;
+  // const input = node.addInput(widget.name, type, {
+  //   widget: { name: widget.name, [GET_CONFIG]: () => config },
+  //   ...(inputIsOptional ? { shape: LiteGraph.SlotShape.HollowCircle } : {}),
+  // });
+  // for (const widget2 of node.widgets) {
+  //   widget2.last_y += LiteGraph.NODE_SLOT_HEIGHT;
+  // }
+  // node.setSize([Math.max(sz[0], node.size[0]), Math.max(sz[1], node.size[1])]);
 
   let externalNode = "";
   let inputId = "";
 
-  console.log(type);
+  // console.log(type);
 
   if (type === "INT") {
     externalNode = "ComfyUIDeployExternalNumberInt";
@@ -286,24 +289,27 @@ function convertToInput(node, widget, config) {
 
   if (!externalNode || !inputId) return;
 
+  node.convertWidgetToInput(widget);
+
   var inputNode = LiteGraph.createNode(externalNode);
-  console.log(widget);
+  // console.log(widget);
   const index = node.inputs.findIndex((x) => x.name == widget.name);
-  console.log(node.widgets_values, index);
+  // console.log(node.widgets_values, index);
   inputNode.configure({
     widgets_values: [inputId, widget.value],
   });
   inputNode.id = ++app.graph.last_node_id;
   inputNode.pos = node.pos;
-  inputNode.pos[0] -= node.size[0] + 40;
-  console.log(inputNode);
-  console.log(app.graph);
+  inputNode.pos[0] -= node.size[0] + 160;
+  // console.log(node, widget);
+  // console.log(app.graph);
   app.graph.add(inputNode);
+  // inputNode.connect(0, node, index);
   inputNode.connect(0, node, index);
 
-  app.graph.setDirtyCanvas(true);
+  app.graph.setDirtyCanvas(true, true);
 
-  return input;
+  return node.inputs.find((x) => x.name == widget.name);
 }
 
 const CONVERTED_TYPE = "converted-widget";
@@ -316,7 +322,12 @@ function getConfig(widgetName) {
   );
 }
 
-function isConvertibleWidget(widget, config) {
+function isConvertibleWidget(node, widget, config) {
+  // console.log(config);
+  if (node.type === "LoadImage" && widget.type === "combo" && widget.name == "image") {
+    return true;
+  }
+
   return (
     (VALID_TYPES.includes(widget.type) || VALID_TYPES.includes(config[0])) &&
     !widget.options?.forceInput
@@ -463,7 +474,7 @@ const ext = {
               w.type,
               w.options || {},
             ];
-            if (isConvertibleWidget(w, config)) {
+            if (isConvertibleWidget(this, w, config)) {
               toInput.push({
                 content: `Convert ${w.name} to external input`,
                 callback: /* @__PURE__ */ __name(
