@@ -173,6 +173,7 @@ const VALID_TYPES = [
   "BOOLEAN",
   "text",
   "string",
+  "combo",
 ];
 
 function hideWidget(node, widget, suffix = "") {
@@ -213,6 +214,8 @@ function getWidgetType(config) {
 
 async function convertToInput(node, widget, config) {
   const { type } = getWidgetType(config);
+
+  console.log(config);
 
   const result = await app.extensionManager.dialog.prompt(
     {
@@ -291,24 +294,56 @@ async function convertToInput(node, widget, config) {
     externalNode = "ComfyUIDeployExternalNumberSlider";
     // inputId = "input_number";
   }
-  
+
   if (type === "STRING") {
     externalNode = "ComfyUIDeployExternalText";
     // inputId = "input_text";
+  }
+
+  if (type === "COMBO") {
+    externalNode = "ComfyUIDeployExternalEnum";
+    // inputId = "input_enum";
   }
 
   if (!externalNode || !inputId) return;
 
   node.convertWidgetToInput(widget);
 
-  var inputNode = LiteGraph.createNode(externalNode);
+  var inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId);
+
+  // if (type === "COMBO") {
+  //   inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId, {
+  //     dynamic_enum_options: config[0],
+  //   });
+  //   console.log(inputNode);
+  //   const options = config[0];
+  //   console.log(options);
+  // } else {
+  //   inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId);
+  // }
+
   const index = node.inputs.findIndex((x) => x.name == widget.name);
-  inputNode.configure({
-    widgets_values: [inputId, widget.value],
-  });
+  if (type === "COMBO") {
+    inputNode.configure({
+      widgets_values: [inputId, widget.value, JSON.stringify(config[0])],
+    });
+  } else
+  {
+    inputNode.configure({
+      widgets_values: [inputId, widget.value],
+    });
+  }
   inputNode.id = ++app.graph.last_node_id;
   inputNode.pos = node.pos;
   inputNode.pos[0] -= node.size[0] + 160;
+
+  if (type === "COMBO") {
+    console.log(inputNode);
+    const options = config[0];
+    console.log(options);
+    inputNode.widgets.find((x) => x.name == "default_value").options.values = options;
+  }
+ 
   app.graph.add(inputNode);
   inputNode.connect(0, node, index);
 
@@ -538,6 +573,13 @@ const ext = {
       console.log(nodeData.input.optional.default_value_url);
     }
 
+    if (
+      nodeData?.input?.optional?.default_value?.[1]?.dynamic_enum === true
+    ) {
+      nodeData.input.optional.default_value = ["DYNAMIC_ENUM"];
+      // console.log(nodeData.input.optional.default_value);
+    }
+
     // const origonNodeCreated = nodeType.prototype.onNodeCreated;
     // nodeType.prototype.onNodeCreated = function () {
     //   const r = origonNodeCreated
@@ -571,6 +613,10 @@ const ext = {
     //   return r
     // };
   },
+  
+  // async nodeCreated(node) {
+ 
+  // },
 
   registerCustomNodes() {
     /** @type {LGraphNode}*/
@@ -733,7 +779,35 @@ const ext = {
 
         return { widget: urlWidget };
       },
+
+      DYNAMIC_ENUM(node, inputName, inputData) {
+        // console.log("DYNAMIC_ENUM", JSON.parse(JSON.stringify(node)), inputName, inputData);
+        const enumWidget = node.addWidget(
+          "combo",
+          inputName,
+          "",
+          { serialize: true, values: [] },
+        );
+
+        return { widget: enumWidget };
+      },
     };
+  },
+
+  async afterConfigureGraph() {
+    app.graph.nodes.forEach(node => {
+      if (node.type === "ComfyUIDeployExternalEnum") {
+        const default_value_index = node.widgets.findIndex(x => x.name === "default_value");
+        const options_index = node.widgets.findIndex(x => x.name === "options");
+
+        var dynamic_enum_options = [node.widgets[default_value_index].value];
+        if (node.widgets[options_index].value) {
+          dynamic_enum_options = JSON.parse(node.widgets[options_index].value);
+        }
+        // console.log("dynamic_enum_options", dynamic_enum_options);
+        node.widgets[default_value_index].options.values = dynamic_enum_options;
+      }
+    });
   },
 
   async setup() {
@@ -923,6 +997,7 @@ const ext = {
         }
       })(app.graph.onAfterChange);
 
+
     sendEventToCD("cd_plugin_setup");
   },
 };
@@ -1107,6 +1182,8 @@ async function deployWorkflow() {
 
   const prompt = await app.graphToPrompt();
   let deps = undefined;
+
+  console.log(prompt);
 
   if (includeDeps) {
     loadingDialog.showLoading("Fetching existing version");
