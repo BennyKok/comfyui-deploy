@@ -215,7 +215,7 @@ function getWidgetType(config) {
 async function convertToInput(node, widget, config) {
   const { type } = getWidgetType(config);
 
-  console.log(config);
+  console.log(node, widget, config);
 
   const result = await app.extensionManager.dialog.prompt(
     {
@@ -322,10 +322,13 @@ async function convertToInput(node, widget, config) {
   //   inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId);
   // }
 
+  var options;
+
   const index = node.inputs.findIndex((x) => x.name == widget.name);
   if (type === "COMBO") {
+    options = widget.options?.values ?? config[0];
     inputNode.configure({
-      widgets_values: [inputId, widget.value, JSON.stringify(config[0])],
+      widgets_values: [inputId, widget.value, JSON.stringify(options)],
     });
   } else
   {
@@ -339,7 +342,6 @@ async function convertToInput(node, widget, config) {
 
   if (type === "COMBO") {
     console.log(inputNode);
-    const options = config[0];
     console.log(options);
     inputNode.widgets.find((x) => x.name == "default_value").options.values = options;
   }
