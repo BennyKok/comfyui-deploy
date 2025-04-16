@@ -42,5 +42,5 @@ class ComfyUIDeployExternalEnum:
 
     CATEGORY = "🔗ComfyDeploy"
 
-    def run(self, input_id, default_value=None, display_name=None, description=None):
+    def run(self, input_id, options=None, default_value=None, display_name=None, description=None):
         return [default_value]
