@@ -139,7 +139,9 @@ async def async_request_with_retry(
                 logger.error(f"Error response body: {error_body}")
 
             if attempt == max_retries - 1:
-                logger.error(f"Request {method} : {url} failed after {max_retries} attempts: {e}")
+                logger.error(
+                    f"Request {method} : {url} failed after {max_retries} attempts: {e}"
+                )
                 raise
 
         await asyncio.sleep(retry_delay)
@@ -1392,6 +1394,8 @@ async def send_json_override(self, event, data, sid=None):
             logger.info(f"\nNode Execution Timeline:\n{timeline}")
             # Clear the execution times for the next run
 
+    print("event 123", event)
+    print("data 123", data)
     # the last executing event is none, then the workflow is finished
     if event == "executing" and data.get("node") is None:
         mark_prompt_done(prompt_id=prompt_id)
