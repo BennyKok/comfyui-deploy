@@ -1395,9 +1395,7 @@ async def send_json_override(self, event, data, sid=None):
             # Clear the execution times for the next run
 
     # the last executing event is none, then the workflow is finished
-    if event == "execution_success" or (
-        event == "executing" and data.get("node") is None
-    ):
+    if event == "executing" and data.get("node") is None:
         mark_prompt_done(prompt_id=prompt_id)
         if not have_pending_upload(prompt_id):
             await update_run(prompt_id, Status.SUCCESS)
@@ -1842,16 +1840,26 @@ async def upload_file(
 
 
 def have_pending_upload(prompt_id):
+    logger.info(f"Checking pending uploads for prompt_id: {prompt_id}")
+
     if (
         prompt_id in prompt_metadata
         and len(prompt_metadata[prompt_id].uploading_nodes) > 0
     ):
+        uploading_nodes = prompt_metadata[prompt_id].uploading_nodes
         logger.info(
-            f"Have pending upload {len(prompt_metadata[prompt_id].uploading_nodes)}"
+            f"Have pending upload for {prompt_id}: {len(uploading_nodes)} nodes. Nodes: {uploading_nodes}"
         )
         return True
 
-    logger.info("No pending upload")
+    if prompt_id in prompt_metadata:
+        logger.info(
+            f"No pending upload for prompt_id: {prompt_id}, uploading_nodes is empty"
+        )
+    else:
+        logger.info(
+            f"No pending upload for prompt_id: {prompt_id}, not in prompt_metadata"
+        )
     return False
 
 
