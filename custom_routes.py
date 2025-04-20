@@ -2015,7 +2015,7 @@ async def upload_in_background(
 
         if file_upload_endpoint is not None and file_upload_endpoint != "":
             # Flag to track if we need to update status after uploads
-            has_uploads = False
+            # has_uploads = False
 
             # Flatten all file types into a single list of uploads
             for file_type, content_type_key, default_content_type in [
@@ -2044,11 +2044,11 @@ async def upload_in_background(
 
                     # Add to the upload queue instead of uploading immediately
                     await upload_queue.add_upload(prompt_id, item, node_id)
-                    has_uploads = True
+                    # has_uploads = True
 
             # Mark the prompt as needing uploads but still report data immediately
-            if has_uploads:
-                await update_file_status(prompt_id, data, True, node_id=node_id)
+            # if has_uploads:
+            #     await update_file_status(prompt_id, data, True, node_id=node_id)
         else:
             logger.info("No file upload endpoint, skipping file upload")
 
