@@ -1310,7 +1310,7 @@ send_json = prompt_server.send_json
 
 
 async def send_json_override(self, event, data, sid=None):
-    # logger.info("INTERNAL:", event, data, sid)
+    # logger.info(f"INTERNAL: event={event}, data={data}, sid={sid}")
     prompt_id = data.get("prompt_id")
 
     target_sid = sid
@@ -2014,9 +2014,12 @@ async def upload_in_background(
                     if file_type == "model_file":
                         if isinstance(item, str):
                             filename = os.path.basename(item)
+                            # Extract folder name from the path
+                            folder_path = os.path.dirname(item)
+                            subfolder = os.path.basename(folder_path) if folder_path else ""
                             item = {
                                 "filename": filename,
-                                "subfolder": "",
+                                "subfolder": subfolder,
                                 "type": "output",
                             }
 
@@ -2667,6 +2670,8 @@ class UploadQueue:
                 file_info = upload_task["file_info"]
                 node_id = upload_task["node_id"]
                 upload_id = upload_task["upload_id"]
+
+                print(file_info)
 
                 try:
                     # Coordinate the actual start of the upload
