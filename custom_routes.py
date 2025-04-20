@@ -1310,7 +1310,7 @@ send_json = prompt_server.send_json
 
 
 async def send_json_override(self, event, data, sid=None):
-    # logger.info("INTERNAL:", event, data, sid)
+    # logger.info(f"INTERNAL: event={event}, data={data}, sid={sid}")
     prompt_id = data.get("prompt_id")
 
     target_sid = sid
@@ -2016,7 +2016,7 @@ async def upload_in_background(
                             filename = os.path.basename(item)
                             item = {
                                 "filename": filename,
-                                "subfolder": "",
+                                "subfolder": data.get("subfolder", ""),
                                 "type": "output",
                             }
 
