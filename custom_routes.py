@@ -2014,9 +2014,12 @@ async def upload_in_background(
                     if file_type == "model_file":
                         if isinstance(item, str):
                             filename = os.path.basename(item)
+                            # Extract folder name from the path
+                            folder_path = os.path.dirname(item)
+                            subfolder = os.path.basename(folder_path) if folder_path else ""
                             item = {
                                 "filename": filename,
-                                "subfolder": data.get("subfolder", ""),
+                                "subfolder": subfolder,
                                 "type": "output",
                             }
 
@@ -2667,6 +2670,8 @@ class UploadQueue:
                 file_info = upload_task["file_info"]
                 node_id = upload_task["node_id"]
                 upload_id = upload_task["upload_id"]
+
+                print(file_info)
 
                 try:
                     # Coordinate the actual start of the upload
