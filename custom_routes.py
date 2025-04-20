@@ -1915,11 +1915,14 @@ async def update_file_status(
     # if 'uploading_nodes' not in prompt_metadata[prompt_id]:
     #     prompt_metadata[prompt_id]['uploading_nodes'] = set()
 
-    if node_id is not None:
-        if uploading:
-            prompt_metadata[prompt_id].uploading_nodes.add(node_id)
-        else:
-            prompt_metadata[prompt_id].uploading_nodes.discard(node_id)
+    if uploading:
+        prompt_metadata[prompt_id].uploading_nodes.add(node_id)
+        logger.info(f"Added node {node_id} to uploading_nodes for prompt {prompt_id}")
+    else:
+        prompt_metadata[prompt_id].uploading_nodes.discard(node_id)
+        logger.info(
+            f"Removed node {node_id} from uploading_nodes for prompt {prompt_id}"
+        )
 
     # logger.info(f"Remaining uploads: {prompt_metadata[prompt_id].uploading_nodes}")
     # Update the remote status
