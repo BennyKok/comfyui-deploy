@@ -1394,10 +1394,10 @@ async def send_json_override(self, event, data, sid=None):
             logger.info(f"\nNode Execution Timeline:\n{timeline}")
             # Clear the execution times for the next run
 
-    print("event 123", event)
-    print("data 123", data)
     # the last executing event is none, then the workflow is finished
-    if event == "executing" and data.get("node") is None:
+    if event == "execution_success" or (
+        event == "executing" and data.get("node") is None
+    ):
         mark_prompt_done(prompt_id=prompt_id)
         if not have_pending_upload(prompt_id):
             await update_run(prompt_id, Status.SUCCESS)
