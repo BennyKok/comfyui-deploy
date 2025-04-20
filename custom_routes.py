@@ -2027,6 +2027,7 @@ async def upload_in_background(
                 items = data.get(file_type, [])
 
                 for item in items:
+                    logger.info(f"Processing {file_type} file: {item}")
                     # if is model_file, just add it to the data
                     if file_type == "model_file":
                         if isinstance(item, str):
