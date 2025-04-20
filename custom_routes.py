@@ -1490,6 +1490,8 @@ async def send_json_override(self, event, data, sid=None):
                     comfy_message_queues[prompt_id].put_nowait(
                         {"event": "output_ready", "data": data}
                     )
+
+            logger.info(f"Prompt {prompt_id} executed {class_type} {data}")
             # logger.info(f"Executed {class_type} {data}")
         else:
             pass
