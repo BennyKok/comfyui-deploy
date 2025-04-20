@@ -1312,7 +1312,7 @@ send_json = prompt_server.send_json
 
 
 async def send_json_override(self, event, data, sid=None):
-    logger.info("INTERNAL:", event, data, sid)
+    logger.info(f"INTERNAL: {event} {data} {sid}")
     prompt_id = data.get("prompt_id")
 
     target_sid = sid
