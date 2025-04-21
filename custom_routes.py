@@ -1912,15 +1912,15 @@ async def update_file_status(
         return
 
     # if there are still nodes that are uploading, then we set the status to uploading
-    if uploading:
-        if prompt_metadata[prompt_id].status != Status.UPLOADING:
-            await update_run(prompt_id, Status.UPLOADING)
-            await send(
-                "uploading",
-                {
-                    "prompt_id": prompt_id,
-                },
-            )
+    # if uploading:
+    #     if prompt_metadata[prompt_id].status != Status.UPLOADING:
+    #         await update_run(prompt_id, Status.UPLOADING)
+    #         await send(
+    #             "uploading",
+    #             {
+    #                 "prompt_id": prompt_id,
+    #             },
+    #         )
 
     # if there are no nodes that are uploading, then we set the status to success
     elif (
@@ -2539,6 +2539,8 @@ class UploadQueue:
                         prompt_id in self.pending_uploads
                         and len(self.pending_uploads[prompt_id]) == 1
                     ):
+                        await update_run(prompt_id, Status.SUCCESS)
+
                         self._log_upload_stats(prompt_id)
                         # Clean up stats
                         del self.upload_stats[prompt_id]
