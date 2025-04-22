@@ -2000,6 +2000,7 @@ async def upload_in_background(
                 ("files", "content_type", "image/png"),
                 ("gifs", "format", "image/gif"),
                 ("model_file", "format", "application/octet-stream"),
+                ("text", "format", "text/plain"),
             ]:
                 items = data.get(file_type, [])
 
@@ -2083,6 +2084,7 @@ async def update_run_with_output(
             or "files" in data
             or "gifs" in data
             or "model_file" in data
+            or "text" in data
         )
     if bypass_upload and have_upload_media:
         print(
