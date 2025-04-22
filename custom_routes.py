@@ -1841,13 +1841,9 @@ async def upload_file(
 
 
 def have_pending_upload(prompt_id):
-    if (
-        prompt_id in prompt_metadata
-        and len(prompt_metadata[prompt_id].uploading_nodes) > 0
-    ):
-        logger.info(
-            f"Have pending upload {len(prompt_metadata[prompt_id].uploading_nodes)}"
-        )
+    # Check if there are pending uploads in the queue
+    if prompt_id in upload_queue.pending_uploads and upload_queue.pending_uploads[prompt_id]:
+        logger.info(f"Have pending upload {len(upload_queue.pending_uploads[prompt_id])}")
         return True
 
     logger.info("No pending upload")
@@ -1901,16 +1897,11 @@ async def handle_error(prompt_id, data, e: Exception):
 async def update_file_status(
     prompt_id: str, data, uploading, have_error=False, node_id=None
 ):
-    # if 'uploading_nodes' not in prompt_metadata[prompt_id]:
-    #     prompt_metadata[prompt_id]['uploading_nodes'] = set()
+    # We're using upload_queue as the single source of truth for tracking uploads
+    # The upload_queue.pending_uploads is managed by the UploadQueue class itself
+    # We no longer need to track uploading_nodes in prompt_metadata
 
-    if node_id is not None:
-        if uploading:
-            prompt_metadata[prompt_id].uploading_nodes.add(node_id)
-        else:
-            prompt_metadata[prompt_id].uploading_nodes.discard(node_id)
-
-    # logger.info(f"Remaining uploads: {prompt_metadata[prompt_id].uploading_nodes}")
+    # logger.info(f"Pending uploads in queue: {upload_queue.pending_uploads.get(prompt_id, set())}")
     # Update the remote status
 
     if have_error:
@@ -1924,15 +1915,15 @@ async def update_file_status(
         return
 
     # if there are still nodes that are uploading, then we set the status to uploading
-    if uploading:
-        if prompt_metadata[prompt_id].status != Status.UPLOADING:
-            await update_run(prompt_id, Status.UPLOADING)
-            await send(
-                "uploading",
-                {
-                    "prompt_id": prompt_id,
-                },
-            )
+    # if uploading:
+    #     if prompt_metadata[prompt_id].status != Status.UPLOADING:
+    #         await update_run(prompt_id, Status.UPLOADING)
+    #         await send(
+    #             "uploading",
+    #             {
+    #                 "prompt_id": prompt_id,
+    #             },
+    #         )
 
     # if there are no nodes that are uploading, then we set the status to success
     elif (
@@ -2554,6 +2545,8 @@ class UploadQueue:
                         prompt_id in self.pending_uploads
                         and len(self.pending_uploads[prompt_id]) == 1
                     ):
+                        await update_run(prompt_id, Status.SUCCESS)
+
                         self._log_upload_stats(prompt_id)
                         # Clean up stats
                         del self.upload_stats[prompt_id]
