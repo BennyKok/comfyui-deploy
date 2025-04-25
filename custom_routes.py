@@ -1949,7 +1949,7 @@ async def handle_upload(
 
     for item in items:
         # Skipping temp files
-        if item.get("type") == "temp":
+        if isinstance(item, dict) and item.get("type") == "temp":
             continue
 
         file_type = item.get(content_type_key, default_content_type)
@@ -2019,7 +2019,7 @@ async def upload_in_background(
                             }
 
                     # Skip temp files
-                    if item.get("type") == "temp":
+                    if isinstance(item, dict) and item.get("type") == "temp":
                         continue
 
                     # Add to the upload queue instead of uploading immediately
