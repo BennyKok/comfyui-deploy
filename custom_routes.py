@@ -1403,20 +1403,20 @@ async def send_json_override(self, event, data, sid=None):
         # We will now rely on the UploadQueue worker to set the final SUCCESS status
         # after all uploads are confirmed complete.
 
-        # if not have_pending_upload(prompt_id):
-        #     await update_run(prompt_id, Status.SUCCESS) # <-- REMOVE/COMMENT OUT
-        #     if prompt_id in prompt_metadata: # <-- REMOVE/COMMENT OUT THIS BLOCK
-        #         current_time = time.perf_counter()
-        #         if prompt_metadata[prompt_id].start_time is not None:
-        #             elapsed_time = current_time - prompt_metadata[prompt_id].start_time
-        #             logger.info(f"Elapsed time: {elapsed_time} seconds")
-        #             asyncio.create_task(
-        #                 send(
-        #                     "elapsed_time",
-        #                     {"prompt_id": prompt_id, "elapsed_time": elapsed_time},
-        #                     sid=sid,
-        #                 )
-        #             )
+        if not have_pending_upload(prompt_id):
+            # await update_run(prompt_id, Status.SUCCESS) # <-- REMOVE/COMMENT OUT
+            if prompt_id in prompt_metadata:  # <-- REMOVE/COMMENT OUT THIS BLOCK
+                current_time = time.perf_counter()
+                if prompt_metadata[prompt_id].start_time is not None:
+                    elapsed_time = current_time - prompt_metadata[prompt_id].start_time
+                    logger.info(f"Elapsed time: {elapsed_time} seconds")
+                    asyncio.create_task(
+                        send(
+                            "elapsed_time",
+                            {"prompt_id": prompt_id, "elapsed_time": elapsed_time},
+                            sid=sid,
+                        )
+                    )
 
     if event == "executing" and data.get("node") is not None:
         node = data.get("node")
