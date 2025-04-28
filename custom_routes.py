@@ -1400,9 +1400,12 @@ async def send_json_override(self, event, data, sid=None):
     # the last executing event is none, then the workflow is finished
     if event == "executing" and data.get("node") is None:
         mark_prompt_done(prompt_id=prompt_id)
+        # We will now rely on the UploadQueue worker to set the final SUCCESS status
+        # after all uploads are confirmed complete.
+
         if not have_pending_upload(prompt_id):
-            await update_run(prompt_id, Status.SUCCESS)
-            if prompt_id in prompt_metadata:
+            # await update_run(prompt_id, Status.SUCCESS) # <-- REMOVE/COMMENT OUT
+            if prompt_id in prompt_metadata:  # <-- REMOVE/COMMENT OUT THIS BLOCK
                 current_time = time.perf_counter()
                 if prompt_metadata[prompt_id].start_time is not None:
                     elapsed_time = current_time - prompt_metadata[prompt_id].start_time
@@ -2559,9 +2562,11 @@ class UploadQueue:
                     # If this was the last file for this prompt, show the stats summary
                     if (
                         prompt_id in self.pending_uploads
+                        # We now rely on the worker's finally block for the final SUCCESS update.
+                        # Check if the set becomes empty *after* removal in the worker.
                         and len(self.pending_uploads[prompt_id]) == 1
                     ):
-                        await update_run(prompt_id, Status.SUCCESS)
+                        # await update_run(prompt_id, Status.SUCCESS) # <-- REMOVE/COMMENT OUT
 
                         self._log_upload_stats(prompt_id)
                         # Clean up stats
