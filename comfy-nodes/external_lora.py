@@ -1,8 +1,4 @@
 import folder_paths
-from PIL import Image, ImageOps
-import numpy as np
-import torch
-import folder_paths
 
 
 class AnyType(str):
@@ -41,6 +37,10 @@ class ComfyUIDeployExternalLora:
                     "STRING",
                     {"multiline": False, "default": ""},
                 ),
+                "bearer_token": (
+                    "STRING",
+                    {"multiline": False, "default": ""},
+                ),
             },
         }
 
@@ -57,6 +57,7 @@ class ComfyUIDeployExternalLora:
         display_name=None,
         description=None,
         lora_url=None,
+        bearer_token=None,
     ):
         import requests
         import os
@@ -84,9 +85,13 @@ class ComfyUIDeployExternalLora:
                     + " to "
                     + destination_path
                 )
+                headers = {"User-Agent": "Mozilla/5.0"}
+                if bearer_token:
+                    headers["Authorization"] = f"Bearer {bearer_token}"
+                    print("using bearer token")
                 response = requests.get(
                     lora_url,
-                    headers={"User-Agent": "Mozilla/5.0"},
+                    headers=headers,
                     allow_redirects=True,
                 )
                 with open(destination_path, "wb") as out_file:
