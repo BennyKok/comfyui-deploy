@@ -88,6 +88,7 @@ class ComfyUIDeployExternalLora:
                 headers = {"User-Agent": "Mozilla/5.0"}
                 if bearer_token:
                     headers["Authorization"] = f"Bearer {bearer_token}"
+                    print("using bearer token")
                 response = requests.get(
                     lora_url,
                     headers=headers,
