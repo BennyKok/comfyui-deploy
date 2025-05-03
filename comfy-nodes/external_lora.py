@@ -37,6 +37,10 @@ class ComfyUIDeployExternalLora:
                     "STRING",
                     {"multiline": False, "default": ""},
                 ),
+                "bearer_token": (
+                    "STRING",
+                    {"multiline": False, "default": ""},
+                ),
             },
         }
 
