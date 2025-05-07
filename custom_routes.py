@@ -2010,13 +2010,14 @@ async def upload_in_background(
                 ("files", "content_type", "image/png"),
                 ("gifs", "format", "image/gif"),
                 ("model_file", "format", "application/octet-stream"),
+                ("result", "format", "application/octet-stream"),
                 ("text_file", "format", "text/plain"),
             ]:
                 items = data.get(file_type, [])
 
                 for item in items:
                     # if is model_file, just add it to the data
-                    if file_type == "model_file":
+                    if file_type == "model_file" or file_type == "result":
                         if isinstance(item, str):
                             filename = os.path.basename(item)
                             # Extract folder name from the path
@@ -2096,6 +2097,7 @@ async def update_run_with_output(
             or "files" in data
             or "gifs" in data
             or "model_file" in data
+            or "result" in data
             or "text_file" in data
         )
     if bypass_upload and have_upload_media:
