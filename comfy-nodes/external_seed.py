@@ -22,7 +22,6 @@ class ComfyUIDeployExternalSeed:
                     "INT",
                     {"default": 4294967295, "min": 1, "max": 999999999999999},
                 ),
-                "control": (["Randomize", "Fixed"],),
             },
             "optional": {
                 "display_name": (
@@ -53,19 +52,28 @@ class ComfyUIDeployExternalSeed:
         input_id,
         min_value,
         max_value,
-        control,
         default_value=None,
         **kwargs,
     ):
         """Inform ComfyUI whether the node output should be considered changed.
 
-        If `control` is "Fixed", we return the inputs tuple so the cached result is reused until the user changes something.
-        For "Randomize", we force re-execution each queue.
+        If default_value is within range (Fixed mode), we return the inputs tuple
+        so the cached result is reused until the user changes something.
+        For Randomize mode, we force re-execution each queue.
         """
-        if control == "Fixed":
-            return (input_id, control, default_value)
+        # Clamp values to allowed range for check
+        min_value = max(1, min_value)
+        max_value = min(cls._MAX_LIMIT, max_value)
 
-        # For Randomize we force re-execution each queue
+        # Fixed mode when default_value is within range
+        if (
+            default_value is not None
+            and default_value >= min_value
+            and default_value <= max_value
+        ):
+            return (input_id, default_value)
+
+        # For Randomize (default_value is -1 or out of range) we force re-execution
         import random as _rnd
 
         return _rnd.random()
@@ -75,7 +83,6 @@ class ComfyUIDeployExternalSeed:
         input_id,
         min_value: int,
         max_value: int,
-        control: str = "Randomize",
         display_name=None,
         description=None,
         default_value: int = -1,
@@ -88,17 +95,13 @@ class ComfyUIDeployExternalSeed:
         if min_value > max_value:
             min_value, max_value = max_value, min_value
 
-        # If default_value is within range, switch to Fixed mode
+        # Fixed mode: default_value is within range
         if default_value >= min_value and default_value <= max_value:
-            control = "Fixed"
-
-        # Control logic
-        if control == "Fixed":
             seed = int(default_value)
             self._cached_seed = seed
             return [seed]
 
-        # Randomize (default or when default_value is -1)
+        # Randomize mode: default_value is -1 or out of range
         seed = random.randint(min_value, max_value)
         self._cached_seed = seed
         return [seed]
