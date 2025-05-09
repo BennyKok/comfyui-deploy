@@ -12,7 +12,7 @@ class ComfyUIDeployExternalSeed:
                 ),
                 "default_value": (
                     "INT",
-                    {"default": 1},
+                    {"default": -1},
                 ),
                 "min_value": (
                     "INT",
@@ -22,7 +22,7 @@ class ComfyUIDeployExternalSeed:
                     "INT",
                     {"default": 4294967295, "min": 1, "max": 999999999999999},
                 ),
-                "control": (["Randomize", "Fixed", "Increment", "Decrement"],),
+                "control": (["Randomize", "Fixed"],),
             },
             "optional": {
                 "display_name": (
@@ -60,12 +60,12 @@ class ComfyUIDeployExternalSeed:
         """Inform ComfyUI whether the node output should be considered changed.
 
         If `control` is "Fixed", we return the inputs tuple so the cached result is reused until the user changes something.
-        For "Randomize", "Increment", "Decrement", we force re-execution each queue.
+        For "Randomize", we force re-execution each queue.
         """
         if control == "Fixed":
             return (input_id, control, default_value)
 
-        # For Randomize, Increment, Decrement we force re-execution each queue
+        # For Randomize we force re-execution each queue
         import random as _rnd
 
         return _rnd.random()
@@ -78,7 +78,7 @@ class ComfyUIDeployExternalSeed:
         control: str = "Randomize",
         display_name=None,
         description=None,
-        default_value: int | None = None,
+        default_value: int = -1,
     ):
         # Clamp values to allowed range
         min_value = max(1, min_value)
@@ -88,40 +88,17 @@ class ComfyUIDeployExternalSeed:
         if min_value > max_value:
             min_value, max_value = max_value, min_value
 
+        # If default_value is within range, switch to Fixed mode
+        if default_value >= min_value and default_value <= max_value:
+            control = "Fixed"
+
         # Control logic
         if control == "Fixed":
-            if default_value is None:
-                seed = self._cached_seed if self._cached_seed is not None else 1
-            else:
-                seed = int(default_value)
+            seed = int(default_value)
             self._cached_seed = seed
             return [seed]
 
-        elif control == "Increment":
-            if self._cached_seed is None:
-                self._cached_seed = int(
-                    default_value if default_value is not None else min_value
-                )
-            else:
-                self._cached_seed += 1
-            # Clamp to max_value
-            if self._cached_seed > max_value:
-                self._cached_seed = max_value
-            return [self._cached_seed]
-
-        elif control == "Decrement":
-            if self._cached_seed is None:
-                self._cached_seed = int(
-                    default_value if default_value is not None else max_value
-                )
-            else:
-                self._cached_seed -= 1
-            # Clamp to min_value
-            if self._cached_seed < min_value:
-                self._cached_seed = min_value
-            return [self._cached_seed]
-
-        # Randomize (default)
+        # Randomize (default or when default_value is -1)
         seed = random.randint(min_value, max_value)
         self._cached_seed = seed
         return [seed]
