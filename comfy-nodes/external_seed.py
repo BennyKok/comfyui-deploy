@@ -22,7 +22,7 @@ class ComfyUIDeployExternalSeed:
                     "INT",
                     {"default": 4294967295, "min": 1, "max": 999999999999999},
                 ),
-                "is_fixed": ("BOOLEAN", {"default": False}),
+                "control": (["Randomize", "Fixed", "Increment", "Decrement"],),
             },
             "optional": {
                 "display_name": (
@@ -53,21 +53,18 @@ class ComfyUIDeployExternalSeed:
         input_id,
         lower_limit,
         upper_limit,
-        is_fixed,
+        control,
         default_value=None,
     ):
         """Inform ComfyUI whether the node output should be considered changed.
 
-        If `is_fixed` is False, we always signal that the node changed by returning a
-        fresh random value.  This forces ComfyUI to re-execute the node so we get a
-        new seed on every graph run.  When `is_fixed` is True we return the inputs
-        tuple so the cached result is reused until the user changes something.
+        If `control` is "Fixed", we return the inputs tuple so the cached result is reused until the user changes something.
+        For "Randomize", "Increment", "Decrement", we force re-execution each queue.
         """
-        if is_fixed:
-            # When fixed, output depends only on default_value
-            return (input_id, is_fixed, default_value)
+        if control == "Fixed":
+            return (input_id, control, default_value)
 
-        # Not fixed: force change each time by returning a unique random number
+        # For Randomize, Increment, Decrement we force re-execution each queue
         import random as _rnd
 
         return _rnd.random()
@@ -77,7 +74,7 @@ class ComfyUIDeployExternalSeed:
         input_id,
         lower_limit: int,
         upper_limit: int,
-        is_fixed: bool = False,
+        control: str = "Randomize",
         display_name=None,
         description=None,
         default_value: int | None = None,
@@ -90,20 +87,43 @@ class ComfyUIDeployExternalSeed:
         if lower_limit > upper_limit:
             lower_limit, upper_limit = upper_limit, lower_limit
 
-        if is_fixed:
-            # Always use default_value if provided (ignore limits)
+        # Control logic
+        if control == "Fixed":
             if default_value is None:
-                # Fallback to cached or first generation when missing
-                if self._cached_seed is not None:
-                    return [self._cached_seed]
-                default_value = 1
-            self._cached_seed = int(default_value)
+                seed = self._cached_seed if self._cached_seed is not None else 1
+            else:
+                seed = int(default_value)
+            self._cached_seed = seed
+            return [seed]
+
+        elif control == "Increment":
+            if self._cached_seed is None:
+                self._cached_seed = int(
+                    default_value if default_value is not None else lower_limit
+                )
+            else:
+                self._cached_seed += 1
+            # Clamp to upper_limit
+            if self._cached_seed > upper_limit:
+                self._cached_seed = upper_limit
             return [self._cached_seed]
 
-        # Generate random seed within range (inclusive)
-        generated_seed = random.randint(lower_limit, upper_limit)
+        elif control == "Decrement":
+            if self._cached_seed is None:
+                self._cached_seed = int(
+                    default_value if default_value is not None else upper_limit
+                )
+            else:
+                self._cached_seed -= 1
+            # Clamp to lower_limit
+            if self._cached_seed < lower_limit:
+                self._cached_seed = lower_limit
+            return [self._cached_seed]
 
-        return [generated_seed]
+        # Randomize (default)
+        seed = random.randint(lower_limit, upper_limit)
+        self._cached_seed = seed
+        return [seed]
 
 
 NODE_CLASS_MAPPINGS = {"ComfyUIDeployExternalSeed": ComfyUIDeployExternalSeed}
