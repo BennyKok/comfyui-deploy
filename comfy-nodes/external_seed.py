@@ -30,7 +30,10 @@ class ComfyUIDeployExternalSeed:
                 ),
                 "description": (
                     "STRING",
-                    {"multiline": True, "default": ""},
+                    {
+                        "multiline": True,
+                        "default": 'For default value:\n"-1" (i.e. not in range): Randomize within the min and max value range. \nin range: Fixed, always the same value\n',
+                    },
                 ),
             },
         }
