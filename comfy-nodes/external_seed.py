@@ -14,11 +14,11 @@ class ComfyUIDeployExternalSeed:
                     "INT",
                     {"default": 1},
                 ),
-                "lower_limit": (
+                "min_value": (
                     "INT",
                     {"default": 1, "min": 1, "max": 999999999999999},
                 ),
-                "upper_limit": (
+                "max_value": (
                     "INT",
                     {"default": 4294967295, "min": 1, "max": 999999999999999},
                 ),
@@ -51,10 +51,11 @@ class ComfyUIDeployExternalSeed:
     def IS_CHANGED(
         cls,
         input_id,
-        lower_limit,
-        upper_limit,
+        min_value,
+        max_value,
         control,
         default_value=None,
+        **kwargs,
     ):
         """Inform ComfyUI whether the node output should be considered changed.
 
@@ -72,20 +73,20 @@ class ComfyUIDeployExternalSeed:
     def run(
         self,
         input_id,
-        lower_limit: int,
-        upper_limit: int,
+        min_value: int,
+        max_value: int,
         control: str = "Randomize",
         display_name=None,
         description=None,
         default_value: int | None = None,
     ):
         # Clamp values to allowed range
-        lower_limit = max(1, lower_limit)
-        upper_limit = min(self._MAX_LIMIT, upper_limit)
+        min_value = max(1, min_value)
+        max_value = min(self._MAX_LIMIT, max_value)
 
         # Ensure limits are in correct order after clamping
-        if lower_limit > upper_limit:
-            lower_limit, upper_limit = upper_limit, lower_limit
+        if min_value > max_value:
+            min_value, max_value = max_value, min_value
 
         # Control logic
         if control == "Fixed":
@@ -99,29 +100,29 @@ class ComfyUIDeployExternalSeed:
         elif control == "Increment":
             if self._cached_seed is None:
                 self._cached_seed = int(
-                    default_value if default_value is not None else lower_limit
+                    default_value if default_value is not None else min_value
                 )
             else:
                 self._cached_seed += 1
-            # Clamp to upper_limit
-            if self._cached_seed > upper_limit:
-                self._cached_seed = upper_limit
+            # Clamp to max_value
+            if self._cached_seed > max_value:
+                self._cached_seed = max_value
             return [self._cached_seed]
 
         elif control == "Decrement":
             if self._cached_seed is None:
                 self._cached_seed = int(
-                    default_value if default_value is not None else upper_limit
+                    default_value if default_value is not None else max_value
                 )
             else:
                 self._cached_seed -= 1
-            # Clamp to lower_limit
-            if self._cached_seed < lower_limit:
-                self._cached_seed = lower_limit
+            # Clamp to min_value
+            if self._cached_seed < min_value:
+                self._cached_seed = min_value
             return [self._cached_seed]
 
         # Randomize (default)
-        seed = random.randint(lower_limit, upper_limit)
+        seed = random.randint(min_value, max_value)
         self._cached_seed = seed
         return [seed]
 
