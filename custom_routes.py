@@ -436,6 +436,12 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 if value["class_type"] == "ComfyUIDeployExternalEXR":
                     value["inputs"]["exr_file"] = new_value
 
+                if value["class_type"] == "ComfyUIDeployExternalSeed":
+                    logger.info(
+                        f"Applied random seed {new_value} to {value['class_type']}"
+                    )
+                    value["inputs"]["default_value"] = new_value
+
 
 def send_prompt(sid: str, inputs: StreamingPrompt):
     # workflow_api = inputs.workflow_api
