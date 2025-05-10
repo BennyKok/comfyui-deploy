@@ -2878,5 +2878,3 @@ def format_execution_timeline(execution_times):
         current_time += duration
 
     return format_table(headers, rows)
-
-    return format_table(headers, rows)
