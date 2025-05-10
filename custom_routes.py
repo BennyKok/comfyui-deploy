@@ -316,7 +316,7 @@ def randomSeed(num_digits=15):
     return random.randint(range_start, range_end)
 
 
-def apply_random_seed_to_workflow(workflow_api):
+def apply_random_seed_to_workflow(workflow_api, workflow):
     """
     Applies a random seed to each element in the workflow_api that has a 'seed' input.
 
@@ -329,6 +329,41 @@ def apply_random_seed_to_workflow(workflow_api):
                 # If seed is a list, it's an input from another node (generally `external number int`)
                 if isinstance(workflow_api[key]["inputs"]["seed"], list):
                     continue
+
+                # Check node type in workflow to determine if we should randomize
+                node_id = key
+                should_skip = (
+                    False  # Add a flag to track if we should skip randomization
+                )
+
+                for node in workflow["nodes"]:
+                    if str(node["id"]) == node_id and node["type"] == "KSampler":
+                        # Check if this node has widgets_values and if seed setting is not "fixed"
+                        if "widgets_values" in node and len(node["widgets_values"]) > 1:
+                            seed_mode = node["widgets_values"][1]
+                            if seed_mode == "fixed":
+                                # Skip randomization for fixed seeds
+                                logger.info(
+                                    f"Skipping random seed for KSampler (node {node_id}) as it's set to fixed"
+                                )
+                                should_skip = True  # Set the flag to skip randomization
+                                break  # Exit the inner loop
+
+                            # Apply random seed for non-fixed seeds (randomize, iter, etc.)
+                            workflow_api[key]["inputs"]["seed"] = randomSeed()
+                            logger.info(
+                                f"Applied random seed {workflow_api[key]['inputs']['seed']} to KSampler (node {node_id})"
+                            )
+                            should_skip = (
+                                True  # Set the flag to skip default randomization
+                            )
+                            break  # Exit the inner loop
+                        break  # This break will skip checking other nodes if widgets_values doesn't exist
+
+                # Skip the rest of the code for this key if we already handled it
+                if should_skip:
+                    continue
+
                 # Special case for SONICSampler
                 if workflow_api[key]["class_type"] == "SONICSampler":
                     workflow_api[key]["inputs"]["seed"] = randomSeed("sonic")
@@ -449,7 +484,7 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     workflow = copy.deepcopy(inputs.workflow)
 
     # Random seed
-    apply_random_seed_to_workflow(workflow_api)
+    apply_random_seed_to_workflow(workflow_api, workflow)
 
     logger.info("getting inputs", inputs.inputs)
 
@@ -535,7 +570,7 @@ async def comfy_deploy_run(request):
     workflow = data.get("workflow")
 
     # Now it handles directly in here
-    apply_random_seed_to_workflow(workflow_api)
+    apply_random_seed_to_workflow(workflow_api, workflow)
     apply_inputs_to_workflow(workflow_api, inputs)
 
     prompt = {
@@ -602,7 +637,7 @@ async def stream_prompt(data, token):
     gpu_event_id = data.get("gpu_event_id", None)
 
     # Now it handles directly in here
-    apply_random_seed_to_workflow(workflow_api)
+    apply_random_seed_to_workflow(workflow_api, workflow)
     apply_inputs_to_workflow(workflow_api, inputs)
 
     prompt = {
