@@ -332,6 +332,9 @@ def apply_random_seed_to_workflow(workflow_api, workflow):
 
                 # Check node type in workflow to determine if we should randomize
                 node_id = key
+                should_skip = (
+                    False  # Add a flag to track if we should skip randomization
+                )
 
                 for node in workflow["nodes"]:
                     if str(node["id"]) == node_id and node["type"] == "KSampler":
@@ -343,15 +346,23 @@ def apply_random_seed_to_workflow(workflow_api, workflow):
                                 logger.info(
                                     f"Skipping random seed for KSampler (node {node_id}) as it's set to fixed"
                                 )
-                                continue
+                                should_skip = True  # Set the flag to skip randomization
+                                break  # Exit the inner loop
 
                             # Apply random seed for non-fixed seeds (randomize, iter, etc.)
                             workflow_api[key]["inputs"]["seed"] = randomSeed()
                             logger.info(
                                 f"Applied random seed {workflow_api[key]['inputs']['seed']} to KSampler (node {node_id})"
                             )
-                            continue
-                        break  # <-- This break will skip checking other nodes if widgets_values doesn't exist
+                            should_skip = (
+                                True  # Set the flag to skip default randomization
+                            )
+                            break  # Exit the inner loop
+                        break  # This break will skip checking other nodes if widgets_values doesn't exist
+
+                # Skip the rest of the code for this key if we already handled it
+                if should_skip:
+                    continue
 
                 # Special case for SONICSampler
                 if workflow_api[key]["class_type"] == "SONICSampler":
@@ -2865,5 +2876,7 @@ def format_execution_timeline(execution_times):
         )
 
         current_time += duration
+
+    return format_table(headers, rows)
 
     return format_table(headers, rows)
