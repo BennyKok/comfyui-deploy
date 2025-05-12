@@ -1966,80 +1966,88 @@ const client = new ComfyDeploy({
   serverURL: `${currentOrigin}/comfydeploy/api/`,
 });
 
-app.extensionManager.registerSidebarTab({
-  id: "search",
-  icon: "pi pi-cloud-upload",
-  title: "Deploy",
-  tooltip: "Deploy and Configure",
-  type: "custom",
-  render: (el) => {
-    el.innerHTML = `
-      <div style="padding: 20px;">
-        <h3>Comfy Deploy</h3>
-        <div id="deploy-container" style="margin-bottom: 20px;"></div>
-        <div id="workflows-container" style="display: none;">
-          <h4>Your Workflows</h4>
-          <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
-            ${loadingIcon}
+// Check if the current URL hostname starts with localhost or 127.0.0.1
+const isLocalhost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+// Only register the sidebar tab if we're on localhost
+if (isLocalhost) {
+  app.extensionManager.registerSidebarTab({
+    id: "search",
+    icon: "pi pi-cloud-upload",
+    title: "Deploy",
+    tooltip: "Deploy and Configure",
+    type: "custom",
+    render: (el) => {
+      el.innerHTML = `
+        <div style="padding: 20px;">
+          <h3>Comfy Deploy</h3>
+          <div id="deploy-container" style="margin-bottom: 20px;"></div>
+          <div id="workflows-container" style="display: none;">
+            <h4>Your Workflows</h4>
+            <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+              ${loadingIcon}
+            </div>
+            <ul id="workflows-list" style="list-style-type: none; padding: 0; display: none;"></ul>
           </div>
-          <ul id="workflows-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+          <div id="config-container"></div>
         </div>
-        <div id="config-container"></div>
-      </div>
-    `;
+      `;
 
-    // Add deploy button
-    const deployContainer = el.querySelector("#deploy-container");
-    const deployButton = document.createElement("button");
-    deployButton.id = "sidebar-deploy-button";
-    deployButton.style.display = "flex";
-    deployButton.style.alignItems = "center";
-    deployButton.style.justifyContent = "center";
-    deployButton.style.width = "100%";
-    deployButton.style.marginBottom = "10px";
-    deployButton.style.padding = "10px";
-    deployButton.style.fontSize = "16px";
-    deployButton.style.fontWeight = "bold";
-    deployButton.style.backgroundColor = "#4CAF50";
-    deployButton.style.color = "white";
-    deployButton.style.border = "none";
-    deployButton.style.borderRadius = "5px";
-    deployButton.style.cursor = "pointer";
-    deployButton.innerHTML = `<i class="pi pi-cloud-upload" style="margin-right: 8px;"></i><div id='sidebar-button-title'>Deploy</div>`;
-    deployButton.onclick = async () => {
-      await deployWorkflow();
-      // Refresh the workflows list after deployment
+      // Add deploy button
+      const deployContainer = el.querySelector("#deploy-container");
+      const deployButton = document.createElement("button");
+      deployButton.id = "sidebar-deploy-button";
+      deployButton.style.display = "flex";
+      deployButton.style.alignItems = "center";
+      deployButton.style.justifyContent = "center";
+      deployButton.style.width = "100%";
+      deployButton.style.marginBottom = "10px";
+      deployButton.style.padding = "10px";
+      deployButton.style.fontSize = "16px";
+      deployButton.style.fontWeight = "bold";
+      deployButton.style.backgroundColor = "#4CAF50";
+      deployButton.style.color = "white";
+      deployButton.style.border = "none";
+      deployButton.style.borderRadius = "5px";
+      deployButton.style.cursor = "pointer";
+      deployButton.innerHTML = `<i class="pi pi-cloud-upload" style="margin-right: 8px;"></i><div id='sidebar-button-title'>Deploy</div>`;
+      deployButton.onclick = async () => {
+        await deployWorkflow();
+        // Refresh the workflows list after deployment
+        refreshWorkflowsList(el);
+      };
+      deployContainer.appendChild(deployButton);
+
+      // Add config button
+      const configContainer = el.querySelector("#config-container");
+      const configButton = document.createElement("button");
+      configButton.style.display = "flex";
+      configButton.style.alignItems = "center";
+      configButton.style.justifyContent = "center";
+      configButton.style.width = "100%";
+      configButton.style.padding = "8px";
+      configButton.style.fontSize = "14px";
+      configButton.style.backgroundColor = "#f0f0f0";
+      configButton.style.color = "#333";
+      configButton.style.border = "1px solid #ccc";
+      configButton.style.borderRadius = "5px";
+      configButton.style.cursor = "pointer";
+      configButton.innerHTML = `<i class="pi pi-cog" style="margin-right: 8px;"></i>Configure`;
+      configButton.onclick = () => {
+        configDialog.show();
+      };
+      deployContainer.appendChild(configButton);
+
+      // Fetch and display workflows
+      const workflowsList = el.querySelector("#workflows-list");
+      const workflowsLoading = el.querySelector("#workflows-loading");
+
       refreshWorkflowsList(el);
-    };
-    deployContainer.appendChild(deployButton);
-
-    // Add config button
-    const configContainer = el.querySelector("#config-container");
-    const configButton = document.createElement("button");
-    configButton.style.display = "flex";
-    configButton.style.alignItems = "center";
-    configButton.style.justifyContent = "center";
-    configButton.style.width = "100%";
-    configButton.style.padding = "8px";
-    configButton.style.fontSize = "14px";
-    configButton.style.backgroundColor = "#f0f0f0";
-    configButton.style.color = "#333";
-    configButton.style.border = "1px solid #ccc";
-    configButton.style.borderRadius = "5px";
-    configButton.style.cursor = "pointer";
-    configButton.innerHTML = `<i class="pi pi-cog" style="margin-right: 8px;"></i>Configure`;
-    configButton.onclick = () => {
-      configDialog.show();
-    };
-    deployContainer.appendChild(configButton);
-
-    // Fetch and display workflows
-    const workflowsList = el.querySelector("#workflows-list");
-    const workflowsLoading = el.querySelector("#workflows-loading");
-
-    refreshWorkflowsList(el);
-  },
-});
+    },
+  });
+}
 
 function getTimeAgo(date) {
   const seconds = Math.floor((new Date() - date) / 1000);
