@@ -158,6 +158,8 @@ from logging import basicConfig, getLogger
 # Check for an environment variable to enable/disable Logfire
 use_logfire = os.environ.get("USE_LOGFIRE", "false").lower() == "true"
 
+API_KEY_COMFY_ORG = os.environ.get("API_KEY_COMFY_ORG", None)
+
 if use_logfire:
     try:
         import logfire
@@ -282,6 +284,9 @@ def post_prompt(json_data):
         extra_data = {}
         if "extra_data" in json_data:
             extra_data = json_data["extra_data"]
+
+        if API_KEY_COMFY_ORG is not None:
+            extra_data["api_key_comfy_org"] = API_KEY_COMFY_ORG
 
         if "client_id" in json_data:
             extra_data["client_id"] = json_data["client_id"]
