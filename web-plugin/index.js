@@ -783,15 +783,25 @@ const ext = {
       },
 
       DYNAMIC_ENUM(node, inputName, inputData) {
-        // console.log("DYNAMIC_ENUM", JSON.parse(JSON.stringify(node)), inputName, inputData);
-        const enumWidget = node.addWidget(
-          "combo",
-          inputName,
-          "",
-          { serialize: true, values: [] },
-        );
+        // Add a check to see if nativeEnum exists and provide fallback
+        if (node.nativeEnum && typeof node.nativeEnum === "function") {
+          // Original code using nativeEnum
+          return node.nativeEnum(inputName, inputData);
+        } else {
+          // Fallback implementation
+          console.log(
+            "DYNAMIC_ENUM",
+            JSON.parse(JSON.stringify(node)),
+            inputName,
+            inputData
+          );
+          const enumWidget = node.addWidget("combo", inputName, "", {
+            serialize: true,
+            values: [],
+          });
 
-        return { widget: enumWidget };
+          return { widget: enumWidget };
+        }
       },
     };
   },
