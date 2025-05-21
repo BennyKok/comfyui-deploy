@@ -5,7 +5,7 @@ LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
-import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
+// import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
 
 const styles = `
 .comfydeploy-menu-item {
@@ -189,7 +189,7 @@ function hideWidget(node, widget, suffix = "") {
     if (!node.inputs) {
       return void 0;
     }
-    let node_input = node.inputs.find((i) => i.widget?.name === widget.name);
+    const node_input = node.inputs.find((i) => i.widget?.name === widget.name);
     if (!node_input || !node_input.link) {
       return void 0;
     }
@@ -217,33 +217,31 @@ async function convertToInput(node, widget, config) {
 
   console.log(node, widget, config);
 
-  const result = await app.extensionManager.dialog.prompt(
-    {
-      title: "Convert " + widget.name + " to external input",
-      message: "Input name",
-      defaultValue: widget.name,
-    }
-  );
+  const result = await app.extensionManager.dialog.prompt({
+    title: "Convert " + widget.name + " to external input",
+    message: "Input name",
+    defaultValue: widget.name,
+  });
 
   if (!result) return;
 
   // Check for duplicate input IDs across existing external input nodes
   const existingInputIds = Object.values(app.graph.nodes)
-    .filter(n => n.type.startsWith("ComfyUIDeployExternal"))
-    .map(n => n.widgets_values?.[0])
+    .filter((n) => n.type.startsWith("ComfyUIDeployExternal"))
+    .map((n) => n.widgets_values?.[0])
     .filter(Boolean);
 
   if (existingInputIds.includes(result)) {
     app.extensionManager.toast.add({
-      severity: 'error',
-      summary: 'Input ID already exists',
-      detail: 'Please choose a different name.',
-      life: 3000
+      severity: "error",
+      summary: "Input ID already exists",
+      detail: "Please choose a different name.",
+      life: 3000,
     });
     return;
   }
 
-  if (node.type == "LoadImage") {
+  if (node.type === "LoadImage") {
     var inputNode = LiteGraph.createNode("ComfyUIDeployExternalImage");
     console.log(widget);
 
@@ -283,7 +281,7 @@ async function convertToInput(node, widget, config) {
   }
 
   let externalNode = "";
-  let inputId = result;
+  const inputId = result;
 
   if (type === "INT") {
     externalNode = "ComfyUIDeployExternalNumberInt";
@@ -309,7 +307,10 @@ async function convertToInput(node, widget, config) {
 
   node.convertWidgetToInput(widget);
 
-  var inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId);
+  var inputNode = LiteGraph.createNode(
+    externalNode,
+    "External Input: " + inputId,
+  );
 
   // if (type === "COMBO") {
   //   inputNode = LiteGraph.createNode(externalNode, "External Input: " + inputId, {
@@ -324,14 +325,13 @@ async function convertToInput(node, widget, config) {
 
   var options;
 
-  const index = node.inputs.findIndex((x) => x.name == widget.name);
+  const index = node.inputs.findIndex((x) => x.name === widget.name);
   if (type === "COMBO") {
     options = widget.options?.values ?? config[0];
     inputNode.configure({
       widgets_values: [inputId, widget.value, JSON.stringify(options)],
     });
-  } else
-  {
+  } else {
     inputNode.configure({
       widgets_values: [inputId, widget.value],
     });
@@ -343,15 +343,16 @@ async function convertToInput(node, widget, config) {
   if (type === "COMBO") {
     console.log(inputNode);
     console.log(options);
-    inputNode.widgets.find((x) => x.name == "default_value").options.values = options;
+    inputNode.widgets.find((x) => x.name === "default_value").options.values =
+      options;
   }
- 
+
   app.graph.add(inputNode);
   inputNode.connect(0, node, index);
 
   app.graph.setDirtyCanvas(true, true);
 
-  return node.inputs.find((x) => x.name == widget.name);
+  return node.inputs.find((x) => x.name === widget.name);
 }
 
 const CONVERTED_TYPE = "converted-widget";
@@ -366,7 +367,11 @@ function getConfig(widgetName) {
 
 function isConvertibleWidget(node, widget, config) {
   // console.log(config);
-  if (node.type === "LoadImage" && widget.type === "combo" && widget.name == "image") {
+  if (
+    node.type === "LoadImage" &&
+    widget.type === "combo" &&
+    widget.name === "image"
+  ) {
     return true;
   }
 
@@ -497,8 +502,8 @@ const ext = {
         ? origGetExtraMenuOptions.apply(this, arguments)
         : void 0;
       if (this.widgets) {
-        let toInput = [];
-        let toWidget = [];
+        const toInput = [];
+        const toWidget = [];
         for (const w of this.widgets) {
           if (w.options?.forceInput) {
             continue;
@@ -575,9 +580,7 @@ const ext = {
       console.log(nodeData.input.optional.default_value_url);
     }
 
-    if (
-      nodeData?.input?.optional?.default_value?.[1]?.dynamic_enum === true
-    ) {
+    if (nodeData?.input?.optional?.default_value?.[1]?.dynamic_enum === true) {
       nodeData.input.optional.default_value = ["DYNAMIC_ENUM"];
       // console.log(nodeData.input.optional.default_value);
     }
@@ -615,9 +618,9 @@ const ext = {
     //   return r
     // };
   },
-  
+
   // async nodeCreated(node) {
- 
+
   // },
 
   registerCustomNodes() {
@@ -720,7 +723,7 @@ const ext = {
           "string",
           inputName,
           /* value=*/ "",
-          () => { },
+          () => {},
           { serialize: true },
         );
 
@@ -758,7 +761,7 @@ const ext = {
         }
 
         // Set up URL widget value handling
-        let default_value = urlWidget.value;
+        const default_value = urlWidget.value;
         Object.defineProperty(urlWidget, "value", {
           set: function (value) {
             this._real_value = value;
@@ -784,12 +787,10 @@ const ext = {
 
       DYNAMIC_ENUM(node, inputName, inputData) {
         // console.log("DYNAMIC_ENUM", JSON.parse(JSON.stringify(node)), inputName, inputData);
-        const enumWidget = node.addWidget(
-          "combo",
-          inputName,
-          "",
-          { serialize: true, values: [] },
-        );
+        const enumWidget = node.addWidget("combo", inputName, "", {
+          serialize: true,
+          values: [],
+        });
 
         return { widget: enumWidget };
       },
@@ -797,10 +798,14 @@ const ext = {
   },
 
   async afterConfigureGraph() {
-    app.graph.nodes.forEach(node => {
+    app.graph.nodes.forEach((node) => {
       if (node.type === "ComfyUIDeployExternalEnum") {
-        const default_value_index = node.widgets.findIndex(x => x.name === "default_value");
-        const options_index = node.widgets.findIndex(x => x.name === "options");
+        const default_value_index = node.widgets.findIndex(
+          (x) => x.name === "default_value",
+        );
+        const options_index = node.widgets.findIndex(
+          (x) => x.name === "options",
+        );
 
         var dynamic_enum_options = [node.widgets[default_value_index].value];
         if (node.widgets[options_index].value) {
@@ -999,7 +1004,6 @@ const ext = {
         }
       })(app.graph.onAfterChange);
 
-
     sendEventToCD("cd_plugin_setup");
   },
 };
@@ -1034,10 +1038,10 @@ function createDynamicUIHtml(data) {
           <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
           <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
           ${data.missing_nodes
-        .map((node) => {
-          return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
-        })
-        .join("")}
+            .map((node) => {
+              return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
+            })
+            .join("")}
       </div>
   `;
   }
@@ -1045,14 +1049,17 @@ function createDynamicUIHtml(data) {
   Object.values(data.custom_nodes).forEach((node) => {
     html += `
           <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
-              <a href="${node.url
-      }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${node.name
-      }</a>
+              <a href="${
+                node.url
+              }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${
+                node.name
+              }</a>
               <p style="font-size: 14px; color: #4b5563;">${node.hash}</p>
-              ${node.warning
-        ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
-        : ""
-      }
+              ${
+                node.warning
+                  ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
+                  : ""
+              }
           </div>
       `;
   });
@@ -1066,8 +1073,9 @@ function createDynamicUIHtml(data) {
   Object.entries(data.models).forEach(([section, items]) => {
     html += `
     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${section.charAt(0).toUpperCase() + section.slice(1)
-      }</h3>`;
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+          section.charAt(0).toUpperCase() + section.slice(1)
+        }</h3>`;
     items.forEach((item) => {
       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
     });
@@ -1083,8 +1091,9 @@ function createDynamicUIHtml(data) {
   Object.entries(data.files).forEach(([section, items]) => {
     html += `
     <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${section.charAt(0).toUpperCase() + section.slice(1)
-      }</h3>`;
+        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
+          section.charAt(0).toUpperCase() + section.slice(1)
+        }</h3>`;
     items.forEach((item) => {
       html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
     });
@@ -1112,7 +1121,7 @@ async function deployWorkflow() {
 
   let deployMeta = graph.findNodesByType("ComfyDeploy");
 
-  if (deployMeta.length == 0) {
+  if (deployMeta.length === 0) {
     const text = await inputDialog.input(
       "Create your deployment",
       "Workflow name",
@@ -1228,7 +1237,7 @@ async function deployWorkflow() {
 
           const match = previousModelHash.find((x) => {
             console.log(file, x.name);
-            return file == x.name;
+            return file === x.name;
           });
           console.log(match);
           if (match && match.hash) {
@@ -1604,12 +1613,14 @@ export class LoadingDialog extends ComfyDialog {
   showLoading(title, message) {
     this.show(`
       <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
-        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${this.loadingIcon
-      }</h3>
-          ${message
-        ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
-        : ""
-      }
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${
+          this.loadingIcon
+        }</h3>
+          ${
+            message
+              ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
+              : ""
+          }
         </div>
       `);
   }
@@ -1752,7 +1763,7 @@ function getData(environment) {
     environment || localStorage.getItem("comfy_deploy_env") || "cloud";
   const data = localStorage.getItem("comfy_deploy_env_data_" + deployOption);
   if (!data) {
-    if (deployOption == "cloud")
+    if (deployOption === "cloud")
       return {
         endpoint: "https://www.comfydeploy.com",
         apiKey: "",
@@ -1844,7 +1855,7 @@ export class ConfigDialog extends ComfyDialog {
     const apiKey = api_key ?? this.container.querySelector("#apiKey").value;
 
     if (!displayName) {
-      if (apiKey != getData().apiKey) {
+      if (apiKey !== getData().apiKey) {
         displayName = "Custom";
       } else {
         displayName = getData().displayName;
@@ -1875,17 +1886,21 @@ export class ConfigDialog extends ComfyDialog {
     </label>
       <label style="color: white; width: 100%;">
         Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${data.endpoint
-      }">
+        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
+          data.endpoint
+        }">
       </label>
       <div style="color: white;">
-        API Key: User / Org <button style="font-size: 18px;">${data.displayName ?? ""
-      }</button>
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${data.apiKey
-      }">
+        API Key: User / Org <button style="font-size: 18px;">${
+          data.displayName ?? ""
+        }</button>
+        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
+          data.apiKey
+        }">
         <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
-          ${data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
-      }
+          ${
+            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
+          }
         </button>
       </div>
       </div>
