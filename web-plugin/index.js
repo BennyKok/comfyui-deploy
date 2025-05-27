@@ -5,7 +5,7 @@ LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
-import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
+// import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
 
 const styles = `
 .comfydeploy-menu-item {
@@ -330,8 +330,7 @@ async function convertToInput(node, widget, config) {
     inputNode.configure({
       widgets_values: [inputId, widget.value, JSON.stringify(options)],
     });
-  } else
-  {
+  } else {
     inputNode.configure({
       widgets_values: [inputId, widget.value],
     });
@@ -345,7 +344,7 @@ async function convertToInput(node, widget, config) {
     console.log(options);
     inputNode.widgets.find((x) => x.name == "default_value").options.values = options;
   }
- 
+
   app.graph.add(inputNode);
   inputNode.connect(0, node, index);
 
@@ -615,9 +614,9 @@ const ext = {
     //   return r
     // };
   },
-  
+
   // async nodeCreated(node) {
- 
+
   // },
 
   registerCustomNodes() {
@@ -1396,85 +1395,6 @@ async function deployWorkflow() {
   }
 }
 
-// Add this function to refresh the workflows list
-function refreshWorkflowsList(el) {
-  const workflowsList = el.querySelector("#workflows-list");
-  const workflowsLoading = el.querySelector("#workflows-loading");
-
-  workflowsLoading.style.display = "flex";
-  workflowsList.style.display = "none";
-  workflowsList.innerHTML = "";
-
-  client.workflows
-    .getAll({
-      page: "1",
-      pageSize: "10",
-    })
-    .then((result) => {
-      workflowsLoading.style.display = "none";
-      workflowsList.style.display = "block";
-
-      if (result.length === 0) {
-        workflowsList.innerHTML =
-          "<li style='color: #bdbdbd;'>No workflows found</li>";
-        return;
-      }
-
-      result.forEach((workflow) => {
-        const li = document.createElement("li");
-        li.style.marginBottom = "15px";
-        li.style.padding = "15px";
-        li.style.backgroundColor = "#2a2a2a";
-        li.style.borderRadius = "8px";
-        li.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-
-        const lastRun = workflow.runs[0];
-        const lastRunStatus = lastRun ? lastRun.status : "No runs";
-        const statusColor =
-          lastRunStatus === "success"
-            ? "#4CAF50"
-            : lastRunStatus === "error"
-              ? "#F44336"
-              : "#FFC107";
-
-        const timeAgo = getTimeAgo(new Date(workflow.updatedAt));
-
-        li.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <strong style="font-size: 18px; color: #e0e0e0;">${workflow.name}</strong>
-            </div>
-            <span style="font-size: 12px; color: ${statusColor}; margin-left: 10px;">Last run: ${lastRunStatus}</span>
-          </div>
-          <div style="font-size: 14px; color: #bdbdbd; margin-bottom: 10px;">Last updated ${timeAgo}</div>
-          <div style="display: flex; gap: 10px;">
-            <button class="open-cloud-btn" style="padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Open in Cloud</button>
-            <button class="load-api-btn" style="padding: 5px 10px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Load Workflow</button>
-          </div>
-        `;
-
-        const openCloudBtn = li.querySelector(".open-cloud-btn");
-        openCloudBtn.onclick = () =>
-          window.open(
-            `${getData().endpoint}/workflows/${workflow.id}?workspace=true`,
-            "_blank",
-          );
-
-        const loadApiBtn = li.querySelector(".load-api-btn");
-        loadApiBtn.onclick = () => loadWorkflowApi(workflow.versions[0].id);
-
-        workflowsList.appendChild(li);
-      });
-    })
-    .catch((error) => {
-      console.error("Error fetching workflows:", error);
-      workflowsLoading.style.display = "none";
-      workflowsList.style.display = "block";
-      workflowsList.innerHTML =
-        "<li style='color: #F44336;'>Error fetching workflows</li>";
-    });
-}
-
 function addButton() {
   const menu = document.querySelector(".comfy-menu");
 
@@ -1961,10 +1881,10 @@ export class ConfigDialog extends ComfyDialog {
 export const configDialog = new ConfigDialog();
 
 const currentOrigin = window.location.origin;
-const client = new ComfyDeploy({
-  bearerAuth: getData().apiKey,
-  serverURL: `${currentOrigin}/comfydeploy/api/`,
-});
+// const client = new ComfyDeploy({
+//   bearerAuth: getData().apiKey,
+//   serverURL: `${currentOrigin}/comfydeploy/api/`,
+// });
 
 // Check if the current URL hostname starts with localhost or 127.0.0.1
 const isLocalhost =
@@ -2016,7 +1936,7 @@ if (isLocalhost) {
       deployButton.onclick = async () => {
         await deployWorkflow();
         // Refresh the workflows list after deployment
-        refreshWorkflowsList(el);
+        // refreshWorkflowsList(el);
       };
       deployContainer.appendChild(deployButton);
 
@@ -2044,7 +1964,7 @@ if (isLocalhost) {
       const workflowsList = el.querySelector("#workflows-list");
       const workflowsLoading = el.querySelector("#workflows-loading");
 
-      refreshWorkflowsList(el);
+      // refreshWorkflowsList(el);
     },
   });
 }
@@ -2064,24 +1984,24 @@ function getTimeAgo(date) {
   return Math.floor(seconds) + " seconds ago";
 }
 
-async function loadWorkflowApi(versionId) {
-  try {
-    const response = await client.comfyui.getWorkflowVersionVersionId({
-      versionId: versionId,
-    });
-    // Implement the logic to load the workflow API into the ComfyUI interface
-    console.log("Workflow API loaded:", response);
-    await window["app"].ui.settings.setSettingValueAsync(
-      "Comfy.Validation.Workflows",
-      true,
-    );
-    app.loadGraphData(response.workflow);
-    // You might want to update the UI or trigger some action in ComfyUI here
-  } catch (error) {
-    console.error("Error loading workflow API:", error);
-    // Show an error message to the user
-  }
-}
+// async function loadWorkflowApi(versionId) {
+//   try {
+//     const response = await client.comfyui.getWorkflowVersionVersionId({
+//       versionId: versionId,
+//     });
+//     // Implement the logic to load the workflow API into the ComfyUI interface
+//     console.log("Workflow API loaded:", response);
+//     await window["app"].ui.settings.setSettingValueAsync(
+//       "Comfy.Validation.Workflows",
+//       true,
+//     );
+//     app.loadGraphData(response.workflow);
+//     // You might want to update the UI or trigger some action in ComfyUI here
+//   } catch (error) {
+//     console.error("Error loading workflow API:", error);
+//     // Show an error message to the user
+//   }
+// }
 
 const orginal_fetch_api = api.fetchApi;
 api.fetchApi = async (route, options) => {
