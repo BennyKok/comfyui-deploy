@@ -2767,30 +2767,32 @@ class UploadQueue:
                             # If this was the last upload for this node, clean up node data
                             if not self.node_uploads[prompt_id][node_id]:
                                 del self.node_uploads[prompt_id][node_id]
-                                if self.node_output_data[prompt_id][node_id]["data"]:
-                                    # Send final node data to API before cleanup
-                                    if prompt_metadata[prompt_id].status_endpoint:
-                                        body = {
-                                            "run_id": prompt_id,
-                                            "output_data": self.node_output_data[
-                                                prompt_id
-                                            ][node_id]["data"],
-                                            "node_meta": {"node_id": node_id},
-                                        }
-                                        try:
-                                            await async_request_with_retry(
-                                                "POST",
-                                                prompt_metadata[
-                                                    prompt_id
-                                                ].status_endpoint,
-                                                token=prompt_metadata[prompt_id].token,
-                                                json=body,
-                                            )
-                                        except Exception as e:
-                                            logger.error(
-                                                f"Failed to send final node data: {str(e)}"
-                                            )
-                                del self.node_output_data[prompt_id][node_id]
+                                if prompt_id in self.node_output_data:
+                                    if node_id in self.node_output_data[prompt_id]:
+                                        if self.node_output_data[prompt_id][node_id]["data"]:
+                                            # Send final node data to API before cleanup
+                                            if prompt_metadata[prompt_id].status_endpoint:
+                                                body = {
+                                                    "run_id": prompt_id,
+                                                    "output_data": self.node_output_data[
+                                                        prompt_id
+                                                    ][node_id]["data"],
+                                                    "node_meta": {"node_id": node_id},
+                                                }
+                                                try:
+                                                    await async_request_with_retry(
+                                                        "POST",
+                                                        prompt_metadata[
+                                                            prompt_id
+                                                        ].status_endpoint,
+                                                        token=prompt_metadata[prompt_id].token,
+                                                        json=body,
+                                                    )
+                                                except Exception as e:
+                                                    logger.error(
+                                                        f"Failed to send final node data: {str(e)}"
+                                                    )
+                                        del self.node_output_data[prompt_id][node_id]
 
                         # Send status update
                         await self.update_queue_status(prompt_id)
