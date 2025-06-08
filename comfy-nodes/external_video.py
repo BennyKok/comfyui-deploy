@@ -748,36 +748,64 @@ class ComfyUIDeployExternalVideo:
                 file_parts = f.split(".")
                 if len(file_parts) > 1 and (file_parts[-1] in video_extensions):
                     files.append(f)
-        return {"required": {
-                    "input_id": (
-                        "STRING",
-                        {"multiline": False, "default": "input_video"},
-                    ),
-                     "force_rate": ("INT", {"default": 0, "min": 0, "max": 60, "step": 1}),
-                     "force_size": (["Disabled", "Custom Height", "Custom Width", "Custom", "256x?", "?x256", "256x256", "512x?", "?x512", "512x512"],),
-                     "custom_width": ("INT", {"default": 512, "min": 0, "max": DIMMAX, "step": 8}),
-                     "custom_height": ("INT", {"default": 512, "min": 0, "max": DIMMAX, "step": 8}),
-                     "frame_load_cap": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                     "skip_first_frames": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                     "select_every_nth": ("INT", {"default": 1, "min": 1, "max": BIGMAX, "step": 1}),
-                     },
-                "optional": {
-                    "meta_batch": ("VHS_BatchManager",),
-                    "vae": ("VAE",),
-                    "default_video": (sorted(files),),
-                    "display_name": (
-                        "STRING",
-                        {"multiline": False, "default": ""},
-                    ),
-                    "description": (
-                        "STRING",
-                        {"multiline": True, "default": ""},
-                    ),
-                },
-                "hidden": {
-                    "unique_id": "UNIQUE_ID"
-                },
-                }
+        return {
+            "required": {
+                "input_id": (
+                    "STRING",
+                    {"multiline": False, "default": "input_video"},
+                ),
+                "force_rate": ("INT", {"default": 0, "min": 0, "max": 60, "step": 1}),
+                "force_size": (
+                    [
+                        "Disabled",
+                        "Custom Height",
+                        "Custom Width",
+                        "Custom",
+                        "256x?",
+                        "?x256",
+                        "256x256",
+                        "512x?",
+                        "?x512",
+                        "512x512",
+                    ],
+                ),
+                "custom_width": (
+                    "INT",
+                    {"default": 512, "min": 0, "max": DIMMAX, "step": 8},
+                ),
+                "custom_height": (
+                    "INT",
+                    {"default": 512, "min": 0, "max": DIMMAX, "step": 8},
+                ),
+                "frame_load_cap": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": BIGMAX, "step": 1},
+                ),
+                "skip_first_frames": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": BIGMAX, "step": 1},
+                ),
+                "select_every_nth": (
+                    "INT",
+                    {"default": 1, "min": 1, "max": BIGMAX, "step": 1},
+                ),
+            },
+            "optional": {
+                "meta_batch": ("VHS_BatchManager",),
+                "vae": ("VAE",),
+                "default_video": (sorted(files),),
+                "display_name": (
+                    "STRING",
+                    {"multiline": False, "default": ""},
+                ),
+                "description": (
+                    "STRING",
+                    {"multiline": True, "default": ""},
+                ),
+                "default_value_url": ("STRING", {"image_preview": True, "default": ""}),
+            },
+            "hidden": {"unique_id": "UNIQUE_ID"},
+        }
 
     CATEGORY = "Video Helper Suite 🎥🅥🅗🅢"
 
@@ -804,16 +832,21 @@ class ComfyUIDeployExternalVideo:
         select_every_nth = kwargs.get("select_every_nth")
         meta_batch = kwargs.get("meta_batch")
         unique_id = kwargs.get("unique_id")
-
+        default_value_url = kwargs.get("default_value_url")
 
         input_dir = folder_paths.get_input_directory()
-        if input_id.startswith("http"):
+        if input_id.startswith("http") or (
+            default_value_url and default_value_url.startswith("http")
+        ):
             import requests
 
-            print("Fetching video from URL: ", input_id)
-            response = requests.get(input_id, stream=True)
+            # Use input_id if it's a URL, otherwise use default_value_url
+            url = input_id if input_id.startswith("http") else default_value_url
+
+            print("Fetching video from URL: ", url)
+            response = requests.get(url, stream=True)
             file_size = int(response.headers.get("Content-Length", 0))
-            file_extension = input_id.split(".")[-1].split("?")[
+            file_extension = url.split(".")[-1].split("?")[
                 0
             ]  # Extract extension and handle URLs with parameters
             if file_extension not in video_extensions:
