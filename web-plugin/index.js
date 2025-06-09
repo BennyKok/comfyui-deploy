@@ -734,95 +734,26 @@ const ext = {
             });
             // console.log("load image");
           },
-          { serialize: false }
+          { serialize: false },
         );
 
-        // Helper function to detect if URL is a video
-        function isVideoUrl(url) {
-          const videoExtensions = [
-            ".mp4",
-            ".webm",
-            ".ogg",
-            ".mov",
-            ".avi",
-            ".mkv",
-            ".m4v",
-          ];
-          const urlLower = url.toLowerCase();
-          return videoExtensions.some((ext) => urlLower.includes(ext));
-        }
+        console.log(node.widgets);
 
-        // Enhanced media preview functionality
-        function showMedia(url) {
-          if (isVideoUrl(url)) {
-            showVideo(url);
-          } else {
-            showImage(url);
-          }
-        }
+        console.log("urlWidget", urlWidget);
 
-        // Original image preview functionality
+        // Add image preview functionality
         function showImage(url) {
           const img = new Image();
           img.onload = () => {
             node.imgs = [img];
-            node.videos = []; // Clear any videos
             app.graph.setDirtyCanvas(true);
             node.setSizeForImage?.();
           };
           img.onerror = () => {
             node.imgs = [];
-            node.videos = [];
             app.graph.setDirtyCanvas(true);
           };
           img.src = url;
-        }
-
-        // New video preview functionality
-        function showVideo(url) {
-          const video = document.createElement("video");
-          video.src = url;
-          video.controls = true;
-          video.muted = true; // Muted by default for autoplay policies
-          video.style.maxWidth = "100%";
-          video.style.maxHeight = "200px"; // Limit height in node preview
-
-          video.onloadedmetadata = () => {
-            // Create a canvas to capture video frame for thumbnail
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            // Seek to 1 second or 10% of duration for thumbnail
-            const seekTime = Math.min(1, video.duration * 0.1);
-            video.currentTime = seekTime;
-          };
-
-          video.onseeked = () => {
-            // Capture frame as thumbnail
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-
-            // Convert to image for ComfyUI display
-            const img = new Image();
-            img.onload = () => {
-              node.imgs = [img];
-              node.videos = [video]; // Store video element for potential playback
-              app.graph.setDirtyCanvas(true);
-              node.setSizeForImage?.();
-            };
-            img.src = canvas.toDataURL();
-          };
-
-          video.onerror = () => {
-            node.imgs = [];
-            node.videos = [];
-            app.graph.setDirtyCanvas(true);
-          };
         }
 
         // Set up URL widget value handling
@@ -830,9 +761,9 @@ const ext = {
         Object.defineProperty(urlWidget, "value", {
           set: function (value) {
             this._real_value = value;
-            // Preview media when URL changes
+            // Preview image when URL changes
             if (value) {
-              showMedia(value);
+              showImage(value);
             }
           },
           get: function () {
@@ -840,10 +771,10 @@ const ext = {
           },
         });
 
-        // Show initial media if URL exists
+        // Show initial image if URL exists
         requestAnimationFrame(() => {
           if (urlWidget.value) {
-            showMedia(urlWidget.value);
+            showImage(urlWidget.value);
           }
         });
 
