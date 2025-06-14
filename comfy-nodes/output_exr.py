@@ -4,6 +4,7 @@ import cv2 as cv
 import torch
 import numpy as np
 import folder_paths
+import requests
 
 def sRGBtoLinear(npArray):
     less = npArray <= 0.0404482362771082
@@ -31,6 +32,7 @@ class ComfyDeployOutputEXR:
                 "tonemap": (["linear", "sRGB", "Reinhard"], {"default": "sRGB"}),
             },
             "optional": {
+                "upload_url": ("STRING", {"multiline": False, "default": ""}),
                 "output_id": (
                     "STRING",
                     {"multiline": False, "default": "output_exr"},
@@ -50,6 +52,7 @@ class ComfyDeployOutputEXR:
         images,
         filename_prefix="ComfyUI",
         tonemap="sRGB",
+        upload_url="",
         output_id="output_exr",
     ):
         filename_prefix += self.prefix_append
@@ -74,21 +77,37 @@ class ComfyDeployOutputEXR:
             bgr[:,:,:,3] = np.clip(1 - linear[:,:,:,3], 0, 1)
 
         for i, image in enumerate(bgr):
-            filename_with_batch_num = filename.replace("%batch_num%", str(i))
-            file = f"{filename_with_batch_num}_{counter:05}_.exr"
-            file_path = os.path.join(full_output_folder, file)
-            
-            cv.imwrite(file_path, image)
+            if upload_url:
+                # If an upload URL is provided, send the file there
+                try:
+                    is_success, buffer = cv.imencode(".exr", image)
+                    if not is_success:
+                        raise Exception("Failed to encode EXR")
+                    
+                    response = requests.put(upload_url, data=buffer.tobytes(), headers={'Content-Type': 'image/x-exr'})
+                    response.raise_for_status()
+                    print(f"Successfully uploaded EXR to signed URL.")
+                    results.append({"url": upload_url, "output_id": output_id})
+                except Exception as e:
+                    print(f"Error uploading EXR to signed URL: {e}")
 
-            results.append(
-                {
-                    "filename": file,
-                    "subfolder": subfolder,
-                    "type": self.type,
-                    "output_id": output_id,
-                }
-            )
-            counter += 1
+            else:
+                # Otherwise, save locally
+                filename_with_batch_num = filename.replace("%batch_num%", str(i))
+                file = f"{filename_with_batch_num}_{counter:05}_.exr"
+                file_path = os.path.join(full_output_folder, file)
+                
+                cv.imwrite(file_path, image)
+
+                results.append(
+                    {
+                        "filename": file,
+                        "subfolder": subfolder,
+                        "type": self.type,
+                        "output_id": output_id,
+                    }
+                )
+                counter += 1
 
         return {"ui": {"images": results}}
 
