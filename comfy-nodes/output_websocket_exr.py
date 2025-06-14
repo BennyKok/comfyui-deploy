@@ -6,7 +6,7 @@ import numpy as np
 import folder_paths
 from server import PromptServer
 import asyncio
-from .globals import send_exr, max_output_id_length
+from globals import send_exr, max_output_id_length
 
 def sRGBtoLinear(npArray):
     less = npArray <= 0.0404482362771082
