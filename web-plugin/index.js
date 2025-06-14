@@ -1838,8 +1838,9 @@ export class ConfigDialog extends ComfyDialog {
       </label>
       <div style="color: white;">
         API Key: User / Org ${
-          data.displayName &&
-          `<button style="font-size: 18px;">${data.displayName}</button>`
+          data.displayName
+            ? `<button style="font-size: 18px;">${data.displayName}</button>`
+            : ""
         }
         <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
           data.apiKey
