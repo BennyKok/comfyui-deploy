@@ -56,9 +56,25 @@ streaming_prompt_metadata: dict[str, StreamingPrompt] = {}
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
     UNENCODED_PREVIEW_IMAGE = 2
+    EXR_IMAGE = 4
 
 
 max_output_id_length = 24
+
+
+async def send_exr(image_data, sid=None, output_id: str = None):
+    max_length = max_output_id_length
+    output_id = output_id[:max_length]
+    padded_output_id = output_id.ljust(max_length, "\x00")
+    encoded_output_id = padded_output_id.encode("ascii", "replace")
+
+    bytesIO = BytesIO()
+    # 10 bytes for the output_id
+    bytesIO.write(encoded_output_id)
+    bytesIO.write(image_data)
+
+    preview_bytes = bytesIO.getvalue()
+    await send_bytes(BinaryEventTypes.EXR_IMAGE, preview_bytes, sid=sid)
 
 
 async def send_image(image_data, sid=None, output_id: str = None):
