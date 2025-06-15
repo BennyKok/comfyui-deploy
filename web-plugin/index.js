@@ -1859,9 +1859,7 @@ export class ConfigDialog extends ComfyDialog {
       this.save();
       const data = getData();
 
-      const uuid =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
+      const uuid = crypto.randomUUID();
       window.open(data.endpoint + "/auth/request/" + uuid, "_blank");
 
       this.timeout = setTimeout(() => {
@@ -1874,7 +1872,9 @@ export class ConfigDialog extends ComfyDialog {
 
       this.poll = setInterval(() => {
         fetch(
-          data.apiUrl + "/api/platform/comfyui/auth-response?request_id=" + uuid
+          `/comfyui-deploy/auth-response?request_id=${uuid}&api_url=${encodeURIComponent(
+            data.apiUrl
+          )}`
         )
           .then((response) => response.json())
           .then(async (json) => {

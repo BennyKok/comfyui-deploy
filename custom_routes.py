@@ -2769,9 +2769,13 @@ class UploadQueue:
                                 del self.node_uploads[prompt_id][node_id]
                                 if prompt_id in self.node_output_data:
                                     if node_id in self.node_output_data[prompt_id]:
-                                        if self.node_output_data[prompt_id][node_id]["data"]:
+                                        if self.node_output_data[prompt_id][node_id][
+                                            "data"
+                                        ]:
                                             # Send final node data to API before cleanup
-                                            if prompt_metadata[prompt_id].status_endpoint:
+                                            if prompt_metadata[
+                                                prompt_id
+                                            ].status_endpoint:
                                                 body = {
                                                     "run_id": prompt_id,
                                                     "output_data": self.node_output_data[
@@ -2785,7 +2789,9 @@ class UploadQueue:
                                                         prompt_metadata[
                                                             prompt_id
                                                         ].status_endpoint,
-                                                        token=prompt_metadata[prompt_id].token,
+                                                        token=prompt_metadata[
+                                                            prompt_id
+                                                        ].token,
                                                         json=body,
                                                     )
                                                 except Exception as e:
@@ -2885,3 +2891,22 @@ def format_execution_timeline(execution_times):
         current_time += duration
 
     return format_table(headers, rows)
+
+
+@server.PromptServer.instance.routes.get("/comfyui-deploy/auth-response")
+async def auth_response_proxy(request):
+    request_id = request.rel_url.query.get("request_id")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+
+    if not request_id:
+        return web.json_response({"error": "request_id is required"}, status=400)
+
+    target_url = f"{api_url}/api/platform/comfyui/auth-response?request_id={request_id}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(target_url) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
