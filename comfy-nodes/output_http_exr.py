@@ -11,7 +11,7 @@ def sRGBtoLinear(npArray):
     npArray[less] = npArray[less] / 12.92
     npArray[~less] = np.power((npArray[~less] + 0.055) / 1.055, 2.4)
 
-class ComfyDeployOutputEXR:
+class ComfyDeployHttpOutputEXR:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
         self.type = "output"
@@ -21,48 +21,24 @@ class ComfyDeployOutputEXR:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "images": ("IMAGE", {"tooltip": "The images to save."}),
-                "filename_prefix": (
-                    "STRING",
-                    {
-                        "default": "ComfyUI",
-                        "tooltip": "The prefix for the file to save.",
-                    },
-                ),
+                "images": ("IMAGE",),
+                "put_signed_url": ("STRING", {"multiline": True, "default": ""}),
                 "tonemap": (["linear", "sRGB", "Reinhard"], {"default": "sRGB"}),
             },
-            "optional": {
-                "upload_url": ("STRING", {"multiline": False, "default": ""}),
-                "output_id": (
-                    "STRING",
-                    {"multiline": False, "default": "output_exr"},
-                ),
-            },
+            "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
 
     RETURN_TYPES = ()
     FUNCTION = "run"
-
     OUTPUT_NODE = True
     CATEGORY = "🔗ComfyDeploy"
-    DESCRIPTION = "Saves the input images as EXR files to your ComfyUI output directory."
+    DESCRIPTION = "Uploads an image as an EXR file to a pre-signed URL."
 
-    def run(
-        self,
-        images,
-        filename_prefix="ComfyUI",
-        tonemap="sRGB",
-        upload_url="",
-        output_id="output_exr",
-    ):
-        filename_prefix += self.prefix_append
-        full_output_folder, filename, counter, subfolder, filename_prefix = (
-            folder_paths.get_save_image_path(
-                filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0]
-            )
-        )
-        results = list()
-        
+    def run(self, images, put_signed_url, tonemap, prompt=None, extra_pnginfo=None):
+        if not put_signed_url:
+            print("Warning: No put_signed_url provided. Nothing will be uploaded.")
+            return {"ui": {"images": []}}
+
         linear = images.cpu().numpy().astype(np.float32)
         if tonemap != "linear":
             sRGBtoLinear(linear[...,:3])
@@ -76,38 +52,20 @@ class ComfyDeployOutputEXR:
         if bgr.shape[-1] > 3:
             bgr[:,:,:,3] = np.clip(1 - linear[:,:,:,3], 0, 1)
 
-        for i, image in enumerate(bgr):
-            if upload_url:
-                # If an upload URL is provided, send the file there
-                try:
-                    is_success, buffer = cv.imencode(".exr", image)
-                    if not is_success:
-                        raise Exception("Failed to encode EXR")
-                    
-                    response = requests.put(upload_url, data=buffer.tobytes(), headers={'Content-Type': 'image/x-exr'})
-                    response.raise_for_status()
-                    print(f"Successfully uploaded EXR to signed URL.")
-                    results.append({"url": upload_url, "output_id": output_id})
-                except Exception as e:
-                    print(f"Error uploading EXR to signed URL: {e}")
-
-            else:
-                # Otherwise, save locally
-                filename_with_batch_num = filename.replace("%batch_num%", str(i))
-                file = f"{filename_with_batch_num}_{counter:05}_.exr"
-                file_path = os.path.join(full_output_folder, file)
+        results = list()
+        
+        for image in bgr:
+            try:
+                is_success, buffer = cv.imencode(".exr", image)
+                if not is_success:
+                    raise Exception("Failed to encode EXR")
                 
-                cv.imwrite(file_path, image)
-
-                results.append(
-                    {
-                        "filename": file,
-                        "subfolder": subfolder,
-                        "type": self.type,
-                        "output_id": output_id,
-                    }
-                )
-                counter += 1
+                response = requests.put(put_signed_url, data=buffer.tobytes(), headers={'Content-Type': 'image/x-exr'})
+                response.raise_for_status()
+                print("Successfully uploaded to signed URL")
+                results.append({"url": put_signed_url, "output_id": "output_http_exr"})
+            except Exception as e:
+                print(f"Error uploading to signed URL: {e}")
 
         return {"ui": {"images": results}}
 
@@ -174,5 +132,5 @@ class ComfyDeployOutputEXRFrames:
         
         return {"ui": {"images": results}}
 
-NODE_CLASS_MAPPINGS = {"ComfyDeployOutputEXR": ComfyDeployOutputEXR, "ComfyDeployOutputEXRFrames": ComfyDeployOutputEXRFrames}
-NODE_DISPLAY_NAME_MAPPINGS = {"ComfyDeployOutputEXR": "EXR Output (ComfyDeploy)", "ComfyDeployOutputEXRFrames": "EXR Frames Output (ComfyDeploy)"} 
+NODE_CLASS_MAPPINGS = {"ComfyDeployHttpOutputEXR": ComfyDeployHttpOutputEXR, "ComfyDeployOutputEXRFrames": ComfyDeployOutputEXRFrames}
+NODE_DISPLAY_NAME_MAPPINGS = {"ComfyDeployHttpOutputEXR": "HTTP EXR Output (ComfyDeploy)", "ComfyDeployOutputEXRFrames": "EXR Frames Saver (ComfyDeploy)"} 
