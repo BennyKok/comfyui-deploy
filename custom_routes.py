@@ -3035,3 +3035,28 @@ async def get_workflows_proxy(request):
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
+
+# for getting a workflow by id
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflow")
+async def get_workflow_proxy(request):
+    workflow_id = request.rel_url.query.get("workflow_id")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/workflow/{workflow_id}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)

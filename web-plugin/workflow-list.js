@@ -44,7 +44,7 @@ async function fetchWorkflows(getData, offset = 0, limit = 20, search = "") {
   }
 }
 
-function createWorkflowItem(workflow, getTimeAgo) {
+function createWorkflowItem(workflow, getTimeAgo, getData) {
   const li = document.createElement("li");
   li.style.cssText = `
       border-bottom: 1px solid #444;
@@ -61,6 +61,73 @@ function createWorkflowItem(workflow, getTimeAgo) {
     li.style.background = "transparent";
   });
 
+  // Add click handler to fetch and load workflow data
+  li.addEventListener("click", async () => {
+    try {
+      const data = getData();
+      if (!data.apiKey) {
+        console.error("No API key configured");
+        return;
+      }
+
+      // Show loading toast
+      const loadingToast = window.app.extensionManager.toast.add({
+        severity: "info",
+        summary: "Loading workflow...",
+        detail: `Loading "${workflow.name}"`,
+        life: 3000,
+      });
+
+      const params = new URLSearchParams({
+        workflow_id: workflow.id,
+        api_url: data.apiUrl || "https://api.comfydeploy.com",
+      });
+
+      const response = await fetch(`/comfyui-deploy/workflow?${params}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${data.apiKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch workflow: ${response.status}`);
+      }
+
+      const workflowData = await response.json();
+      console.log("Workflow data:", workflowData);
+
+      // Load the workflow into the graph
+      if (workflowData.versions && workflowData.versions.length > 0) {
+        const latestVersion = workflowData.versions[0];
+        if (latestVersion.workflow && window.app) {
+          // Load the workflow
+          window.app.loadGraphData(latestVersion.workflow);
+
+          // Show success toast
+          window.app.extensionManager.toast.add({
+            severity: "success",
+            summary: "Workflow loaded successfully",
+            detail: `Loaded "${workflow.name}" v${latestVersion.version}`,
+            life: 3000,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error loading workflow:", error);
+      // Show error toast
+      window.app.extensionManager.toast.add({
+        severity: "error",
+        summary: "Failed to load workflow",
+        detail: error.message,
+        life: 5000,
+      });
+    } finally {
+      loadingToast.close();
+    }
+  });
+
   const updatedDate = new Date(workflow.updated_at);
   const timeAgo = getTimeAgo(updatedDate);
 
@@ -69,39 +136,40 @@ function createWorkflowItem(workflow, getTimeAgo) {
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           ${
             workflow.cover_image
-              ? `
-            <div style="flex-shrink: 0;">
-              <img src="${workflow.cover_image}" 
-                   style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #333;" 
-                   alt="Workflow cover"
-                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-              <div style="display: none; width: 48px; height: 48px; border-radius: 6px; background: #333; align-items: center; justify-content: center; color: #aaa; font-size: 20px;">
-                📄
-              </div>
-            </div>
-          `
-              : `
-            <div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 6px; background: #333; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 20px;">
-              📄
-            </div>
-          `
+              ? `<img src="${workflow.cover_image}" 
+                     style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex-shrink: 0;"
+                     onerror="this.style.display='none'">`
+              : `<div style="width: 40px; height: 40px; border-radius: 4px; background: #444; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888;">
+                   ${workflow.name.charAt(0).toUpperCase()}
+                 </div>`
           }
           
           <div style="flex: 1; min-width: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-              <h5 style="margin: 0; font-size: 14px; font-weight: 400; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+              <h4 style="margin: 0; font-size: 14px; font-weight: 400; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 ${workflow.name}
-              </h5>
+              </h4>
               ${
                 workflow.pinned
-                  ? '<span style="color: #f39c12; font-size: 12px;">📌</span>'
+                  ? `<span style="color: #ffd700; font-size: 12px;">📌</span>`
                   : ""
               }
             </div>
             
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+            ${
+              workflow.description
+                ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #bbb; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                     ${workflow.description}
+                   </p>`
+                : ""
+            }
+            
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+              <img src="${workflow.user_icon}" 
+                   style="width: 16px; height: 16px; border-radius: 50%;"
+                   onerror="this.style.display='none'">
               <span style="font-size: 11px; color: #888;">
-                Updated ${timeAgo}
+                ${workflow.user_name} • Updated ${timeAgo}
               </span>
             </div>
           </div>
@@ -139,7 +207,7 @@ async function loadMoreWorkflows(element, getData, getTimeAgo) {
 
       // Render new workflow items
       newWorkflows.forEach((workflow) => {
-        const workflowItem = createWorkflowItem(workflow, getTimeAgo);
+        const workflowItem = createWorkflowItem(workflow, getTimeAgo, getData);
         workflowsList.appendChild(workflowItem);
       });
     }
@@ -174,10 +242,16 @@ async function initializeWorkflowsList(element, getData, getTimeAgo) {
   const workflowsList = element.querySelector("#workflows-list");
   const workflowsLoading = element.querySelector("#workflows-loading");
 
-  if (workflowsState.initialized) return;
+  // Check if already initialized AND the DOM elements still exist
+  if (
+    workflowsState.initialized &&
+    workflowsList &&
+    workflowsList.children.length > 0
+  )
+    return;
 
   try {
-    // Reset state
+    // Reset state (always reset when reinitializing)
     workflowsState = {
       workflows: [],
       offset: 0,
@@ -187,6 +261,11 @@ async function initializeWorkflowsList(element, getData, getTimeAgo) {
       initialized: true,
       currentSearch: "",
     };
+
+    // Clear existing content in case of reinitialization
+    if (workflowsList) {
+      workflowsList.innerHTML = "";
+    }
 
     // Show container and loading
     workflowsContainer.style.display = "block";
