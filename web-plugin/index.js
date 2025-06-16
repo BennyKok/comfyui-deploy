@@ -1112,9 +1112,9 @@ async function deployWorkflow() {
   /** @type {LGraph} */
   const graph = app.graph;
 
-  let { endpoint, apiKey, displayName } = getData();
+  let { endpoint, apiKey, apiUrl, displayName } = getData();
 
-  if (!endpoint || !apiKey || apiKey === "" || endpoint === "") {
+  if (!endpoint || !apiKey || apiKey === "" || endpoint === "" || !apiUrl) {
     configDialog.show();
     return;
   }
@@ -1158,7 +1158,7 @@ async function deployWorkflow() {
 
     <br><br>
     <label>
-    <input id="include-deps" type="checkbox" checked>Include dependency</input>
+    <input id="include-deps" type="checkbox">Include dependency</input>
     </label>
     <br>
     <label>
@@ -1172,13 +1172,65 @@ async function deployWorkflow() {
   const includeDeps = document.getElementById("include-deps").checked;
   const reuseHash = document.getElementById("reuse-hash").checked;
 
+  const prompt = await app.graphToPrompt();
+  let deps = undefined;
+
+  console.log(prompt);
+
+  if (workflow_id.trim() !== "") {
+    const text = await inputDialog.input("Save changes", "Comment");
+    if (!text) return;
+
+    try {
+      loadingDialog.showLoading("Saving changes");
+
+      const body = {
+        api_url: apiUrl,
+        workflow: prompt.workflow,
+        workflow_id: workflow_id,
+        workflow_api: prompt.output,
+        comment: text,
+      };
+
+      let data = await fetch("/comfyui-deploy/workflow/version", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + apiKey,
+        },
+      });
+
+      if (data.status !== 200) {
+        throw new Error(await data.text());
+      } else {
+        data = await data.json();
+
+        console.log(data);
+
+        infoDialog.show(
+          `<span style="color:green;">New version created!</span> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`
+        );
+
+        deployMetaNode.widgets[2].value = data.version;
+        graph.change();
+      }
+    } catch (e) {
+      infoDialog.showError("Error", e.message);
+      return;
+    } finally {
+      loadingDialog.close();
+      return;
+    }
+  }
+
   if (endpoint.endsWith("/")) {
     endpoint = endpoint.slice(0, -1);
   }
   loadingDialog.showLoading("Generating snapshot");
 
   const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
-  // console.log(snapshot);
+  console.log(snapshot);
   loadingDialog.close();
 
   if (!snapshot) {
@@ -1191,16 +1243,11 @@ async function deployWorkflow() {
 
   const title = deploy.querySelector("#button-title");
 
-  const prompt = await app.graphToPrompt();
-  let deps = undefined;
-
-  console.log(prompt);
-
   if (includeDeps) {
     loadingDialog.showLoading("Fetching existing version");
 
     const existing_workflow = await fetch(
-      endpoint + "/api/workflow/" + workflow_id,
+      apiUrl + "/api/workflow/" + workflow_id,
       {
         method: "GET",
         headers: {
@@ -1213,6 +1260,8 @@ async function deployWorkflow() {
       .catch(() => {
         return {};
       });
+
+    console.log("workflow", existing_workflow);
 
     loadingDialog.close();
 
@@ -1297,6 +1346,7 @@ async function deployWorkflow() {
       };
 
     loadingDialog.close();
+    console.log(deps);
 
     const depsOk = await confirmDialog.confirm(
       "Check dependencies",
@@ -1319,9 +1369,8 @@ async function deployWorkflow() {
       )}" />`
       // createDynamicUIHtml(deps),
     );
-    if (!depsOk) return;
 
-    console.log(deps);
+    if (!depsOk) return;
   }
 
   loadingDialog.showLoading("Deploying...");
@@ -1329,28 +1378,15 @@ async function deployWorkflow() {
   title.innerText = "Deploying...";
   title.style.color = "orange";
 
-  // console.log(prompt);
-
-  // TODO trim the ending / from endpoint is there is
-  if (endpoint.endsWith("/")) {
-    endpoint = endpoint.slice(0, -1);
-  }
-
-  // console.log(prompt.workflow);
-
-  const apiRoute = endpoint + "/api/workflow";
-  // const userId = apiKey
   try {
     const body = {
-      workflow_name,
-      workflow_id,
-      workflow: prompt.workflow,
+      name: workflow_name,
+      workflow_json: prompt.workflow,
       workflow_api: prompt.output,
-      snapshot: snapshot,
-      dependencies: deps,
+      api_url: apiUrl,
     };
     console.log(body);
-    let data = await fetch(apiRoute, {
+    let data = await fetch("/comfyui-deploy/workflow", {
       method: "POST",
       body: JSON.stringify(body),
       headers: {
@@ -1360,7 +1396,6 @@ async function deployWorkflow() {
     });
 
     console.log(data);
-
     if (data.status !== 200) {
       throw new Error(await data.text());
     } else {
@@ -1372,21 +1407,15 @@ async function deployWorkflow() {
     title.textContent = "Done";
     title.style.color = "green";
 
+    const version = data.version || 1;
+
     deployMetaNode.widgets[1].value = data.workflow_id;
-    deployMetaNode.widgets[2].value = data.version;
+    deployMetaNode.widgets[2].value = version;
     graph.change();
 
     infoDialog.show(
-      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`
+      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${version} <br/>`
     );
-
-    // // Refresh the workflows list in the sidebar
-    // const sidebarEl = document.querySelector(
-    //   '.comfy-sidebar-tab[data-id="search"]',
-    // );
-    // if (sidebarEl) {
-    //   refreshWorkflowsList(sidebarEl);
-    // }
 
     setTimeout(() => {
       title.textContent = "Deploy";
