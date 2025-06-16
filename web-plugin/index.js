@@ -3,6 +3,7 @@ import { api } from "../../scripts/api.js";
 // import { LGraphNode } from "../../scripts/widgets.js";
 LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
+import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
 // import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
@@ -1973,7 +1974,7 @@ if (isLocalhost) {
     title: "Deploy",
     tooltip: "Deploy and Configure",
     type: "custom",
-    render: (el) => {
+    render: async (el) => {
       el.innerHTML = `
         <div style="padding: 20px;">
           <h3>Comfy Deploy</h3>
@@ -2038,7 +2039,12 @@ if (isLocalhost) {
       const workflowsList = el.querySelector("#workflows-list");
       const workflowsLoading = el.querySelector("#workflows-loading");
 
-      // refreshWorkflowsList(el);
+      // Initialize workflows list and search
+      const data = getData();
+      if (data.apiKey) {
+        addWorkflowSearch(el, getData, getTimeAgo);
+        await initializeWorkflowsList(el, getData, getTimeAgo);
+      }
     },
   });
 }

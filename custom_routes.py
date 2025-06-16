@@ -31,6 +31,7 @@ import torch
 import psutil
 from collections import OrderedDict
 import io
+from urllib.parse import urlencode
 
 # Global session
 client_session = None
@@ -2984,6 +2985,47 @@ async def create_workflow_version_proxy(request):
         async with client_session.post(
             target_url,
             json=request_body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": auth_header,
+            },
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflows")
+async def get_workflows_proxy(request):
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    search = request.rel_url.query.get("search", "")
+    limit = request.rel_url.query.get("limit", 10)
+    offset = request.rel_url.query.get("offset", 0)
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    # Build query parameters properly
+    params = {}
+    if search:
+        params["search"] = search
+    if limit:
+        params["limit"] = limit
+    if offset:
+        params["offset"] = offset
+
+    target_url = f"{api_url}/api/workflows"
+    if params:
+        target_url += f"?{urlencode(params)}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url,
             headers={
                 "Content-Type": "application/json",
                 "Authorization": auth_header,
