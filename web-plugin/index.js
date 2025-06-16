@@ -1818,7 +1818,7 @@ export class ConfigDialog extends ComfyDialog {
     clearTimeout(this.timeout);
   }
 
-  save(api_key, displayName) {
+  async save(api_key, displayName) {
     const deployOption = this.container.querySelector("#deployOption").value;
     localStorage.setItem("comfy_deploy_env", deployOption);
 
@@ -1840,6 +1840,9 @@ export class ConfigDialog extends ComfyDialog {
       displayName,
       environment: deployOption,
     });
+
+    // Refresh workflow list after saving configuration
+    await refreshWorkflowListIfOpen();
   }
 
   show() {
@@ -1920,6 +1923,7 @@ export class ConfigDialog extends ComfyDialog {
                 "Authenticated",
                 `<div>You will be able to upload workflow to <button style="font-size: 18px; width: fit;">${json.name}</button></div>`
               );
+
               configDialog.show();
             }
           })
@@ -2426,4 +2430,35 @@ function addMenuRightButtons(buttonConfigs) {
     buttonIdPrefix: "cd-button-",
     containerStyle: {},
   });
+}
+
+// Function to refresh workflow list if sidebar is open
+async function refreshWorkflowListIfOpen() {
+  try {
+    const workflowsContainer = document.querySelector("#workflows-container");
+    const workflowsList = document.querySelector("#workflows-list");
+
+    // Only refresh if workflows container is visible and has been initialized
+    if (!workflowsContainer || !workflowsList) {
+      return;
+    }
+
+    // Import the functions we need
+    const { initializeWorkflowsList } = await import("./workflow-list.js");
+
+    // Clear existing workflows and reset state safely
+    workflowsList.innerHTML = "";
+    if (window.workflowsState) {
+      window.workflowsState.initialized = false;
+      window.workflowsState.workflows = [];
+      window.workflowsState.offset = 0;
+      window.workflowsState.hasMore = true;
+    }
+    // Reinitialize the workflow list
+    await initializeWorkflowsList(document, getData, getTimeAgo);
+
+    console.log("Workflow list refreshed successfully");
+  } catch (error) {
+    console.error("Error refreshing workflow list:", error);
+  }
 }

@@ -9,6 +9,9 @@ let workflowsState = {
   currentSearch: "",
 };
 
+// Make workflowsState accessible globally
+window.workflowsState = workflowsState;
+
 async function fetchWorkflows(getData, offset = 0, limit = 20, search = "") {
   try {
     const data = getData();
@@ -276,7 +279,7 @@ async function initializeWorkflowsList(element, getData, getTimeAgo) {
         list-style-type: none;
         padding: 0;
         margin: 0;
-        height: calc(100vh - 400px);
+        height: calc(100vh - 350px);
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #666 transparent;
