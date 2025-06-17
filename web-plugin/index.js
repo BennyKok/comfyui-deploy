@@ -1412,6 +1412,7 @@ async function deployWorkflow() {
       throw new Error(await data.text());
     } else {
       data = await data.json();
+      await refreshWorkflowListIfOpen();
     }
 
     loadingDialog.close();
@@ -1419,14 +1420,37 @@ async function deployWorkflow() {
     title.textContent = "Done";
     title.style.color = "green";
 
-    const version = data.version || 1;
-
     deployMetaNode.widgets[1].value = data.workflow_id;
-    deployMetaNode.widgets[2].value = version;
+    deployMetaNode.widgets[2].value = 2;
     graph.change();
 
+    if (data.workflow_id) {
+      const prompt_with_workflow_id = await app.graphToPrompt();
+
+      const body = {
+        api_url: apiUrl,
+        workflow: prompt_with_workflow_id.workflow,
+        workflow_id: data.workflow_id,
+        workflow_api: prompt_with_workflow_id.output,
+        comment: "chore: apply workflow id",
+      };
+
+      let new_version_data = await fetch("/comfyui-deploy/workflow/version", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + apiKey,
+        },
+      });
+
+      if (new_version_data.status !== 200) {
+        throw new Error(await new_version_data.text());
+      }
+    }
+
     infoDialog.show(
-      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${version} <br/>`
+      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: 2 <br/>`
     );
 
     setTimeout(() => {
