@@ -693,8 +693,19 @@ const ext = {
 
       onConfigure(o) {
         // This method is called when the node is being configured (e.g., when loading a saved graph)
-        // Ensure all necessary data is restored
-        if (o.properties) {
+        // ComfyUI stores widget values in widgets_values array, not properties
+        if (o.widgets_values && o.widgets_values.length >= 3) {
+          // Set the widget values directly
+          this.widgets[0].value = o.widgets_values[0] || "";
+          this.widgets[1].value = o.widgets_values[1] || "";
+          this.widgets[2].value = o.widgets_values[2] || "1";
+
+          // Also update properties to stay in sync
+          this.properties.workflow_name = o.widgets_values[0] || "";
+          this.properties.workflow_id = o.widgets_values[1] || "";
+          this.properties.version = o.widgets_values[2] || "1";
+        } else if (o.properties) {
+          // Fallback to properties if widgets_values is not available
           this.properties = { ...this.properties, ...o.properties };
           this.widgets[0].value = this.properties.workflow_name || "";
           this.widgets[1].value = this.properties.workflow_id || "";
