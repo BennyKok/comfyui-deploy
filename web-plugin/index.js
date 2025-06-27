@@ -503,38 +503,42 @@ const ext = {
       nodeType.prototype.onNodeCreated = function () {
         onNodeCreated ? onNodeCreated.apply(this, []) : undefined;
 
-        // Import ComfyWidgets if not available globally
-        const ComfyWidgets = app2.widgets || window.ComfyWidgets;
+        // Wait a bit to ensure all other widgets are created first
+        setTimeout(() => {
+          // Import ComfyWidgets if not available globally
+          const ComfyWidgets = app2.widgets || window.ComfyWidgets;
 
-        // Create widget exactly like rgthree does
-        this.textDisplayWidget = ComfyWidgets["STRING"](
-          this,
-          "displayed_text",
-          ["STRING", { multiline: true }],
-          app2
-        ).widget;
+          // Create widget exactly like rgthree does
+          this.textDisplayWidget = ComfyWidgets["STRING"](
+            this,
+            "displayed_text",
+            ["STRING", { multiline: true }],
+            app2
+          ).widget;
 
-        // Make it read-only
-        this.textDisplayWidget.inputEl.readOnly = true;
+          // Make it read-only
+          this.textDisplayWidget.inputEl.readOnly = true;
 
-        // Style it
-        this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
+          // Style it
+          this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
 
-        // Critical: Override serialize to prevent interference with widget order
-        this.textDisplayWidget.serializeValue = async (node, index) => {
-          // Return undefined to exclude from serialization completely
-          return undefined;
-        };
+          // Ensure it doesn't get serialized
+          this.textDisplayWidget.serializeValue = () => undefined;
+          this.textDisplayWidget.serialize = false;
 
-        // Mark this widget as non-serializable
-        this.textDisplayWidget.serialize = false;
+          // Remove it from widgets_values array if it exists
+          const widgetIndex = this.widgets.indexOf(this.textDisplayWidget);
+          if (widgetIndex > -1 && this.widgets_values) {
+            this.widgets_values.splice(widgetIndex, 1);
+          }
+        }, 100);
       };
 
       const onExecuted = nodeType.prototype.onExecuted;
       nodeType.prototype.onExecuted = function (message) {
         onExecuted?.apply(this, [message]);
 
-        // Display the text output on the node (exactly like rgthree)
+        // Display the text output on the node
         if (message.text && message.text.length > 0 && this.textDisplayWidget) {
           this.textDisplayWidget.value = message.text[0];
         }
