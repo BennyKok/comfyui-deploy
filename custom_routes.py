@@ -31,6 +31,7 @@ import torch
 import psutil
 from collections import OrderedDict
 import io
+from urllib.parse import urlencode
 
 # Global session
 client_session = None
@@ -2769,9 +2770,13 @@ class UploadQueue:
                                 del self.node_uploads[prompt_id][node_id]
                                 if prompt_id in self.node_output_data:
                                     if node_id in self.node_output_data[prompt_id]:
-                                        if self.node_output_data[prompt_id][node_id]["data"]:
+                                        if self.node_output_data[prompt_id][node_id][
+                                            "data"
+                                        ]:
                                             # Send final node data to API before cleanup
-                                            if prompt_metadata[prompt_id].status_endpoint:
+                                            if prompt_metadata[
+                                                prompt_id
+                                            ].status_endpoint:
                                                 body = {
                                                     "run_id": prompt_id,
                                                     "output_data": self.node_output_data[
@@ -2785,7 +2790,9 @@ class UploadQueue:
                                                         prompt_metadata[
                                                             prompt_id
                                                         ].status_endpoint,
-                                                        token=prompt_metadata[prompt_id].token,
+                                                        token=prompt_metadata[
+                                                            prompt_id
+                                                        ].token,
                                                         json=body,
                                                     )
                                                 except Exception as e:
@@ -2885,3 +2892,171 @@ def format_execution_timeline(execution_times):
         current_time += duration
 
     return format_table(headers, rows)
+
+
+@server.PromptServer.instance.routes.get("/comfyui-deploy/auth-response")
+async def auth_response_proxy(request):
+    request_id = request.rel_url.query.get("request_id")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+
+    if not request_id:
+        return web.json_response({"error": "request_id is required"}, status=400)
+
+    target_url = f"{api_url}/api/platform/comfyui/auth-response?request_id={request_id}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(target_url) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+@server.PromptServer.instance.routes.post("/comfyui-deploy/workflow")
+async def create_workflow_proxy(request):
+    data = await request.json()
+    name = data.get("name")
+    workflow_json = data.get("workflow_json")
+    workflow_api = data.get("workflow_api")
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    if not name or not workflow_json or not workflow_api:
+        return web.json_response(
+            {"error": "name, workflow_json, workflow_api are required"}, status=400
+        )
+
+    target_url = f"{api_url}/api/workflow"
+
+    request_body = {
+        "name": name,
+        "workflow_json": json.dumps(workflow_json),
+        "workflow_api": json.dumps(workflow_api),
+    }
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json=request_body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": auth_header,
+            },
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+@server.PromptServer.instance.routes.post("/comfyui-deploy/workflow/version")
+async def create_workflow_version_proxy(request):
+    data = await request.json()
+    workflow_id = data.get("workflow_id")
+    workflow = data.get("workflow")
+    workflow_api = data.get("workflow_api")
+    comment = data.get("comment", "")
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/workflow/{workflow_id}/version"
+
+    request_body = {
+        "workflow": workflow,
+        "workflow_api": workflow_api,
+        "comment": comment,
+    }
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json=request_body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": auth_header,
+            },
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflows")
+async def get_workflows_proxy(request):
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    search = request.rel_url.query.get("search", "")
+    limit = request.rel_url.query.get("limit", 10)
+    offset = request.rel_url.query.get("offset", 0)
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    # Build query parameters properly
+    params = {}
+    if search:
+        params["search"] = search
+    if limit:
+        params["limit"] = limit
+    if offset:
+        params["offset"] = offset
+
+    target_url = f"{api_url}/api/workflows"
+    if params:
+        target_url += f"?{urlencode(params)}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": auth_header,
+            },
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# for getting a workflow by id
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflow")
+async def get_workflow_proxy(request):
+    workflow_id = request.rel_url.query.get("workflow_id")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/workflow/{workflow_id}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
