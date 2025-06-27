@@ -92,7 +92,7 @@ class ComfyDeployOutputText:
             }
         )
 
-        return {"ui": {"text_file": results}}
+        return {"ui": {"text_file": results, "text": text}}
 
 
 NODE_CLASS_MAPPINGS = {"ComfyDeployOutputText": ComfyDeployOutputText}

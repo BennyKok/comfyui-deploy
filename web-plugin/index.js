@@ -497,6 +497,48 @@ const ext = {
   },
 
   async beforeRegisterNodeDef(nodeType, nodeData, app2) {
+    // Add text display functionality for ComfyDeployOutputText
+    if (nodeData.name === "ComfyDeployOutputText") {
+      const onNodeCreated = nodeType.prototype.onNodeCreated;
+      nodeType.prototype.onNodeCreated = function () {
+        onNodeCreated ? onNodeCreated.apply(this, []) : undefined;
+
+        // Create a read-only text widget to display the output
+        this.textDisplayWidget = this.addWidget(
+          "text",
+          "output_text",
+          "",
+          () => {},
+          {
+            multiline: true,
+            serialize: false, // Don't save this to the workflow
+          }
+        );
+
+        // Make the widget read-only
+        if (this.textDisplayWidget.inputEl) {
+          this.textDisplayWidget.inputEl.readOnly = true;
+          this.textDisplayWidget.inputEl.style.backgroundColor = "transparent";
+          this.textDisplayWidget.inputEl.style.border = "1px solid #555";
+          this.textDisplayWidget.inputEl.style.color = "#ccc";
+        }
+      };
+
+      const onExecuted = nodeType.prototype.onExecuted;
+      nodeType.prototype.onExecuted = function (message) {
+        onExecuted?.apply(this, [message]);
+
+        // Display the text output on the node
+        if (message.text && message.text.length > 0 && this.textDisplayWidget) {
+          this.textDisplayWidget.value = message.text[0];
+
+          // Resize the node to fit the content
+          this.setSize(this.computeSize());
+          app.graph.setDirtyCanvas(true);
+        }
+      };
+    }
+
     const origGetExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
     nodeType.prototype.getExtraMenuOptions = function (_, options) {
       const r = origGetExtraMenuOptions
