@@ -503,36 +503,25 @@ const ext = {
       nodeType.prototype.onNodeCreated = function () {
         onNodeCreated ? onNodeCreated.apply(this, []) : undefined;
 
-        // Create a multiline text widget to display the output (similar to rgthree)
-        this.textDisplayWidget = this.addWidget(
-          "text",
+        // Import ComfyWidgets if not available globally
+        const ComfyWidgets = app2.widgets || window.ComfyWidgets;
+
+        // Create widget exactly like rgthree does
+        this.textDisplayWidget = ComfyWidgets["STRING"](
+          this,
           "displayed_text",
-          "",
-          () => {},
-          {
-            multiline: true,
-            serialize: false, // Don't save this to the workflow
-          }
-        );
+          ["STRING", { multiline: true }],
+          app2
+        ).widget;
 
-        // Style the widget to look like a proper text display box
-        if (this.textDisplayWidget.inputEl) {
-          this.textDisplayWidget.inputEl.readOnly = true;
-          this.textDisplayWidget.inputEl.style.backgroundColor =
-            "var(--comfy-input-bg)";
-          this.textDisplayWidget.inputEl.style.border =
-            "1px solid var(--border-color)";
-          this.textDisplayWidget.inputEl.style.color = "var(--input-text)";
-          this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
-          this.textDisplayWidget.inputEl.style.fontSize = "12px";
-          this.textDisplayWidget.inputEl.style.minHeight = "100px";
-          this.textDisplayWidget.inputEl.style.resize = "vertical";
-          this.textDisplayWidget.inputEl.style.padding = "8px";
-          this.textDisplayWidget.inputEl.style.whiteSpace = "pre-wrap";
-          this.textDisplayWidget.inputEl.style.wordWrap = "break-word";
-        }
+        // Make it read-only
+        this.textDisplayWidget.inputEl.readOnly = true;
 
-        // Override the serialize function to not save the display value
+        // Style it
+        this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
+        this.textDisplayWidget.inputEl.style.fontSize = "12px";
+
+        // Override serialize (exactly like rgthree)
         this.textDisplayWidget.serializeValue = () => "";
       };
 
@@ -540,13 +529,9 @@ const ext = {
       nodeType.prototype.onExecuted = function (message) {
         onExecuted?.apply(this, [message]);
 
-        // Display the text output on the node
+        // Display the text output on the node (exactly like rgthree)
         if (message.text && message.text.length > 0 && this.textDisplayWidget) {
           this.textDisplayWidget.value = message.text[0];
-
-          // Resize the node to fit the content
-          this.setSize(this.computeSize());
-          app.graph.setDirtyCanvas(true);
         }
       };
     }
