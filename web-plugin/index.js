@@ -519,10 +519,15 @@ const ext = {
 
         // Style it
         this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
-        this.textDisplayWidget.inputEl.style.fontSize = "12px";
 
-        // Override serialize (exactly like rgthree)
-        this.textDisplayWidget.serializeValue = () => "";
+        // Critical: Override serialize to prevent interference with widget order
+        this.textDisplayWidget.serializeValue = async (node, index) => {
+          // Return undefined to exclude from serialization completely
+          return undefined;
+        };
+
+        // Mark this widget as non-serializable
+        this.textDisplayWidget.serialize = false;
       };
 
       const onExecuted = nodeType.prototype.onExecuted;
