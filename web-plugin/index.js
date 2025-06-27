@@ -504,16 +504,12 @@ const ext = {
         onNodeCreated ? onNodeCreated.apply(this, []) : undefined;
 
         // Create a multiline text widget to display the output (similar to rgthree)
-        this.textDisplayWidget = this.addWidget(
-          "text",
+        this.textDisplayWidget = app.widgets.STRING(
+          this,
           "displayed_text",
-          "",
-          () => {},
-          {
-            multiline: true,
-            serialize: false, // Don't save this to the workflow
-          }
-        );
+          ["STRING", { multiline: true }],
+          app2
+        ).widget;
 
         // Style the widget to look like a proper text display box
         if (this.textDisplayWidget.inputEl) {
