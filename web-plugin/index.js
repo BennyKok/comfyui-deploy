@@ -503,10 +503,10 @@ const ext = {
       nodeType.prototype.onNodeCreated = function () {
         onNodeCreated ? onNodeCreated.apply(this, []) : undefined;
 
-        // Create a read-only text widget to display the output
+        // Create a multiline text widget to display the output (similar to rgthree)
         this.textDisplayWidget = this.addWidget(
           "text",
-          "output_text",
+          "displayed_text",
           "",
           () => {},
           {
@@ -515,13 +515,25 @@ const ext = {
           }
         );
 
-        // Make the widget read-only
+        // Style the widget to look like a proper text display box
         if (this.textDisplayWidget.inputEl) {
           this.textDisplayWidget.inputEl.readOnly = true;
-          this.textDisplayWidget.inputEl.style.backgroundColor = "transparent";
-          this.textDisplayWidget.inputEl.style.border = "1px solid #555";
-          this.textDisplayWidget.inputEl.style.color = "#ccc";
+          this.textDisplayWidget.inputEl.style.backgroundColor =
+            "var(--comfy-input-bg)";
+          this.textDisplayWidget.inputEl.style.border =
+            "1px solid var(--border-color)";
+          this.textDisplayWidget.inputEl.style.color = "var(--input-text)";
+          this.textDisplayWidget.inputEl.style.fontFamily = "monospace";
+          this.textDisplayWidget.inputEl.style.fontSize = "12px";
+          this.textDisplayWidget.inputEl.style.minHeight = "100px";
+          this.textDisplayWidget.inputEl.style.resize = "vertical";
+          this.textDisplayWidget.inputEl.style.padding = "8px";
+          this.textDisplayWidget.inputEl.style.whiteSpace = "pre-wrap";
+          this.textDisplayWidget.inputEl.style.wordWrap = "break-word";
         }
+
+        // Override the serialize function to not save the display value
+        this.textDisplayWidget.serializeValue = () => "";
       };
 
       const onExecuted = nodeType.prototype.onExecuted;
