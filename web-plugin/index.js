@@ -2000,13 +2000,10 @@ const currentOrigin = window.location.origin;
 //   serverURL: `${currentOrigin}/comfydeploy/api/`,
 // });
 
-// Check if the current URL hostname starts with localhost or 127.0.0.1
-const isLocalhost =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
+const isComfyDeployDashboard = currentOrigin.includes("comfydeploy.com");
 
 // Only register the sidebar tab if we're on localhost
-if (isLocalhost) {
+if (!isComfyDeployDashboard) {
   app.extensionManager.registerSidebarTab({
     id: "search",
     icon: "pi pi-cloud-upload",
