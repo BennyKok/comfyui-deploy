@@ -1440,10 +1440,6 @@ async def send_json_override(self, event, data, sid=None):
             logger.info(format_table(headers, table_data))
             # print("========================\n")
 
-            timeline = format_execution_timeline(NODE_EXECUTION_TIMES)
-            logger.info(f"\nNode Execution Timeline:\n{timeline}")
-            # Clear the execution times for the next run
-
     # the last executing event is none, then the workflow is finished
     if event == "executing" and data.get("node") is None:
         mark_prompt_done(prompt_id=prompt_id)
@@ -2754,59 +2750,57 @@ class UploadQueue:
                     logger.error(f"Upload failed: {str(e)}")
                     logger.error(traceback.format_exc())
                 finally:
-                    # Remove this upload from tracking
-                    if prompt_id in self.pending_uploads:
-                        self.pending_uploads[prompt_id].discard(upload_id)
-                        # Remove from node tracking if applicable
-                        if (
-                            node_id
-                            and prompt_id in self.node_uploads
-                            and node_id in self.node_uploads[prompt_id]
-                        ):
-                            self.node_uploads[prompt_id][node_id].discard(upload_id)
+                    async with self.lock:  # Acquire lock to protect shared dict access
+                        if prompt_id in self.pending_uploads:
+                            self.pending_uploads[prompt_id].discard(upload_id)
 
-                            # If this was the last upload for this node, clean up node data
-                            if not self.node_uploads[prompt_id][node_id]:
-                                del self.node_uploads[prompt_id][node_id]
-                                if prompt_id in self.node_output_data:
-                                    if node_id in self.node_output_data[prompt_id]:
-                                        if self.node_output_data[prompt_id][node_id][
-                                            "data"
-                                        ]:
-                                            # Send final node data to API before cleanup
-                                            if prompt_metadata[
-                                                prompt_id
-                                            ].status_endpoint:
-                                                body = {
-                                                    "run_id": prompt_id,
-                                                    "output_data": self.node_output_data[
+                            if (
+                                node_id
+                                and prompt_id in self.node_uploads
+                                and node_id in self.node_uploads[prompt_id]
+                            ):
+                                self.node_uploads[prompt_id][node_id].discard(upload_id)
+
+                                if not self.node_uploads[prompt_id][node_id]:
+                                    del self.node_uploads[prompt_id][node_id]
+
+                                    if (
+                                        prompt_id in self.node_output_data
+                                        and node_id in self.node_output_data[prompt_id]
+                                    ):
+                                        node_data = self.node_output_data[prompt_id][
+                                            node_id
+                                        ]
+                                        if node_data["data"]:
+                                            body = {
+                                                "run_id": prompt_id,
+                                                "output_data": node_data["data"],
+                                                "node_meta": {"node_id": node_id},
+                                            }
+                                            try:
+                                                await async_request_with_retry(
+                                                    "POST",
+                                                    prompt_metadata[
                                                         prompt_id
-                                                    ][node_id]["data"],
-                                                    "node_meta": {"node_id": node_id},
-                                                }
-                                                try:
-                                                    await async_request_with_retry(
-                                                        "POST",
-                                                        prompt_metadata[
-                                                            prompt_id
-                                                        ].status_endpoint,
-                                                        token=prompt_metadata[
-                                                            prompt_id
-                                                        ].token,
-                                                        json=body,
-                                                    )
-                                                except Exception as e:
-                                                    logger.error(
-                                                        f"Failed to send final node data: {str(e)}"
-                                                    )
+                                                    ].status_endpoint,
+                                                    token=prompt_metadata[
+                                                        prompt_id
+                                                    ].token,
+                                                    json=body,
+                                                )
+                                            except Exception as e:
+                                                logger.error(
+                                                    f"Failed to send final node data: {str(e)}"
+                                                )
+
+                                        # Safe to delete now (re-check not strictly needed with lock, but harmless)
                                         del self.node_output_data[prompt_id][node_id]
 
-                        # Send status update
-                        await self.update_queue_status(prompt_id)
-
                         # If no more pending uploads for this prompt and it's done, update status
-                        if not self.pending_uploads[prompt_id] and is_prompt_done(
-                            prompt_id
+                        if (
+                            prompt_id in self.pending_uploads
+                            and not self.pending_uploads[prompt_id]
+                            and is_prompt_done(prompt_id)
                         ):
                             # Clean up all data for this prompt
                             if prompt_id in self.node_uploads:
@@ -2819,8 +2813,11 @@ class UploadQueue:
                             loop.create_task(update_run(prompt_id, Status.SUCCESS))
                             loop.create_task(send("success", {"prompt_id": prompt_id}))
 
-                    # Mark task as done
+                    # Mark task as done (outside lock to avoid holding it unnecessarily)
                     self.queue.task_done()
+
+                    # Send status update (also outside lock)
+                    await self.update_queue_status(prompt_id)
 
             except Exception as e:
                 logger.error(f"Error in upload worker: {str(e)}")
