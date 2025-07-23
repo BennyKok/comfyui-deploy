@@ -265,7 +265,7 @@ def clear_current_prompt(sid):
     streaming_prompt_metadata[sid].running_prompt_ids.clear()
 
 
-def post_prompt(json_data):
+async def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
     json_data = prompt_server.trigger_on_prompt(json_data)
 
@@ -281,7 +281,14 @@ def post_prompt(json_data):
 
     if "prompt" in json_data:
         prompt = json_data["prompt"]
-        valid = execution.validate_prompt(prompt)
+        prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
+
+        try:
+            valid = await execution.validate_prompt(prompt_id, prompt)
+        except TypeError as e:
+            logger.warning(f"Trying old validate_prompt signature: {e}")
+            valid = execution.validate_prompt(prompt)
+
         extra_data = {}
         if "extra_data" in json_data:
             extra_data = json_data["extra_data"]
@@ -292,8 +299,6 @@ def post_prompt(json_data):
         if "client_id" in json_data:
             extra_data["client_id"] = json_data["client_id"]
         if valid[0]:
-            # if the prompt id is provided
-            prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
             outputs_to_execute = valid[2]
             prompt_server.prompt_queue.put(
                 (number, prompt_id, prompt, extra_data, outputs_to_execute)
@@ -500,15 +505,15 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
 
     prompt_id = str(uuid.uuid4())
 
-    prompt = {
-        "prompt": workflow_api,
-        "client_id": sid,  # "comfy_deploy_instance", #api.client_id
-        "prompt_id": prompt_id,
-        "extra_data": {"extra_pnginfo": {"workflow": workflow}},
-    }
+    # prompt = {
+    #     "prompt": workflow_api,
+    #     "client_id": sid,  # "comfy_deploy_instance", #api.client_id
+    #     "prompt_id": prompt_id,
+    #     "extra_data": {"extra_pnginfo": {"workflow": workflow}},
+    # }
 
     try:
-        res = post_prompt(prompt)
+        # res = post_prompt(prompt)
         inputs.running_prompt_ids.add(prompt_id)
         prompt_metadata[prompt_id] = SimplePrompt(
             status_endpoint=inputs.status_endpoint,
@@ -519,7 +524,7 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
-        stack_trace = traceback.format_exc().strip()
+        # stack_trace = traceback.format_exc().strip()
         logger.info(f"error: {error_type}, {e}")
         logger.info(f"stack trace: {stack_trace_short}")
 
@@ -595,7 +600,7 @@ async def comfy_deploy_run(request):
     )
 
     try:
-        res = post_prompt(prompt)
+        res = await post_prompt(prompt)
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
@@ -664,7 +669,7 @@ async def stream_prompt(data, token):
     # log('info', "Begin prompt", prompt=prompt)
 
     try:
-        res = post_prompt(prompt)
+        res = await post_prompt(prompt)
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
@@ -1266,22 +1271,11 @@ def handle_execute(class_type, last_node_id, prompt_id, server, unique_id):
 
 try:
     origin_execute = execution.execute
+    is_async = asyncio.iscoroutinefunction(origin_execute)
 
-    def swizzle_execute(
-        server,
-        dynprompt,
-        caches,
-        current_item,
-        extra_data,
-        executed,
-        prompt_id,
-        execution_list,
-        pending_subgraph_results,
-    ):
-        unique_id = current_item
-        class_type = dynprompt.get_node(unique_id)["class_type"]
-        last_node_id = server.last_node_id
-        result = origin_execute(
+    if is_async:
+
+        async def swizzle_execute(
             server,
             dynprompt,
             caches,
@@ -1291,12 +1285,61 @@ try:
             prompt_id,
             execution_list,
             pending_subgraph_results,
-        )
-        handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
-        return result
+            pending_async_nodes,
+        ):
+            unique_id = current_item
+            class_type = dynprompt.get_node(unique_id)["class_type"]
+            last_node_id = server.last_node_id
+
+            result = await origin_execute(
+                server,
+                dynprompt,
+                caches,
+                current_item,
+                extra_data,
+                executed,
+                prompt_id,
+                execution_list,
+                pending_subgraph_results,
+                pending_async_nodes,
+            )
+
+            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+            return result
+    else:
+
+        def swizzle_execute(
+            server,
+            dynprompt,
+            caches,
+            current_item,
+            extra_data,
+            executed,
+            prompt_id,
+            execution_list,
+            pending_subgraph_results,
+        ):
+            unique_id = current_item
+            class_type = dynprompt.get_node(unique_id)["class_type"]
+            last_node_id = server.last_node_id
+
+            result = origin_execute(
+                server,
+                dynprompt,
+                caches,
+                current_item,
+                extra_data,
+                executed,
+                prompt_id,
+                execution_list,
+                pending_subgraph_results,
+            )
+
+            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+            return result
 
     execution.execute = swizzle_execute
-except Exception as e:
+except Exception:
     pass
 
 
