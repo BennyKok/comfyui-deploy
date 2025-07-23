@@ -1266,7 +1266,7 @@ def handle_execute(class_type, last_node_id, prompt_id, server, unique_id):
 try:
     origin_execute = execution.execute
 
-    def swizzle_execute(
+    async def swizzle_execute(
         server,
         dynprompt,
         caches,
@@ -1276,11 +1276,13 @@ try:
         prompt_id,
         execution_list,
         pending_subgraph_results,
+        pending_async_nodes,  # ← Missing parameter
     ):
         unique_id = current_item
         class_type = dynprompt.get_node(unique_id)["class_type"]
         last_node_id = server.last_node_id
-        result = origin_execute(
+
+        result = await origin_execute(  # ← Need to await
             server,
             dynprompt,
             caches,
@@ -1290,7 +1292,9 @@ try:
             prompt_id,
             execution_list,
             pending_subgraph_results,
+            pending_async_nodes,  # ← Missing parameter
         )
+
         handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
         return result
 
