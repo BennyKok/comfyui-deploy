@@ -1282,7 +1282,7 @@ try:
         prompt_id,
         execution_list,
         pending_subgraph_results,
-        pending_async_nodes,
+        pending_async_nodes=None,
     ):
         unique_id = current_item
         class_type = dynprompt.get_node(unique_id)["class_type"]
