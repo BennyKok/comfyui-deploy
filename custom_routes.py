@@ -1271,24 +1271,26 @@ def handle_execute(class_type, last_node_id, prompt_id, server, unique_id):
 
 try:
     origin_execute = execution.execute
+    is_async = asyncio.iscoroutinefunction(origin_execute)
 
-    async def swizzle_execute(
-        server,
-        dynprompt,
-        caches,
-        current_item,
-        extra_data,
-        executed,
-        prompt_id,
-        execution_list,
-        pending_subgraph_results,
-        pending_async_nodes=None,
-    ):
-        unique_id = current_item
-        class_type = dynprompt.get_node(unique_id)["class_type"]
-        last_node_id = server.last_node_id
+    if is_async:
 
-        try:
+        async def swizzle_execute(
+            server,
+            dynprompt,
+            caches,
+            current_item,
+            extra_data,
+            executed,
+            prompt_id,
+            execution_list,
+            pending_subgraph_results,
+            pending_async_nodes,
+        ):
+            unique_id = current_item
+            class_type = dynprompt.get_node(unique_id)["class_type"]
+            last_node_id = server.last_node_id
+
             result = await origin_execute(
                 server,
                 dynprompt,
@@ -1301,8 +1303,26 @@ try:
                 pending_subgraph_results,
                 pending_async_nodes,
             )
-        except TypeError as e:
-            logger.warning(f"Trying old execute signature: {e}")
+
+            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+            return result
+    else:
+
+        def swizzle_execute(
+            server,
+            dynprompt,
+            caches,
+            current_item,
+            extra_data,
+            executed,
+            prompt_id,
+            execution_list,
+            pending_subgraph_results,
+        ):
+            unique_id = current_item
+            class_type = dynprompt.get_node(unique_id)["class_type"]
+            last_node_id = server.last_node_id
+
             result = origin_execute(
                 server,
                 dynprompt,
@@ -1315,11 +1335,11 @@ try:
                 pending_subgraph_results,
             )
 
-        handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
-        return result
+            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+            return result
 
     execution.execute = swizzle_execute
-except Exception as e:
+except Exception:
     pass
 
 
