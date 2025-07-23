@@ -287,7 +287,7 @@ async def post_prompt(json_data):
             valid = await execution.validate_prompt(prompt_id, prompt)
         except TypeError as e:
             logger.warning(f"Trying old validate_prompt signature: {e}")
-            valid = await execution.validate_prompt(prompt)
+            valid = execution.validate_prompt(prompt)
 
         extra_data = {}
         if "extra_data" in json_data:
@@ -1303,7 +1303,7 @@ try:
             )
         except TypeError as e:
             logger.warning(f"Trying old execute signature: {e}")
-            result = await origin_execute(
+            result = origin_execute(
                 server,
                 dynprompt,
                 caches,
