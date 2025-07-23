@@ -265,7 +265,7 @@ def clear_current_prompt(sid):
     streaming_prompt_metadata[sid].running_prompt_ids.clear()
 
 
-def post_prompt(json_data):
+async def post_prompt(json_data):
     prompt_server = server.PromptServer.instance
     json_data = prompt_server.trigger_on_prompt(json_data)
 
@@ -282,7 +282,7 @@ def post_prompt(json_data):
     if "prompt" in json_data:
         prompt = json_data["prompt"]
         prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
-        valid = execution.validate_prompt(prompt_id, prompt)
+        valid = await execution.validate_prompt(prompt_id, prompt)
         extra_data = {}
         if "extra_data" in json_data:
             extra_data = json_data["extra_data"]
@@ -499,15 +499,15 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
 
     prompt_id = str(uuid.uuid4())
 
-    prompt = {
-        "prompt": workflow_api,
-        "client_id": sid,  # "comfy_deploy_instance", #api.client_id
-        "prompt_id": prompt_id,
-        "extra_data": {"extra_pnginfo": {"workflow": workflow}},
-    }
+    # prompt = {
+    #     "prompt": workflow_api,
+    #     "client_id": sid,  # "comfy_deploy_instance", #api.client_id
+    #     "prompt_id": prompt_id,
+    #     "extra_data": {"extra_pnginfo": {"workflow": workflow}},
+    # }
 
     try:
-        res = post_prompt(prompt)
+        # res = post_prompt(prompt)
         inputs.running_prompt_ids.add(prompt_id)
         prompt_metadata[prompt_id] = SimplePrompt(
             status_endpoint=inputs.status_endpoint,
@@ -518,7 +518,7 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
-        stack_trace = traceback.format_exc().strip()
+        # stack_trace = traceback.format_exc().strip()
         logger.info(f"error: {error_type}, {e}")
         logger.info(f"stack trace: {stack_trace_short}")
 
@@ -594,7 +594,7 @@ async def comfy_deploy_run(request):
     )
 
     try:
-        res = post_prompt(prompt)
+        res = await post_prompt(prompt)
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
@@ -663,7 +663,7 @@ async def stream_prompt(data, token):
     # log('info', "Begin prompt", prompt=prompt)
 
     try:
-        res = post_prompt(prompt)
+        res = await post_prompt(prompt)
     except Exception as e:
         error_type = type(e).__name__
         stack_trace_short = traceback.format_exc().strip().split("\n")[-2]
