@@ -282,7 +282,13 @@ async def post_prompt(json_data):
     if "prompt" in json_data:
         prompt = json_data["prompt"]
         prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
-        valid = await execution.validate_prompt(prompt_id, prompt)
+
+        try:
+            valid = await execution.validate_prompt(prompt_id, prompt)
+        except TypeError as e:
+            logger.warning(f"Trying old validate_prompt signature: {e}")
+            valid = await execution.validate_prompt(prompt)
+
         extra_data = {}
         if "extra_data" in json_data:
             extra_data = json_data["extra_data"]
@@ -1276,24 +1282,38 @@ try:
         prompt_id,
         execution_list,
         pending_subgraph_results,
-        pending_async_nodes,  # ← Missing parameter
+        pending_async_nodes,
     ):
         unique_id = current_item
         class_type = dynprompt.get_node(unique_id)["class_type"]
         last_node_id = server.last_node_id
 
-        result = await origin_execute(  # ← Need to await
-            server,
-            dynprompt,
-            caches,
-            current_item,
-            extra_data,
-            executed,
-            prompt_id,
-            execution_list,
-            pending_subgraph_results,
-            pending_async_nodes,  # ← Missing parameter
-        )
+        try:
+            result = await origin_execute(
+                server,
+                dynprompt,
+                caches,
+                current_item,
+                extra_data,
+                executed,
+                prompt_id,
+                execution_list,
+                pending_subgraph_results,
+                pending_async_nodes,
+            )
+        except TypeError as e:
+            logger.warning(f"Trying old execute signature: {e}")
+            result = await origin_execute(
+                server,
+                dynprompt,
+                caches,
+                current_item,
+                extra_data,
+                executed,
+                prompt_id,
+                execution_list,
+                pending_subgraph_results,
+            )
 
         handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
         return result
