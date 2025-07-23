@@ -281,7 +281,8 @@ def post_prompt(json_data):
 
     if "prompt" in json_data:
         prompt = json_data["prompt"]
-        valid = execution.validate_prompt(prompt)
+        prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
+        valid = execution.validate_prompt(prompt_id, prompt)
         extra_data = {}
         if "extra_data" in json_data:
             extra_data = json_data["extra_data"]
@@ -292,8 +293,6 @@ def post_prompt(json_data):
         if "client_id" in json_data:
             extra_data["client_id"] = json_data["client_id"]
         if valid[0]:
-            # if the prompt id is provided
-            prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
             outputs_to_execute = valid[2]
             prompt_server.prompt_queue.put(
                 (number, prompt_id, prompt, extra_data, outputs_to_execute)
