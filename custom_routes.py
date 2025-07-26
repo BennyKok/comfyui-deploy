@@ -2098,6 +2098,7 @@ async def upload_in_background(
                 ("model_file", "format", "application/octet-stream"),
                 ("result", "format", "application/octet-stream"),
                 ("text_file", "format", "text/plain"),
+                ("audio", "format", "audio/mpeg"),
             ]:
                 items = data.get(file_type, [])
 
@@ -2185,6 +2186,7 @@ async def update_run_with_output(
             or "model_file" in data
             or "result" in data
             or "text_file" in data
+            or "audio" in data
         )
     if bypass_upload and have_upload_media:
         print(
