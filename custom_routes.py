@@ -291,7 +291,7 @@ async def post_prompt(json_data):
         valid = None
         last_error = None
 
-        # Always try newest signature first (even if partial_execution_targets is None)
+        # v0.3.48 (3 args)
         try:
             valid = await execution.validate_prompt(
                 prompt_id, prompt, partial_execution_targets
@@ -302,7 +302,7 @@ async def post_prompt(json_data):
                 f"validate_prompt with 3 params not supported, trying with 2. Debug: {last_error}"
             )
 
-        # Try current signature with prompt_id
+        # v0.3.45 - 0.3.47 (2 args)
         if valid is None:
             try:
                 valid = await execution.validate_prompt(prompt_id, prompt)
@@ -312,7 +312,7 @@ async def post_prompt(json_data):
                     f"validate_prompt with 2 params not supported, trying legacy signature. Debug: {last_error}"
                 )
 
-        # Fall back to oldest signature (sync - no await!)
+        # v0.3.44 or older (1 arg)
         if valid is None:
             try:
                 valid = execution.validate_prompt(prompt)
