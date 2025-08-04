@@ -283,11 +283,45 @@ async def post_prompt(json_data):
         prompt = json_data["prompt"]
         prompt_id = json_data.get("prompt_id") or str(uuid.uuid4())
 
+        partial_execution_targets = None
+        if "partial_execution_targets" in json_data:
+            partial_execution_targets = json_data["partial_execution_targets"]
+
+        # Handle different validate_prompt signatures (newest to oldest)
+        valid = None
+        last_error = None
+
+        # Always try newest signature first (even if partial_execution_targets is None)
         try:
-            valid = await execution.validate_prompt(prompt_id, prompt)
+            valid = await execution.validate_prompt(
+                prompt_id, prompt, partial_execution_targets
+            )
         except TypeError as e:
-            logger.warning(f"Trying old validate_prompt signature: {e}")
-            valid = execution.validate_prompt(prompt)
+            last_error = e
+            logger.debug(
+                f"validate_prompt with 3 params not supported, trying with 2. Debug: {last_error}"
+            )
+
+        # Try current signature with prompt_id
+        if valid is None:
+            try:
+                valid = await execution.validate_prompt(prompt_id, prompt)
+            except TypeError as e:
+                last_error = e
+                logger.debug(
+                    f"validate_prompt with 2 params not supported, trying legacy signature. Debug: {last_error}"
+                )
+
+        # Fall back to oldest signature (sync - no await!)
+        if valid is None:
+            try:
+                valid = execution.validate_prompt(prompt)
+            except TypeError as e:
+                last_error = e
+                logger.error(
+                    f"validate_prompt failed with all signatures. Last error: {last_error}"
+                )
+                raise
 
         extra_data = {}
         if "extra_data" in json_data:
