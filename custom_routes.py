@@ -2360,7 +2360,7 @@ async def monitor_upload_queue():
             logger.error(f"Error in upload queue monitor: {str(e)}")
 
         # Check every 30 seconds
-        await asyncio.sleep(30)
+        await asyncio.sleep(3)
 
 
 # use after calling GET /object_info (it populates the `filename_list_cache` variable)
