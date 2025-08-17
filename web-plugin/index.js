@@ -999,7 +999,10 @@ const ext = {
           "Comfy.Sidebar.Location",
           "left"
         );
-        // localStorage.setItem("Comfy.MenuPosition.Docked", "true");
+        await app.ui.settings.setSettingValueAsync(
+          "Comfy.TutorialCompleted",
+          true
+        );
         console.log("native mode manmanman");
       } catch (error) {
         console.error("Error setting validation to false", error);
