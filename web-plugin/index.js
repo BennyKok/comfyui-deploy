@@ -4,6 +4,7 @@ import { api } from "../../scripts/api.js";
 LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
+import { initializeMachineManager } from "./machine-manager.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
 // import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
@@ -2018,6 +2019,13 @@ if (!isComfyDeployDashboard) {
         <div style="padding: 20px;">
           <h3>Comfy Deploy</h3>
           <div id="deploy-container" style="margin-bottom: 20px;"></div>
+          <div id="machine-container" style="margin-bottom: 20px;">
+            <h4>Serverless Machine</h4>
+            <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+              ${loadingIcon}
+            </div>
+            <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+          </div>
           <div id="workflows-container" style="display: none;">
             <h4>Your Workflows</h4>
             <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
@@ -2077,6 +2085,9 @@ if (!isComfyDeployDashboard) {
       // Fetch and display workflows
       const workflowsList = el.querySelector("#workflows-list");
       const workflowsLoading = el.querySelector("#workflows-loading");
+
+      // Initialize machine manager
+      await initializeMachineManager(el, getData);
 
       // Initialize workflows list and search
       const data = getData();

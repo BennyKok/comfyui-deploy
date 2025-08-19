@@ -279,7 +279,7 @@ async function initializeWorkflowsList(element, getData, getTimeAgo) {
         list-style-type: none;
         padding: 0;
         margin: 0;
-        height: calc(100vh - 350px);
+        height: calc(100vh - 480px);
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #666 transparent;
