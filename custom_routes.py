@@ -2995,6 +2995,7 @@ async def create_workflow_proxy(request):
     name = data.get("name")
     workflow_json = data.get("workflow_json")
     workflow_api = data.get("workflow_api")
+    machine_id = data.get("machine_id")
     api_url = data.get("api_url", "https://api.comfydeploy.com")
 
     auth_header = request.headers.get("Authorization")
@@ -3014,6 +3015,7 @@ async def create_workflow_proxy(request):
         "name": name,
         "workflow_json": json.dumps(workflow_json),
         "workflow_api": json.dumps(workflow_api),
+        "machine_id": machine_id,
     }
 
     try:

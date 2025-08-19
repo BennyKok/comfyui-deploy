@@ -1401,6 +1401,10 @@ async function deployWorkflow() {
       workflow_api: prompt.output,
       api_url: apiUrl,
     };
+    const machineId = localStorage.getItem('comfy_deploy_machine_id');
+    if (machineId) {
+      body.machine_id = machineId;
+    }
     console.log(body);
     let data = await fetch("/comfyui-deploy/workflow", {
       method: "POST",

@@ -416,6 +416,7 @@ window.showAddMachineDialog = function(isUpdate = false) {
         id="dialog-machine-id-input" 
         placeholder="${isUpdate ? 'Enter new machine ID' : 'Enter your machine ID'}" 
         onkeypress="if(event.key === 'Enter') addMachineFromDialog()"
+        oninput="validateMachineIdInput()"
         style="
           width: 100%;
           padding: 10px 12px;
@@ -477,6 +478,89 @@ window.closeAddMachineDialog = function() {
   }
 };
 
+// Validate UUID format
+function isValidUUID(str) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+// Show validation error in dialog
+function showValidationError(message) {
+  let errorDiv = document.getElementById('dialog-validation-error');
+  if (!errorDiv) {
+    errorDiv = document.createElement('div');
+    errorDiv.id = 'dialog-validation-error';
+    errorDiv.style.cssText = `
+      color: #e74c3c;
+      font-size: 12px;
+      margin-top: 4px;
+      padding: 8px 12px;
+      background: rgba(231, 76, 60, 0.1);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      border-radius: 4px;
+    `;
+    
+    const input = document.getElementById('dialog-machine-id-input');
+    if (input && input.parentElement) {
+      input.parentElement.appendChild(errorDiv);
+    }
+  }
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+}
+
+// Hide validation error
+function hideValidationError() {
+  const errorDiv = document.getElementById('dialog-validation-error');
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+  }
+}
+
+// Real-time validation as user types
+window.validateMachineIdInput = function() {
+  const input = document.getElementById('dialog-machine-id-input');
+  if (!input) return;
+  
+  const machineId = input.value.trim();
+  
+  // Clear validation if input is empty
+  if (!machineId) {
+    hideValidationError();
+    updateInputBorder(input, 'neutral');
+    return;
+  }
+  
+  // Check UUID format
+  if (isValidUUID(machineId)) {
+    hideValidationError();
+    updateInputBorder(input, 'valid');
+  } else {
+    // Only show error if user has typed something substantial
+    if (machineId.length > 8) {
+      showValidationError('Machine ID must be a valid UUID format');
+      updateInputBorder(input, 'invalid');
+    } else {
+      hideValidationError();
+      updateInputBorder(input, 'neutral');
+    }
+  }
+};
+
+// Update input border color based on validation state
+function updateInputBorder(input, state) {
+  switch(state) {
+    case 'valid':
+      input.style.borderColor = '#27ae60';
+      break;
+    case 'invalid':
+      input.style.borderColor = '#e74c3c';
+      break;
+    default:
+      input.style.borderColor = '#555';
+  }
+}
+
 // Add machine from dialog
 window.addMachineFromDialog = function() {
   const input = document.getElementById('dialog-machine-id-input');
@@ -487,9 +571,18 @@ window.addMachineFromDialog = function() {
   
   const machineId = input.value.trim();
   if (!machineId) {
-    alert('Please enter a machine ID');
+    showValidationError('Please enter a machine ID');
     return;
   }
+  
+  // Validate UUID format
+  if (!isValidUUID(machineId)) {
+    showValidationError('Machine ID must be a valid UUID format');
+    return;
+  }
+  
+  // Hide any validation errors
+  hideValidationError();
   
   // Close dialog
   closeAddMachineDialog();
