@@ -3139,6 +3139,7 @@ async def get_workflow_proxy(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+
 # for getting a machine by id
 @server.PromptServer.instance.routes.get("/comfyui-deploy/machine")
 async def get_machine_proxy(request):
@@ -3163,6 +3164,7 @@ async def get_machine_proxy(request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+
 # for fetching docker steps from current snapshot
 @server.PromptServer.instance.routes.post("/comfyui-deploy/snapshot-to-docker")
 async def snapshot_to_docker_proxy(request):
@@ -3183,14 +3185,13 @@ async def snapshot_to_docker_proxy(request):
     try:
         await ensure_client_session()
         async with client_session.post(
-            target_url,
-            json=request_body,
-            headers={"Authorization": auth_header}
+            target_url, json=request_body, headers={"Authorization": auth_header}
         ) as response:
             json_data = await response.json()
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
 
 # update a serverless machine with machine id
 @server.PromptServer.instance.routes.post("/comfyui-deploy/machine/update")
@@ -3209,9 +3210,7 @@ async def update_machine_proxy(request):
 
     target_url = f"{api_url}/api/machine/serverless/{machine_id}"
 
-    request_body = {
-        "docker_command_steps": docker_steps
-    }
+    request_body = {"docker_command_steps": docker_steps}
 
     if comfyui_version:
         request_body["comfyui_version"] = comfyui_version
@@ -3219,14 +3218,13 @@ async def update_machine_proxy(request):
     try:
         await ensure_client_session()
         async with client_session.patch(
-            target_url,
-            json=request_body,
-            headers={"Authorization": auth_header}
+            target_url, json=request_body, headers={"Authorization": auth_header}
         ) as response:
             json_data = await response.json()
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
 
 @server.PromptServer.instance.routes.post("/comfyui-deploy/machine/create")
 async def create_machine_proxy(request):
@@ -3248,15 +3246,37 @@ async def create_machine_proxy(request):
         "name": name,
         "docker_command_steps": docker_command_steps,
         "comfyui_version": comfyui_version,
-        "gpu": "A10G"
+        "gpu": "A10G",
     }
 
     try:
         await ensure_client_session()
         async with client_session.post(
-            target_url,
-            json=request_body,
-            headers={"Authorization": auth_header}
+            target_url, json=request_body, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# get latest comfyui version
+@server.PromptServer.instance.routes.get("/comfyui-deploy/comfyui-version")
+async def get_comfyui_version_proxy(request):
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/latest-hashes"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url, headers={"Authorization": auth_header}
         ) as response:
             json_data = await response.json()
             return web.json_response(json_data, status=response.status)

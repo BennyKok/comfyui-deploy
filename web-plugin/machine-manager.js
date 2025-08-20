@@ -1,6 +1,8 @@
 // Machine Manager Script
 // Handles local storage machine ID functionality
 
+import { fetchSnapshot, fetchSnapshotSimple } from "./snapshot-utils.js";
+
 const MACHINE_STORAGE_KEY = "comfy_deploy_machine_id";
 
 // Blacklisted URLs that should never appear in machine creation or sync
@@ -14,8 +16,8 @@ const BLACKLISTED_URLS = [
 function isBlacklisted(step) {
   if (step.type === "custom-node" && step.data?.url) {
     const normalizedStepUrl = normalizeRepoUrl(step.data.url);
-    return BLACKLISTED_URLS.some(blacklistedUrl => 
-      normalizeRepoUrl(blacklistedUrl) === normalizedStepUrl
+    return BLACKLISTED_URLS.some(
+      (blacklistedUrl) => normalizeRepoUrl(blacklistedUrl) === normalizedStepUrl
     );
   }
   return false;
@@ -24,7 +26,7 @@ function isBlacklisted(step) {
 // Helper function to filter out blacklisted steps
 function filterBlacklistedSteps(steps) {
   if (!steps || !Array.isArray(steps)) return steps;
-  return steps.filter(step => !isBlacklisted(step));
+  return steps.filter((step) => !isBlacklisted(step));
 }
 
 // Initialize machine manager
@@ -401,19 +403,10 @@ window.syncMachine = async function (machineId) {
 
     const data = window.comfyDeployGetData();
 
-    // Helper function to fetch snapshot with error handling
-    const fetchSnapshot = async () => {
-      const response = await fetch("/snapshot/get_current");
-      if (!response.ok) {
-        throw new Error(`Snapshot fetch failed: ${response.status}`);
-      }
-      return response.json();
-    };
-
     // Fetch machine data and snapshot docker steps in parallel
     const [machineData, snapshot] = await Promise.all([
       fetchMachineDetails(machineId, window.comfyDeployGetData),
-      fetchSnapshot(),
+      fetchSnapshot(window.comfyDeployGetData),
     ]);
 
     if (!machineData || machineData.error) {
@@ -545,7 +538,9 @@ function compareDockerSteps(machineSteps, snapshotSteps) {
 
   // Filter out blacklisted steps before comparison
   const filteredMachineSteps = filterBlacklistedSteps(machineSteps.steps || []);
-  const filteredSnapshotSteps = filterBlacklistedSteps(snapshotSteps.steps || []);
+  const filteredSnapshotSteps = filterBlacklistedSteps(
+    snapshotSteps.steps || []
+  );
 
   // Build maps using comparison keys
   filteredMachineSteps.forEach((step) => {
@@ -1411,7 +1406,7 @@ window.applySyncChanges = async function (machineId) {
 
     window.currentComparisonResults.forEach((item) => {
       let stepToAdd = null;
-      
+
       if (item.type === "conflict") {
         // Use the selected version for conflicts
         if (item.selectedVersion === "machine") {
@@ -1429,7 +1424,7 @@ window.applySyncChanges = async function (machineId) {
         // Always include unchanged items
         stepToAdd = item.step;
       }
-      
+
       // Only add if not blacklisted
       if (stepToAdd && !isBlacklisted(stepToAdd)) {
         finalSteps.push(stepToAdd);
@@ -1945,32 +1940,22 @@ window.closeCreateMachineDialog = function () {
 // Load data for machine creation
 async function loadCreateMachineData() {
   try {
-    // Helper function to fetch snapshot with error handling
-    const fetchSnapshot = async () => {
-      const response = await fetch("/snapshot/get_current");
-      if (!response.ok) {
-        throw new Error(`Snapshot fetch failed: ${response.status}`);
-      }
-      return response.json();
-    };
-
     // Get current snapshot and convert to docker steps
-    const [snapshot, dockerStepsResponse] = await Promise.all([
-      fetchSnapshot(),
-      fetchSnapshot().then((snapshot) =>
-        fetch("/comfyui-deploy/snapshot-to-docker", {
-          method: "POST",
-          body: JSON.stringify({
-            api_url: window.comfyDeployGetData().apiUrl,
-            snapshot: snapshot,
-          }),
-          headers: {
-            Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
-            "Content-Type": "application/json",
-          },
-        }).then((x) => x.json())
-      ),
-    ]);
+    const snapshot = await fetchSnapshot(window.comfyDeployGetData);
+    const dockerStepsResponse = await fetch(
+      "/comfyui-deploy/snapshot-to-docker",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          api_url: window.comfyDeployGetData().apiUrl,
+          snapshot: snapshot,
+        }),
+        headers: {
+          Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    ).then((x) => x.json());
 
     // Store data globally
     window.currentCreateMachineData = {
@@ -2023,7 +2008,7 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
     // Update the dockerSteps with filtered steps
     window.currentCreateMachineData.dockerSteps = {
       ...dockerSteps,
-      steps: steps
+      steps: steps,
     };
     window.currentCreateMachineData.selectedSteps = new Set(
       steps.map((_, index) => index)

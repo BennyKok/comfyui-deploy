@@ -5,6 +5,7 @@ LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
 import { initializeMachineManager } from "./machine-manager.js";
+import { fetchSnapshotSimple } from "./snapshot-utils.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
 // import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
@@ -1233,7 +1234,7 @@ async function deployWorkflow() {
   }
   loadingDialog.showLoading("Generating snapshot");
 
-  const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
+  const snapshot = await fetchSnapshotSimple();
   console.log(snapshot);
   loadingDialog.close();
 
@@ -1259,7 +1260,7 @@ async function deployWorkflow() {
       workflow_api: prompt.output,
       api_url: apiUrl,
     };
-    const machineId = localStorage.getItem('comfy_deploy_machine_id');
+    const machineId = localStorage.getItem("comfy_deploy_machine_id");
     if (machineId) {
       body.machine_id = machineId;
     }
