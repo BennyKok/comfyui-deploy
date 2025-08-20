@@ -3,6 +3,30 @@
 
 const MACHINE_STORAGE_KEY = "comfy_deploy_machine_id";
 
+// Blacklisted URLs that should never appear in machine creation or sync
+const BLACKLISTED_URLS = [
+  "https://github.com/Comfy-Org/ComfyUI-Manager",
+  "https://github.com/ltdrdata/ComfyUI-Manager",
+  // Add more URLs to blacklist here
+];
+
+// Helper function to check if a step should be blacklisted
+function isBlacklisted(step) {
+  if (step.type === "custom-node" && step.data?.url) {
+    const normalizedStepUrl = normalizeRepoUrl(step.data.url);
+    return BLACKLISTED_URLS.some(blacklistedUrl => 
+      normalizeRepoUrl(blacklistedUrl) === normalizedStepUrl
+    );
+  }
+  return false;
+}
+
+// Helper function to filter out blacklisted steps
+function filterBlacklistedSteps(steps) {
+  if (!steps || !Array.isArray(steps)) return steps;
+  return steps.filter(step => !isBlacklisted(step));
+}
+
 // Initialize machine manager
 async function initializeMachineManager(element, getData) {
   const machineContainer = element.querySelector("#machine-container");
@@ -519,13 +543,17 @@ function compareDockerSteps(machineSteps, snapshotSteps) {
   const snapshotMap = new Map();
   const comparisonResults = [];
 
+  // Filter out blacklisted steps before comparison
+  const filteredMachineSteps = filterBlacklistedSteps(machineSteps.steps || []);
+  const filteredSnapshotSteps = filterBlacklistedSteps(snapshotSteps.steps || []);
+
   // Build maps using comparison keys
-  machineSteps.steps?.forEach((step) => {
+  filteredMachineSteps.forEach((step) => {
     const key = getComparisonKey(step);
     machineMap.set(key, step);
   });
 
-  snapshotSteps.steps?.forEach((step) => {
+  filteredSnapshotSteps.forEach((step) => {
     const key = getComparisonKey(step);
     snapshotMap.set(key, step);
   });
@@ -1382,22 +1410,29 @@ window.applySyncChanges = async function (machineId) {
     const finalSteps = [];
 
     window.currentComparisonResults.forEach((item) => {
+      let stepToAdd = null;
+      
       if (item.type === "conflict") {
         // Use the selected version for conflicts
         if (item.selectedVersion === "machine") {
-          finalSteps.push(item.machineStep);
+          stepToAdd = item.machineStep;
         } else {
-          finalSteps.push(item.snapshotStep);
+          stepToAdd = item.snapshotStep;
         }
       } else if (item.type === "new" && item.selected) {
         // Add selected new items
-        finalSteps.push(item.step);
+        stepToAdd = item.step;
       } else if (item.type === "removed" && !item.selected) {
         // Keep items that are NOT selected for removal
-        finalSteps.push(item.step);
+        stepToAdd = item.step;
       } else if (item.type === "unchanged") {
         // Always include unchanged items
-        finalSteps.push(item.step);
+        stepToAdd = item.step;
+      }
+      
+      // Only add if not blacklisted
+      if (stepToAdd && !isBlacklisted(stepToAdd)) {
+        finalSteps.push(stepToAdd);
       }
     });
 
@@ -1980,10 +2015,16 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
   if (!content) return;
 
   const comfyuiVersion = snapshot.comfyui || "Unknown";
-  const steps = dockerSteps.steps || [];
+  // Filter out blacklisted steps before rendering
+  const steps = filterBlacklistedSteps(dockerSteps.steps || []);
 
   // Initialize all steps as selected by default
   if (window.currentCreateMachineData) {
+    // Update the dockerSteps with filtered steps
+    window.currentCreateMachineData.dockerSteps = {
+      ...dockerSteps,
+      steps: steps
+    };
     window.currentCreateMachineData.selectedSteps = new Set(
       steps.map((_, index) => index)
     );
