@@ -40,7 +40,7 @@ async function initializeMachineManager(element, getData) {
 
   const data = getData();
 
-  if (!machineContainer || !machineLoading || !machineList) {
+  if (!machineContainer || !machineLoading || !machineList || !data.apiKey) {
     return;
   }
 
