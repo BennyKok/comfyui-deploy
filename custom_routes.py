@@ -3162,3 +3162,32 @@ async def get_machine_proxy(request):
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
+# for fetching docker steps from current snapshot
+@server.PromptServer.instance.routes.post("/comfyui-deploy/snapshot-to-docker")
+async def snapshot_to_docker_proxy(request):
+    data = await request.json()
+    snapshot = data.get("snapshot")
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/snapshot-to-docker"
+
+    request_body = snapshot
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json=request_body,
+            headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)

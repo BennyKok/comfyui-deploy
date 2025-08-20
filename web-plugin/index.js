@@ -1881,14 +1881,14 @@ if (!isComfyDeployDashboard) {
         <div style="padding: 20px;">
           <h3>Comfy Deploy</h3>
           <div id="deploy-container" style="margin-bottom: 20px;"></div>
-          <div id="machine-container" style="margin-bottom: 20px;">
-            <h4>Serverless Machine</h4>
-            <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
-              ${loadingIcon}
-            </div>
-            <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
-          </div>
           <div id="workflows-container" style="display: none;">
+            <div id="machine-container" style="margin-bottom: 20px;">
+              <h4>Serverless Machine</h4>
+              <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+                ${loadingIcon}
+              </div>
+              <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+            </div>
             <h4>Your Workflows</h4>
             <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
               ${loadingIcon}

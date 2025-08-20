@@ -1,17 +1,17 @@
 // Machine Manager Script
 // Handles local storage machine ID functionality
 
-const MACHINE_STORAGE_KEY = 'comfy_deploy_machine_id';
+const MACHINE_STORAGE_KEY = "comfy_deploy_machine_id";
 
 // Initialize machine manager
 async function initializeMachineManager(element, getData) {
   const machineContainer = element.querySelector("#machine-container");
   const machineLoading = element.querySelector("#machine-loading");
   const machineList = element.querySelector("#machine-list");
-  
+
   // Store getData function globally for sync functionality
   window.comfyDeployGetData = getData;
-  
+
   const data = getData();
 
   if (!machineContainer || !machineLoading || !machineList) {
@@ -21,7 +21,7 @@ async function initializeMachineManager(element, getData) {
   try {
     // Check if machine ID exists in localStorage
     const storedMachineId = localStorage.getItem(MACHINE_STORAGE_KEY);
-    
+
     if (!storedMachineId) {
       showNoMachineMessage(machineLoading, machineList);
       return;
@@ -33,13 +33,16 @@ async function initializeMachineManager(element, getData) {
 
     // Get machine details from API
     const machineData = await fetchMachineDetails(storedMachineId, getData);
-    
+
     if (machineData && !machineData.error) {
       displayMachine(machineData, machineLoading, machineList, data.endpoint);
     } else {
-      showMachineError(machineLoading, machineList, "Failed to load machine details");
+      showMachineError(
+        machineLoading,
+        machineList,
+        "Failed to load machine details"
+      );
     }
-
   } catch (error) {
     showMachineError(machineLoading, machineList, "Error loading machine");
   }
@@ -132,22 +135,22 @@ function displayMachine(machineData, machineLoading, machineList, endpoint) {
   machineList.style.display = "block";
 
   const machine = machineData.data || machineData;
-  const machineName = machine.name || 'Unnamed Machine';
-  const machineGpu = machine.gpu || 'Unknown GPU';
-  const machineStatus = machine.status || 'ready';
+  const machineName = machine.name || "Unnamed Machine";
+  const machineGpu = machine.gpu || "Unknown GPU";
+  const machineStatus = machine.status || "ready";
   const machineId = machine.id;
 
   // Determine status color and display for specific statuses
   const getStatusStyle = (status) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'ready') {
-      return { color: '#27ae60', text: 'Ready' };
-    } else if (statusLower === 'building') {
-      return { color: '#f39c12', text: 'Building' };
-    } else if (statusLower === 'error') {
-      return { color: '#e74c3c', text: 'Error' };
+    if (statusLower === "ready") {
+      return { color: "#27ae60", text: "Ready" };
+    } else if (statusLower === "building") {
+      return { color: "#f39c12", text: "Building" };
+    } else if (statusLower === "error") {
+      return { color: "#e74c3c", text: "Error" };
     } else {
-      return { color: '#95a5a6', text: 'Unknown' };
+      return { color: "#95a5a6", text: "Unknown" };
     }
   };
 
@@ -256,15 +259,15 @@ async function fetchMachineDetails(machineId, getData) {
 
     const params = new URLSearchParams({
       machine_id: machineId,
-      api_url: data.apiUrl || "https://api.comfydeploy.com"
+      api_url: data.apiUrl || "https://api.comfydeploy.com",
     });
 
     const response = await fetch(`/comfyui-deploy/machine?${params}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${data.apiKey}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${data.apiKey}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -279,10 +282,12 @@ async function fetchMachineDetails(machineId, getData) {
 }
 
 // Remove machine from localStorage
-window.removeMachine = function(machineId) {
-  if (confirm('Are you sure you want to remove this machine from local storage?')) {
+window.removeMachine = function (machineId) {
+  if (
+    confirm("Are you sure you want to remove this machine from local storage?")
+  ) {
     localStorage.removeItem(MACHINE_STORAGE_KEY);
-    
+
     // Show success message temporarily
     const machineList = document.querySelector("#machine-list");
     if (machineList) {
@@ -292,7 +297,7 @@ window.removeMachine = function(machineId) {
           <div>Machine removed successfully</div>
         </li>
       `;
-      
+
       // After 2 seconds, show the no machine message
       setTimeout(() => {
         const machineLoading = document.querySelector("#machine-loading");
@@ -303,12 +308,12 @@ window.removeMachine = function(machineId) {
 };
 
 // Sync machine status
-window.syncMachine = async function(machineId) {
+window.syncMachine = async function (machineId) {
   try {
     // Get current machine elements
     const machineList = document.querySelector("#machine-list");
     const machineLoading = document.querySelector("#machine-loading");
-    
+
     if (!machineList || !machineLoading) {
       console.error("Machine elements not found");
       return;
@@ -326,23 +331,47 @@ window.syncMachine = async function(machineId) {
     }
 
     // Fetch updated machine data
-    const machineData = await fetchMachineDetails(machineId, window.comfyDeployGetData);
-    
+    const machineData = await fetchMachineDetails(
+      machineId,
+      window.comfyDeployGetData
+    );
+
     if (machineData && !machineData.error) {
       // Get endpoint for the link
       const data = window.comfyDeployGetData();
-      const endpoint = data.endpoint || 'https://app.comfydeploy.com';
-      
+      const endpoint = data.endpoint || "https://app.comfydeploy.com";
+
       // Update display with fresh data
       displayMachine(machineData, machineLoading, machineList, endpoint);
-      
+      console.log("🚀 ~ machineData docker command steps:", machineData.docker_command_steps)
+
       // Show brief success indicator (optional)
+      const snapshot = await fetch("/snapshot/get_current").then((x) =>
+        x.json()
+      );
+
+      const dockerSteps = await fetch("/comfyui-deploy/snapshot-to-docker", {
+        method: "POST",
+        body: JSON.stringify({
+          api_url: data.apiUrl,
+          snapshot: snapshot,
+        }),
+        headers: {
+          Authorization: `Bearer ${data.apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }).then((x) => x.json());
+      console.log("🚀 ~ dockerSteps:", dockerSteps);
+
       console.log("Machine synced successfully");
     } else {
       // Show error and revert to previous state
-      showMachineError(machineLoading, machineList, "Failed to sync machine data");
+      showMachineError(
+        machineLoading,
+        machineList,
+        "Failed to sync machine data"
+      );
     }
-
   } catch (error) {
     console.error("Error syncing machine:", error);
     const machineList = document.querySelector("#machine-list");
@@ -354,11 +383,11 @@ window.syncMachine = async function(machineId) {
 };
 
 // Show add machine dialog
-window.showAddMachineDialog = function(isUpdate = false) {
+window.showAddMachineDialog = function (isUpdate = false) {
   const currentMachineId = localStorage.getItem(MACHINE_STORAGE_KEY);
   // Create dialog overlay
-  const overlay = document.createElement('div');
-  overlay.id = 'machine-dialog-overlay';
+  const overlay = document.createElement("div");
+  overlay.id = "machine-dialog-overlay";
   overlay.style.cssText = `
     position: fixed;
     top: 0;
@@ -373,7 +402,7 @@ window.showAddMachineDialog = function(isUpdate = false) {
   `;
 
   // Create dialog box
-  const dialog = document.createElement('div');
+  const dialog = document.createElement("div");
   dialog.style.cssText = `
     background: #2c2c2c;
     border-radius: 8px;
@@ -386,7 +415,9 @@ window.showAddMachineDialog = function(isUpdate = false) {
 
   dialog.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h3 style="margin: 0; font-size: 16px; font-weight: 600;">${isUpdate ? 'Update Machine ID' : 'Add Machine'}</h3>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 600;">${
+        isUpdate ? "Update Machine ID" : "Add Machine"
+      }</h3>
       <button onclick="closeAddMachineDialog()" style="
         background: none;
         border: none;
@@ -402,19 +433,27 @@ window.showAddMachineDialog = function(isUpdate = false) {
       ">×</button>
     </div>
     
-    ${isUpdate && currentMachineId ? `
+    ${
+      isUpdate && currentMachineId
+        ? `
     <div style="margin-bottom: 12px; padding: 8px 12px; background: #1a1a1a; border-radius: 4px; border-left: 3px solid #f39c12;">
       <div style="font-size: 12px; color: #ccc; margin-bottom: 4px;">Current Machine ID:</div>
       <div style="font-size: 13px; color: #ffffff; font-family: monospace;">${currentMachineId}</div>
     </div>
-    ` : ''}
+    `
+        : ""
+    }
     
     <div style="margin-bottom: 16px;">
-      <label style="display: block; margin-bottom: 8px; font-size: 13px; color: #ccc;">${isUpdate ? 'New Machine ID:' : 'Machine ID:'}</label>
+      <label style="display: block; margin-bottom: 8px; font-size: 13px; color: #ccc;">${
+        isUpdate ? "New Machine ID:" : "Machine ID:"
+      }</label>
       <input 
         type="text" 
         id="dialog-machine-id-input" 
-        placeholder="${isUpdate ? 'Enter new machine ID' : 'Enter your machine ID'}" 
+        placeholder="${
+          isUpdate ? "Enter new machine ID" : "Enter your machine ID"
+        }" 
         onkeypress="if(event.key === 'Enter') addMachineFromDialog()"
         oninput="validateMachineIdInput()"
         style="
@@ -441,7 +480,7 @@ window.showAddMachineDialog = function(isUpdate = false) {
         cursor: pointer;
       ">Cancel</button>
       <button onclick="addMachineFromDialog()" style="
-        background: ${isUpdate ? '#f39c12' : '#27ae60'};
+        background: ${isUpdate ? "#f39c12" : "#27ae60"};
         color: white;
         border: none;
         border-radius: 4px;
@@ -449,7 +488,7 @@ window.showAddMachineDialog = function(isUpdate = false) {
         font-size: 12px;
         cursor: pointer;
         font-weight: 500;
-      ">${isUpdate ? 'Update Machine' : 'Add Machine'}</button>
+      ">${isUpdate ? "Update Machine" : "Add Machine"}</button>
     </div>
   `;
 
@@ -458,12 +497,12 @@ window.showAddMachineDialog = function(isUpdate = false) {
 
   // Focus on input
   setTimeout(() => {
-    const input = document.getElementById('dialog-machine-id-input');
+    const input = document.getElementById("dialog-machine-id-input");
     if (input) input.focus();
   }, 100);
 
   // Close on overlay click
-  overlay.addEventListener('click', function(e) {
+  overlay.addEventListener("click", function (e) {
     if (e.target === overlay) {
       closeAddMachineDialog();
     }
@@ -471,8 +510,8 @@ window.showAddMachineDialog = function(isUpdate = false) {
 };
 
 // Close add machine dialog
-window.closeAddMachineDialog = function() {
-  const overlay = document.getElementById('machine-dialog-overlay');
+window.closeAddMachineDialog = function () {
+  const overlay = document.getElementById("machine-dialog-overlay");
   if (overlay) {
     overlay.remove();
   }
@@ -480,16 +519,17 @@ window.closeAddMachineDialog = function() {
 
 // Validate UUID format
 function isValidUUID(str) {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
 
 // Show validation error in dialog
 function showValidationError(message) {
-  let errorDiv = document.getElementById('dialog-validation-error');
+  let errorDiv = document.getElementById("dialog-validation-error");
   if (!errorDiv) {
-    errorDiv = document.createElement('div');
-    errorDiv.id = 'dialog-validation-error';
+    errorDiv = document.createElement("div");
+    errorDiv.id = "dialog-validation-error";
     errorDiv.style.cssText = `
       color: #e74c3c;
       font-size: 12px;
@@ -499,114 +539,114 @@ function showValidationError(message) {
       border: 1px solid rgba(231, 76, 60, 0.3);
       border-radius: 4px;
     `;
-    
-    const input = document.getElementById('dialog-machine-id-input');
+
+    const input = document.getElementById("dialog-machine-id-input");
     if (input && input.parentElement) {
       input.parentElement.appendChild(errorDiv);
     }
   }
   errorDiv.textContent = message;
-  errorDiv.style.display = 'block';
+  errorDiv.style.display = "block";
 }
 
 // Hide validation error
 function hideValidationError() {
-  const errorDiv = document.getElementById('dialog-validation-error');
+  const errorDiv = document.getElementById("dialog-validation-error");
   if (errorDiv) {
-    errorDiv.style.display = 'none';
+    errorDiv.style.display = "none";
   }
 }
 
 // Real-time validation as user types
-window.validateMachineIdInput = function() {
-  const input = document.getElementById('dialog-machine-id-input');
+window.validateMachineIdInput = function () {
+  const input = document.getElementById("dialog-machine-id-input");
   if (!input) return;
-  
+
   const machineId = input.value.trim();
-  
+
   // Clear validation if input is empty
   if (!machineId) {
     hideValidationError();
-    updateInputBorder(input, 'neutral');
+    updateInputBorder(input, "neutral");
     return;
   }
-  
+
   // Check UUID format
   if (isValidUUID(machineId)) {
     hideValidationError();
-    updateInputBorder(input, 'valid');
+    updateInputBorder(input, "valid");
   } else {
     // Only show error if user has typed something substantial
     if (machineId.length > 8) {
-      showValidationError('Machine ID must be a valid UUID format');
-      updateInputBorder(input, 'invalid');
+      showValidationError("Machine ID must be a valid UUID format");
+      updateInputBorder(input, "invalid");
     } else {
       hideValidationError();
-      updateInputBorder(input, 'neutral');
+      updateInputBorder(input, "neutral");
     }
   }
 };
 
 // Update input border color based on validation state
 function updateInputBorder(input, state) {
-  switch(state) {
-    case 'valid':
-      input.style.borderColor = '#27ae60';
+  switch (state) {
+    case "valid":
+      input.style.borderColor = "#27ae60";
       break;
-    case 'invalid':
-      input.style.borderColor = '#e74c3c';
+    case "invalid":
+      input.style.borderColor = "#e74c3c";
       break;
     default:
-      input.style.borderColor = '#555';
+      input.style.borderColor = "#555";
   }
 }
 
 // Add machine from dialog
-window.addMachineFromDialog = function() {
-  const input = document.getElementById('dialog-machine-id-input');
+window.addMachineFromDialog = function () {
+  const input = document.getElementById("dialog-machine-id-input");
   if (!input) {
     console.error("Machine ID input not found");
     return;
   }
-  
+
   const machineId = input.value.trim();
   if (!machineId) {
-    showValidationError('Please enter a machine ID');
+    showValidationError("Please enter a machine ID");
     return;
   }
-  
+
   // Validate UUID format
   if (!isValidUUID(machineId)) {
-    showValidationError('Machine ID must be a valid UUID format');
+    showValidationError("Machine ID must be a valid UUID format");
     return;
   }
-  
+
   // Hide any validation errors
   hideValidationError();
-  
+
   // Close dialog
   closeAddMachineDialog();
-  
+
   // Add the machine and refresh
   addMachine(machineId);
 };
 
 // Add machine to localStorage (utility function)
-window.addMachine = function(machineId) {
+window.addMachine = function (machineId) {
   localStorage.setItem(MACHINE_STORAGE_KEY, machineId);
-  
+
   // Show loading state immediately
   const machineLoading = document.querySelector("#machine-loading");
   const machineList = document.querySelector("#machine-list");
-  
+
   if (machineLoading && machineList) {
     machineLoading.style.display = "flex";
     machineList.style.display = "none";
   }
-  
+
   // Find the correct parent element that contains the machine elements
-  let element = document.querySelector('.comfy-menu');
-  
+  let element = document.querySelector(".comfy-menu");
+
   // If .comfy-menu doesn't work, try to find the parent of machine-container
   if (!element || !element.querySelector("#machine-container")) {
     const machineContainer = document.querySelector("#machine-container");
@@ -614,7 +654,7 @@ window.addMachine = function(machineId) {
       element = machineContainer.parentElement;
     }
   }
-  
+
   if (element && window.comfyDeployGetData) {
     // Use setTimeout to ensure DOM updates are processed
     setTimeout(() => {
