@@ -319,9 +319,34 @@ window.syncMachine = async function (machineId) {
       return;
     }
 
-    // Show loading state
-    machineLoading.style.display = "flex";
-    machineList.style.display = "none";
+    // Update the sync button to show loading state
+    const syncButton = machineList.querySelector('button[onclick*="syncMachine"]');
+    let originalButtonContent = null;
+    if (syncButton) {
+      originalButtonContent = syncButton.innerHTML;
+      syncButton.disabled = true;
+      syncButton.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
+        </svg>
+        Loading...
+      `;
+      // Add spinning animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+      `;
+      document.head.appendChild(style);
+    }
 
     // Get getData function from global scope (passed during initialization)
     if (!window.comfyDeployGetData) {
@@ -330,48 +355,62 @@ window.syncMachine = async function (machineId) {
       return;
     }
 
-    // Fetch updated machine data
-    const machineData = await fetchMachineDetails(
-      machineId,
-      window.comfyDeployGetData
-    );
+    const data = window.comfyDeployGetData();
 
-    if (machineData && !machineData.error) {
-      // Get endpoint for the link
-      const data = window.comfyDeployGetData();
-      const endpoint = data.endpoint || "https://app.comfydeploy.com";
+    // Fetch machine data and snapshot docker steps in parallel
+    const [machineData, snapshot] = await Promise.all([
+      fetchMachineDetails(machineId, window.comfyDeployGetData),
+      fetch("/snapshot/get_current").then((x) => x.json())
+    ]);
 
-      // Update display with fresh data
-      displayMachine(machineData, machineLoading, machineList, endpoint);
-      console.log("🚀 ~ machineData docker command steps:", machineData.docker_command_steps)
-
-      // Show brief success indicator (optional)
-      const snapshot = await fetch("/snapshot/get_current").then((x) =>
-        x.json()
-      );
-
-      const dockerSteps = await fetch("/comfyui-deploy/snapshot-to-docker", {
-        method: "POST",
-        body: JSON.stringify({
-          api_url: data.apiUrl,
-          snapshot: snapshot,
-        }),
-        headers: {
-          Authorization: `Bearer ${data.apiKey}`,
-          "Content-Type": "application/json",
-        },
-      }).then((x) => x.json());
-      console.log("🚀 ~ dockerSteps:", dockerSteps);
-
-      console.log("Machine synced successfully");
-    } else {
-      // Show error and revert to previous state
+    if (!machineData || machineData.error) {
       showMachineError(
         machineLoading,
         machineList,
-        "Failed to sync machine data"
+        "Failed to fetch machine data"
       );
+      return;
     }
+
+    // Fetch docker steps from snapshot
+    const dockerSteps = await fetch("/comfyui-deploy/snapshot-to-docker", {
+      method: "POST",
+      body: JSON.stringify({
+        api_url: data.apiUrl,
+        snapshot: snapshot,
+      }),
+      headers: {
+        Authorization: `Bearer ${data.apiKey}`,
+        "Content-Type": "application/json",
+      },
+    }).then((x) => x.json());
+
+    // Restore the sync button
+    if (syncButton && originalButtonContent) {
+      syncButton.disabled = false;
+      syncButton.innerHTML = originalButtonContent;
+    }
+
+    // Get endpoint for the link
+    const endpoint = data.endpoint || "https://app.comfydeploy.com";
+
+    // Update display with fresh data
+    displayMachine(machineData, machineLoading, machineList, endpoint);
+
+    console.log("🚀 ~ machineData docker command steps:", machineData.docker_command_steps);
+    console.log("🚀 ~ snapshot dockerSteps:", dockerSteps);
+
+    // Store data globally for version comparison
+    window.lastMachineData = machineData;
+    window.lastSnapshotData = snapshot;
+    
+    // Show the sync dialog with comparison
+    showSyncComparisonDialog(
+      machineData.docker_command_steps || { steps: [] },
+      dockerSteps || { steps: [] },
+      machineId
+    );
+
   } catch (error) {
     console.error("Error syncing machine:", error);
     const machineList = document.querySelector("#machine-list");
@@ -380,6 +419,931 @@ window.syncMachine = async function (machineId) {
       showMachineError(machineLoading, machineList, "Error syncing machine");
     }
   }
+};
+
+// Normalize repository URL for comparison
+function normalizeRepoUrl(url) {
+  if (!url) return null;
+  // Remove protocol, www, .git extension, and trailing slashes
+  return url.toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\.git$/, '')
+    .replace(/\/$/, '');
+}
+
+// Get a unique key for comparison based on the step type
+function getComparisonKey(step) {
+  if (step.type === 'custom-node') {
+    // Use normalized URL as key for custom nodes
+    const url = step.data?.url;
+    return normalizeRepoUrl(url) || step.id;
+  } else if (step.type === 'custom-node-manager') {
+    // Use node_id as key for custom-node-manager
+    return step.data?.node_id || step.id;
+  }
+  return step.id;
+}
+
+// Compare docker steps and generate diff
+function compareDockerSteps(machineSteps, snapshotSteps) {
+  const machineMap = new Map();
+  const snapshotMap = new Map();
+  const comparisonResults = [];
+
+  // Build maps using comparison keys
+  machineSteps.steps?.forEach(step => {
+    const key = getComparisonKey(step);
+    machineMap.set(key, step);
+  });
+
+  snapshotSteps.steps?.forEach(step => {
+    const key = getComparisonKey(step);
+    snapshotMap.set(key, step);
+  });
+
+  // Process all unique keys
+  const allKeys = new Set([...machineMap.keys(), ...snapshotMap.keys()]);
+
+  allKeys.forEach(key => {
+    const machineStep = machineMap.get(key);
+    const snapshotStep = snapshotMap.get(key);
+
+    if (machineStep && snapshotStep) {
+      // Both exist - check if they match
+      let isMatch = false;
+      
+      if (machineStep.type === 'custom-node' && snapshotStep.type === 'custom-node') {
+        isMatch = machineStep.data?.hash === snapshotStep.data?.hash;
+      } else if (machineStep.type === 'custom-node-manager' && snapshotStep.type === 'custom-node-manager') {
+        isMatch = machineStep.data?.version === snapshotStep.data?.version;
+      }
+
+      if (isMatch) {
+        // Identical - no action needed
+        comparisonResults.push({
+          type: 'unchanged',
+          key: key,
+          step: snapshotStep,
+          name: snapshotStep.data?.name || snapshotStep.id
+        });
+      } else {
+        // Version conflict - user needs to choose
+        comparisonResults.push({
+          type: 'conflict',
+          key: key,
+          machineStep: machineStep,
+          snapshotStep: snapshotStep,
+          selectedVersion: 'snapshot', // Default to snapshot version
+          name: snapshotStep.data?.name || machineStep.data?.name || key
+        });
+      }
+    } else if (snapshotStep && !machineStep) {
+      // Only in snapshot - new addition
+      comparisonResults.push({
+        type: 'new',
+        key: key,
+        step: snapshotStep,
+        selected: true, // Default selected for addition
+        name: snapshotStep.data?.name || snapshotStep.id
+      });
+    } else if (machineStep && !snapshotStep) {
+      // Only in machine - might be removed
+      comparisonResults.push({
+        type: 'removed',
+        key: key,
+        step: machineStep,
+        selected: false, // Default not selected for removal
+        name: machineStep.data?.name || machineStep.id
+      });
+    }
+  });
+
+  // Sort results: conflicts first, then new, then removed, then unchanged
+  const typeOrder = { 'conflict': 0, 'new': 1, 'removed': 2, 'unchanged': 3 };
+  comparisonResults.sort((a, b) => {
+    const orderDiff = typeOrder[a.type] - typeOrder[b.type];
+    if (orderDiff !== 0) return orderDiff;
+    // Within same type, sort by name
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  return comparisonResults;
+}
+
+// Show sync comparison dialog
+window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineId) {
+  // Compare the steps
+  const comparisonResults = compareDockerSteps(machineSteps, snapshotSteps);
+  
+  // Get ComfyUI version comparison data from global storage
+  const machineData = window.lastMachineData;
+  const snapshotData = window.lastSnapshotData;
+  
+  let comfyuiComparison = null;
+  if (machineData && snapshotData) {
+    const machineVersion = machineData.comfyui_version;
+    console.log("machine: ", machineData.comfyui_version);
+    const localVersion = snapshotData.comfyui;
+    console.log("local: ",snapshotData.comfyui);
+
+    
+    if (machineVersion && localVersion) {
+      const versionsMatch = machineVersion === localVersion;
+      comfyuiComparison = {
+        machineVersion,
+        localVersion,
+        versionsMatch,
+        selectedVersion: versionsMatch ? 'same' : 'local' // Default to local version if different
+      };
+    }
+  }
+  
+  // Create dialog overlay
+  const overlay = document.createElement("div");
+  overlay.id = "sync-dialog-overlay";
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+
+  // Create dialog box
+  const dialog = document.createElement("div");
+  dialog.style.cssText = `
+    background: #2c2c2c;
+    border-radius: 12px;
+    padding: 0;
+    width: 800px;
+    max-width: 90vw;
+    max-height: 85vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  `;
+
+  // Count different types
+  const conflicts = comparisonResults.filter(r => r.type === 'conflict');
+  const newItems = comparisonResults.filter(r => r.type === 'new');
+  const removedItems = comparisonResults.filter(r => r.type === 'removed');
+  const unchangedItems = comparisonResults.filter(r => r.type === 'unchanged');
+  
+  // Create dialog content
+  let dialogContent = `
+    <div style="
+      padding: 18px 24px;
+      border-bottom: 1px solid #404040;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1f1f1f 100%);
+    ">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Dependencies Sync</h3>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #999;">
+            ${comfyuiComparison ? (comfyuiComparison.versionsMatch ? '1 ComfyUI (same), ' : '1 ComfyUI version, ') : ''}${conflicts.length} conflicts, ${newItems.length} new, ${removedItems.length} removed, ${unchangedItems.length} unchanged
+          </p>
+        </div>
+        <button onclick="closeSyncDialog()" style="
+          background: none;
+          border: none;
+          color: #999;
+          font-size: 24px;
+          cursor: pointer;
+          padding: 0;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#404040'" onmouseout="this.style.background='none'">×</button>
+      </div>
+    </div>
+    
+    <div style="
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      background: #1a1a1a;
+    ">
+  `;
+
+  // Helper function to render compact item
+  const renderCompactItem = (item, index) => {
+    const step = item.step || item.snapshotStep || item.machineStep;
+    const name = item.name;
+    
+    if (item.type === 'conflict') {
+      // Version conflict - show radio buttons for selection
+      const machineHash = item.machineStep.data?.hash;
+      const snapshotHash = item.snapshotStep.data?.hash;
+      const machineVersion = item.machineStep.data?.version;
+      const snapshotVersion = item.snapshotStep.data?.version;
+      
+      return `
+        <div style="
+          display: flex;
+          align-items: center;
+          padding: 10px 12px;
+          background: #252525;
+          border-radius: 6px;
+          margin-bottom: 6px;
+          border: 1px solid #444;
+        ">
+          <div style="
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #f39c1220;
+            color: #f39c12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+          ">⚠</div>
+          
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 500; font-size: 13px; color: #fff; margin-bottom: 6px;">
+              ${name}
+            </div>
+            <div style="display: flex; gap: 12px; font-size: 11px;">
+              <label style="
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                background: #1a1a1a;
+                border: 1px solid #333;
+                transition: all 0.2s;
+              " onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">
+                <input 
+                  type="radio" 
+                  name="conflict-${item.key}"
+                  value="machine"
+                  ${item.selectedVersion === 'machine' ? 'checked' : ''}
+                  onchange="updateConflictSelection('${item.key}', 'machine')"
+                  style="margin-right: 6px; cursor: pointer;"
+                />
+                <span style="color: #e74c3c;">Machine:</span>
+                <span style="margin-left: 4px; font-family: monospace; color: #999;">
+                  ${machineHash ? machineHash.substring(0, 8) : machineVersion || 'unknown'}
+                </span>
+              </label>
+              
+              <label style="
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                background: #1a1a1a;
+                border: 1px solid #333;
+                transition: all 0.2s;
+              " onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">
+                <input 
+                  type="radio" 
+                  name="conflict-${item.key}"
+                  value="snapshot"
+                  ${item.selectedVersion === 'snapshot' ? 'checked' : ''}
+                  onchange="updateConflictSelection('${item.key}', 'snapshot')"
+                  style="margin-right: 6px; cursor: pointer;"
+                />
+                <span style="color: #27ae60;">Local:</span>
+                <span style="margin-left: 4px; font-family: monospace; color: #999;">
+                  ${snapshotHash ? snapshotHash.substring(0, 8) : snapshotVersion || 'unknown'}
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (item.type === 'new') {
+      // New item - show checkbox
+      return `
+        <div style="
+          display: flex;
+          align-items: center;
+          padding: 10px 12px;
+          background: #252525;
+          border-radius: 6px;
+          margin-bottom: 6px;
+          border: 1px solid #333;
+        ">
+          <input 
+            type="checkbox" 
+            id="new-${item.key}" 
+            ${item.selected ? 'checked' : ''}
+            onchange="updateItemSelection('${item.key}', 'new', this.checked)"
+            style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
+          />
+          <div style="
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #27ae6020;
+            color: #27ae60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+          ">+</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500; font-size: 13px; color: #fff;">
+              ${name}
+            </div>
+            ${step.type === 'custom-node' && step.data?.hash ? 
+              `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
+              step.type === 'custom-node-manager' && step.data?.version ? 
+              `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+            }
+          </div>
+        </div>
+      `;
+    } else if (item.type === 'removed') {
+      // Removed item - show checkbox (unchecked by default)
+      return `
+        <div style="
+          display: flex;
+          align-items: center;
+          padding: 10px 12px;
+          background: #252525;
+          border-radius: 6px;
+          margin-bottom: 6px;
+          border: 1px solid #333;
+          opacity: ${item.selected ? '1' : '0.6'};
+        ">
+          <input 
+            type="checkbox" 
+            id="remove-${item.key}" 
+            ${item.selected ? 'checked' : ''}
+            onchange="updateItemSelection('${item.key}', 'removed', this.checked)"
+            style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
+          />
+          <div style="
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #e74c3c20;
+            color: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+          ">−</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500; font-size: 13px; color: #fff;">
+              ${name}
+            </div>
+            ${step.type === 'custom-node' && step.data?.hash ? 
+              `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
+              step.type === 'custom-node-manager' && step.data?.version ? 
+              `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+            }
+          </div>
+        </div>
+      `;
+    } else {
+      // Unchanged - just show as info
+      return `
+        <div style="
+          display: flex;
+          align-items: center;
+          padding: 8px 12px;
+          background: #1f1f1f;
+          border-radius: 6px;
+          margin-bottom: 4px;
+          border: 1px solid #2a2a2a;
+          opacity: 0.5;
+        ">
+          <div style="
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 10px;
+            flex-shrink: 0;
+          ">✓</div>
+          <div style="flex: 1;">
+            <div style="font-size: 12px; color: #888;">
+              ${name}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  // Store comfyui comparison globally
+  window.currentComfyUIComparison = comfyuiComparison;
+  
+  // Render ComfyUI version section - always show if we have version data
+  if (comfyuiComparison) {
+    if (comfyuiComparison.versionsMatch) {
+      // Versions match - show green success state
+      dialogContent += `
+        <div style="margin-bottom: 16px;">
+          <h4 style="
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #27ae60;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          ">ComfyUI Version</h4>
+          <div style="
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: #1f2f1f;
+            border-radius: 6px;
+            border: 1px solid #27ae60;
+            opacity: 0.8;
+          ">
+            <div style="
+              width: 20px;
+              height: 20px;
+              border-radius: 3px;
+              background: #27ae60;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: 600;
+              margin-right: 10px;
+              flex-shrink: 0;
+            ">✓</div>
+            
+            <div style="flex: 1;">
+              <div style="font-weight: 500; font-size: 13px; color: #27ae60; margin-bottom: 2px;">
+                ComfyUI Core - Versions Match
+              </div>
+              <div style="font-size: 11px; color: #666; font-family: monospace;">
+                ${comfyuiComparison.machineVersion}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Versions differ - show conflict state
+      dialogContent += `
+        <div style="margin-bottom: 20px;">
+          <h4 style="
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #9b59b6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          ">ComfyUI Version</h4>
+          <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Choose which ComfyUI version to use:</div>
+          <div style="
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: #252525;
+            border-radius: 6px;
+            border: 1px solid #444;
+          ">
+            <div style="
+              width: 20px;
+              height: 20px;
+              border-radius: 3px;
+              background: #9b59b620;
+              color: #9b59b6;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              font-weight: 600;
+              margin-right: 10px;
+              flex-shrink: 0;
+            ">🔧</div>
+            
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 500; font-size: 13px; color: #fff; margin-bottom: 6px;">
+                ComfyUI Core
+              </div>
+              <div style="display: flex; gap: 12px; font-size: 11px;">
+                <label style="
+                  display: flex;
+                  align-items: center;
+                  cursor: pointer;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  background: #1a1a1a;
+                  border: 1px solid #333;
+                  transition: all 0.2s;
+                " onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">
+                  <input 
+                    type="radio" 
+                    name="comfyui-version"
+                    value="machine"
+                    ${comfyuiComparison.selectedVersion === 'machine' ? 'checked' : ''}
+                    onchange="updateComfyUIVersionSelection('machine')"
+                    style="margin-right: 6px; cursor: pointer;"
+                  />
+                  <span style="color: #e74c3c;">Machine:</span>
+                  <span style="margin-left: 4px; font-family: monospace; color: #999;">
+                    ${comfyuiComparison.machineVersion}
+                  </span>
+                </label>
+                
+                <label style="
+                  display: flex;
+                  align-items: center;
+                  cursor: pointer;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  background: #1a1a1a;
+                  border: 1px solid #333;
+                  transition: all 0.2s;
+                " onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">
+                  <input 
+                    type="radio" 
+                    name="comfyui-version"
+                    value="local"
+                    ${comfyuiComparison.selectedVersion === 'local' ? 'checked' : ''}
+                    onchange="updateComfyUIVersionSelection('local')"
+                    style="margin-right: 6px; cursor: pointer;"
+                  />
+                  <span style="color: #27ae60;">Local:</span>
+                  <span style="margin-left: 4px; font-family: monospace; color: #999;">
+                    ${comfyuiComparison.localVersion}
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Render sections
+  if (conflicts.length > 0) {
+    dialogContent += `
+      <div style="margin-bottom: 16px;">
+        <h4 style="
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          font-weight: 600;
+          color: #f39c12;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        ">Version Conflicts (${conflicts.length})</h4>
+        <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Choose which version to use:</div>
+        ${conflicts.map((item, i) => renderCompactItem(item, i)).join('')}
+      </div>
+    `;
+  }
+
+  if (newItems.length > 0) {
+    dialogContent += `
+      <div style="margin-bottom: 16px;">
+        <h4 style="
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          font-weight: 600;
+          color: #27ae60;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        ">New Dependencies (${newItems.length})</h4>
+        ${newItems.map((item, i) => renderCompactItem(item, i)).join('')}
+      </div>
+    `;
+  }
+
+  if (removedItems.length > 0) {
+    dialogContent += `
+      <div style="margin-bottom: 16px;">
+        <h4 style="
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          font-weight: 600;
+          color: #e74c3c;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        ">Not in Local Snapshot (${removedItems.length})</h4>
+        <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Select to remove from machine:</div>
+        ${removedItems.map((item, i) => renderCompactItem(item, i)).join('')}
+      </div>
+    `;
+  }
+
+  if (unchangedItems.length > 0) {
+    dialogContent += `
+      <details style="margin-bottom: 16px;">
+        <summary style="
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        ">Unchanged (${unchangedItems.length})</summary>
+        ${unchangedItems.map((item, i) => renderCompactItem(item, i)).join('')}
+      </details>
+    `;
+  }
+
+  const hasChanges = conflicts.length > 0 || newItems.length > 0 || removedItems.length > 0;
+  
+  if (!hasChanges) {
+    dialogContent += `
+      <div style="
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      ">
+        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+        <div style="font-size: 16px; font-weight: 500;">Everything is up to date!</div>
+        <div style="font-size: 13px; margin-top: 8px;">Your machine dependencies match the current snapshot.</div>
+      </div>
+    `;
+  }
+
+  dialogContent += `
+    </div>
+    
+    <div style="
+      padding: 16px 20px;
+      border-top: 1px solid #404040;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1f1f1f 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    ">
+      <div id="sync-selected-count" style="font-size: 12px; color: #999;">
+        ${hasChanges ? `${getSelectedCount(comparisonResults)} changes selected` : ''}
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button onclick="closeSyncDialog()" style="
+          background: #404040;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 18px;
+          font-size: 13px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#555'" onmouseout="this.style.background='#404040'">
+          Cancel
+        </button>
+        ${hasChanges ? `
+          <button onclick="applySyncChanges('${machineId}')" style="
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+          " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+            Apply Changes
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+
+  dialog.innerHTML = dialogContent;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  // Store comparison results globally for access by apply function
+  window.currentComparisonResults = comparisonResults;
+
+  // Close on overlay click
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) {
+      closeSyncDialog();
+    }
+  });
+};
+
+// Helper function to get step details
+function getStepDetails(step) {
+  if (step.type === 'custom-node') {
+    const hash = step.data?.hash;
+    const url = step.data?.url;
+    const meta = step.data?.meta;
+    
+    return `
+      <div style="font-size: 12px; color: #999;">
+        ${url ? `<div style="margin-bottom: 2px;">📦 ${url.split('/').slice(-1)[0]}</div>` : ''}
+        ${hash ? `<div style="font-family: monospace; font-size: 11px;">Hash: ${hash.substring(0, 8)}...</div>` : ''}
+        ${meta?.stargazers_count ? `<div>⭐ ${meta.stargazers_count} stars</div>` : ''}
+      </div>
+    `;
+  } else if (step.type === 'custom-node-manager') {
+    return `
+      <div style="font-size: 12px; color: #999;">
+        <div>📦 Node ID: ${step.data?.node_id || 'Unknown'}</div>
+        <div>Version: ${step.data?.version || 'Unknown'}</div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+// Helper function to get update details
+function getUpdateDetails(machineStep, snapshotStep) {
+  let details = '<div style="font-size: 12px; color: #999;">';
+  
+  if (snapshotStep.type === 'custom-node') {
+    const oldHash = machineStep.data?.hash;
+    const newHash = snapshotStep.data?.hash;
+    
+    if (oldHash !== newHash) {
+      details += `
+        <div style="margin-bottom: 4px;">
+          <span style="color: #e74c3c;">Old:</span> 
+          <span style="font-family: monospace; font-size: 11px;">${oldHash ? oldHash.substring(0, 8) : 'None'}...</span>
+        </div>
+        <div>
+          <span style="color: #27ae60;">New:</span> 
+          <span style="font-family: monospace; font-size: 11px;">${newHash ? newHash.substring(0, 8) : 'None'}...</span>
+        </div>
+      `;
+    }
+  } else if (snapshotStep.type === 'custom-node-manager') {
+    const oldVersion = machineStep.data?.version;
+    const newVersion = snapshotStep.data?.version;
+    
+    if (oldVersion !== newVersion) {
+      details += `
+        <div style="margin-bottom: 2px;">
+          <span style="color: #e74c3c;">Old:</span> v${oldVersion || 'Unknown'}
+        </div>
+        <div>
+          <span style="color: #27ae60;">New:</span> v${newVersion || 'Unknown'}
+        </div>
+      `;
+    }
+  }
+  
+  details += '</div>';
+  return details;
+}
+
+// Helper function to get selected count
+function getSelectedCount(comparisonResults) {
+  let count = 0;
+  
+  // Count ComfyUI version if there's a difference (not if they match)
+  if (window.currentComfyUIComparison && !window.currentComfyUIComparison.versionsMatch) {
+    count++;
+  }
+  
+  comparisonResults.forEach(item => {
+    if (item.type === 'conflict') {
+      count++; // Conflicts always need resolution
+    } else if (item.type === 'new' && item.selected) {
+      count++;
+    } else if (item.type === 'removed' && item.selected) {
+      count++;
+    }
+  });
+  return count;
+}
+
+// Update selected count in dialog
+function updateSelectedCountDisplay() {
+  if (!window.currentComparisonResults) return;
+  
+  const selectedCount = getSelectedCount(window.currentComparisonResults);
+  const countElement = document.querySelector('#sync-selected-count');
+  if (countElement) {
+    countElement.textContent = `${selectedCount} changes selected`;
+  }
+}
+
+// Update ComfyUI version selection
+window.updateComfyUIVersionSelection = function(version) {
+  if (window.currentComfyUIComparison) {
+    window.currentComfyUIComparison.selectedVersion = version;
+    updateSelectedCountDisplay();
+  }
+};
+
+// Update conflict selection
+window.updateConflictSelection = function(key, version) {
+  if (!window.currentComparisonResults) return;
+  
+  const item = window.currentComparisonResults.find(r => r.key === key && r.type === 'conflict');
+  if (item) {
+    item.selectedVersion = version;
+    updateSelectedCountDisplay();
+  }
+};
+
+// Update item selection (for new and removed items)
+window.updateItemSelection = function(key, type, selected) {
+  if (!window.currentComparisonResults) return;
+  
+  const item = window.currentComparisonResults.find(r => r.key === key && r.type === type);
+  if (item) {
+    item.selected = selected;
+    updateSelectedCountDisplay();
+  }
+};
+
+// Close sync dialog
+window.closeSyncDialog = function() {
+  const overlay = document.getElementById("sync-dialog-overlay");
+  if (overlay) {
+    overlay.remove();
+  }
+  window.currentComparisonResults = null;
+  window.currentComfyUIComparison = null;
+};
+
+// Apply sync changes
+window.applySyncChanges = function(machineId) {
+  if (!window.currentComparisonResults) return;
+  
+  const finalSteps = [];
+  
+  window.currentComparisonResults.forEach(item => {
+    if (item.type === 'conflict') {
+      // Use the selected version for conflicts
+      if (item.selectedVersion === 'machine') {
+        finalSteps.push(item.machineStep);
+      } else {
+        finalSteps.push(item.snapshotStep);
+      }
+    } else if (item.type === 'new' && item.selected) {
+      // Add selected new items
+      finalSteps.push(item.step);
+    } else if (item.type === 'removed' && !item.selected) {
+      // Keep items that are NOT selected for removal
+      finalSteps.push(item.step);
+    } else if (item.type === 'unchanged') {
+      // Always include unchanged items
+      finalSteps.push(item.step);
+    }
+  });
+  
+  // Format as docker steps
+  const dockerSteps = {
+    steps: finalSteps
+  };
+  
+  // Add ComfyUI version if there's a comparison (whether matching or not)
+  let selectedComfyUIVersion = null;
+  if (window.currentComfyUIComparison) {
+    if (window.currentComfyUIComparison.versionsMatch) {
+      // If versions match, use the common version
+      selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
+    } else {
+      // If versions differ, use the selected one
+      if (window.currentComfyUIComparison.selectedVersion === 'machine') {
+        selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
+      } else {
+        selectedComfyUIVersion = window.currentComfyUIComparison.localVersion;
+      }
+    }
+    dockerSteps.comfyui_version = selectedComfyUIVersion;
+  }
+  
+  // Log the final docker steps
+  console.log("🚀 Final docker steps to apply:", dockerSteps);
+
+  // Close the dialog
+  closeSyncDialog();
+  
+  // TODO: Send these docker steps to the backend to update the machine
+  // This would be implemented based on your backend API
 };
 
 // Show add machine dialog
