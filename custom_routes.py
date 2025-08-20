@@ -3227,3 +3227,38 @@ async def update_machine_proxy(request):
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
+@server.PromptServer.instance.routes.post("/comfyui-deploy/machine/create")
+async def create_machine_proxy(request):
+    data = await request.json()
+    name = data.get("name")
+    docker_command_steps = data.get("docker_command_steps")
+    comfyui_version = data.get("comfyui_version")
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/machine/serverless"
+
+    request_body = {
+        "name": name,
+        "docker_command_steps": docker_command_steps,
+        "comfyui_version": comfyui_version,
+        "gpu": "A10G"
+    }
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json=request_body,
+            headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)

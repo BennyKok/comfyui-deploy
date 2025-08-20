@@ -63,22 +63,40 @@ function showNoMachineMessage(machineLoading, machineList) {
         </svg>
       </div>
       <div style="font-weight: 500; margin-bottom: 12px;">No machine found</div>
-      <button 
-        onclick="showAddMachineDialog()"
-        style="
-          background: #27ae60;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          padding: 8px 16px;
-          font-size: 12px;
-          cursor: pointer;
-          font-weight: 500;
-        "
-        title="Add machine"
-      >
-        Add Machine
-      </button>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button 
+          onclick="showAddMachineDialog()"
+          style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+          "
+          title="Add existing machine"
+        >
+          Add Machine
+        </button>
+        <button 
+          onclick="showCreateMachineDialog()"
+          style="
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+          "
+          title="Create new machine from local setup"
+        >
+          Sync Local Machine
+        </button>
+      </div>
     </li>
   `;
 }
@@ -1624,6 +1642,539 @@ window.addMachine = function (machineId) {
     }, 100);
   } else {
     console.error("Could not find elements for machine refresh");
+  }
+};
+
+// Show create machine dialog
+window.showCreateMachineDialog = function() {
+  // Create dialog overlay
+  const overlay = document.createElement("div");
+  overlay.id = "create-machine-dialog-overlay";
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+
+  // Create dialog box
+  const dialog = document.createElement("div");
+  dialog.style.cssText = `
+    background: #2c2c2c;
+    border-radius: 12px;
+    padding: 0;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 85vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  `;
+
+  dialog.innerHTML = `
+    <div style="
+      padding: 18px 24px;
+      border-bottom: 1px solid #404040;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1f1f1f 100%);
+    ">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Create New Machine</h3>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #999;">
+            Sync your local ComfyUI setup to the cloud
+          </p>
+        </div>
+        <button onclick="closeCreateMachineDialog()" style="
+          background: none;
+          border: none;
+          color: #999;
+          font-size: 24px;
+          cursor: pointer;
+          padding: 0;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#404040'" onmouseout="this.style.background='none'">×</button>
+      </div>
+    </div>
+    
+    <div id="create-machine-content" style="
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      background: #1a1a1a;
+    ">
+      <div style="text-align: center; padding: 40px; color: #666;">
+        <div style="font-size: 24px; margin-bottom: 16px;">⏳</div>
+        <div style="font-size: 16px; font-weight: 500;">Loading local setup...</div>
+        <div style="font-size: 13px; margin-top: 8px;">Analyzing your ComfyUI installation</div>
+      </div>
+    </div>
+    
+    <div style="
+      padding: 16px 20px;
+      border-top: 1px solid #404040;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1f1f1f 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    ">
+      <div style="font-size: 12px; color: #999;"></div>
+      <div style="display: flex; gap: 12px;">
+        <button onclick="closeCreateMachineDialog()" style="
+          background: #404040;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 18px;
+          font-size: 13px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#555'" onmouseout="this.style.background='#404040'">
+          Cancel
+        </button>
+        <button id="create-machine-btn" onclick="createMachine()" disabled style="
+          background: #555;
+          color: #999;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 20px;
+          font-size: 13px;
+          cursor: not-allowed;
+          font-weight: 500;
+          transition: all 0.2s;
+        ">
+          Create Machine
+        </button>
+      </div>
+    </div>
+  `;
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  // Close on overlay click
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) {
+      closeCreateMachineDialog();
+    }
+  });
+
+  // Load machine creation data
+  loadCreateMachineData();
+};
+
+// Close create machine dialog
+window.closeCreateMachineDialog = function() {
+  const overlay = document.getElementById("create-machine-dialog-overlay");
+  if (overlay) {
+    overlay.remove();
+  }
+  window.currentCreateMachineData = null;
+};
+
+// Load data for machine creation
+async function loadCreateMachineData() {
+  try {
+    // Get current snapshot and convert to docker steps
+    const [snapshot, dockerStepsResponse] = await Promise.all([
+      fetch("/snapshot/get_current").then(x => x.json()),
+      fetch("/snapshot/get_current")
+        .then(x => x.json())
+        .then(snapshot => 
+          fetch("/comfyui-deploy/snapshot-to-docker", {
+            method: "POST",
+            body: JSON.stringify({
+              api_url: window.comfyDeployGetData().apiUrl,
+              snapshot: snapshot,
+            }),
+            headers: {
+              Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
+              "Content-Type": "application/json",
+            },
+          }).then(x => x.json())
+        )
+    ]);
+
+    // Store data globally
+    window.currentCreateMachineData = {
+      snapshot,
+      dockerSteps: dockerStepsResponse,
+      selectedSteps: new Set() // Track selected docker steps
+    };
+
+    // Render the machine creation form
+    renderCreateMachineForm(snapshot, dockerStepsResponse);
+
+  } catch (error) {
+    console.error("Error loading machine creation data:", error);
+    renderCreateMachineError("Failed to load local setup data");
+  }
+}
+
+// Render machine creation form
+function renderCreateMachineForm(snapshot, dockerSteps) {
+  const content = document.getElementById("create-machine-content");
+  if (!content) return;
+
+  const comfyuiVersion = snapshot.comfyui || "Unknown";
+  const steps = dockerSteps.steps || [];
+
+  // Initialize all steps as selected by default
+  if (window.currentCreateMachineData) {
+    window.currentCreateMachineData.selectedSteps = new Set(steps.map((_, index) => index));
+  }
+
+  content.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-size: 13px; color: #ccc;">Machine Name:</label>
+      <input 
+        type="text" 
+        id="machine-name-input" 
+        placeholder="Local Machine"
+        value="Local Machine"
+        style="
+          width: 100%;
+          padding: 10px 12px;
+          border: 1px solid #555;
+          border-radius: 4px;
+          font-size: 13px;
+          background: #1a1a1a;
+          color: #ffffff;
+          box-sizing: border-box;
+        "
+      />
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <h4 style="
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: #3498db;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      ">ComfyUI Version</h4>
+      <div style="
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #1f2f2f;
+        border-radius: 6px;
+        border: 1px solid #3498db;
+        opacity: 0.8;
+      ">
+        <div style="
+          width: 20px;
+          height: 20px;
+          border-radius: 3px;
+          background: #3498db;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 600;
+          margin-right: 10px;
+          flex-shrink: 0;
+        ">🔧</div>
+        
+        <div style="flex: 1;">
+          <div style="font-weight: 500; font-size: 13px; color: #3498db; margin-bottom: 2px;">
+            ComfyUI Core
+          </div>
+          <div style="font-size: 11px; color: #666; font-family: monospace;">
+            ${comfyuiVersion}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${steps.length > 0 ? `
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h4 style="
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #27ae60;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          ">Custom Nodes (${steps.length})</h4>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="selectAllNodes()" style="
+              background: #27ae60;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              padding: 4px 8px;
+              font-size: 11px;
+              cursor: pointer;
+              font-weight: 500;
+            ">Select All</button>
+            <button onclick="deselectAllNodes()" style="
+              background: #e74c3c;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              padding: 4px 8px;
+              font-size: 11px;
+              cursor: pointer;
+              font-weight: 500;
+            ">Deselect All</button>
+          </div>
+        </div>
+        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #333; border-radius: 6px; background: #252525;">
+          ${steps.map((step, index) => renderNodeStep(step, index)).join('')}
+        </div>
+      </div>
+    ` : `
+      <div style="
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        background: #252525;
+        border-radius: 6px;
+        border: 1px solid #333;
+        margin-bottom: 20px;
+      ">
+        <div style="font-size: 16px; margin-bottom: 8px;">📦</div>
+        <div style="font-size: 13px;">No custom nodes detected</div>
+      </div>
+    `}
+  `;
+
+  // Enable the create button
+  const createBtn = document.getElementById("create-machine-btn");
+  if (createBtn) {
+    createBtn.disabled = false;
+    createBtn.style.background = "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
+    createBtn.style.color = "white";
+    createBtn.style.cursor = "pointer";
+    createBtn.style.boxShadow = "0 2px 8px rgba(52, 152, 219, 0.3)";
+  }
+}
+
+// Render individual node step
+function renderNodeStep(step, index) {
+  const name = step.data?.name || step.id || "Unknown Node";
+  const isSelected = window.currentCreateMachineData?.selectedSteps.has(index) || false;
+  
+  return `
+    <div style="
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #333;
+    ">
+      <input 
+        type="checkbox" 
+        id="node-${index}" 
+        ${isSelected ? 'checked' : ''}
+        onchange="toggleNodeSelection(${index})"
+        style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
+      />
+      <div style="flex: 1;">
+        <div style="font-weight: 500; font-size: 13px; color: #fff;">
+          ${name}
+        </div>
+        ${step.type === 'custom-node' && step.data?.hash ? 
+          `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
+          step.type === 'custom-node-manager' && step.data?.version ? 
+          `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+        }
+      </div>
+    </div>
+  `;
+}
+
+// Render error state
+function renderCreateMachineError(message) {
+  const content = document.getElementById("create-machine-content");
+  if (!content) return;
+
+  content.innerHTML = `
+    <div style="text-align: center; padding: 40px; color: #e74c3c;">
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Error</div>
+      <div style="font-size: 13px;">${message}</div>
+    </div>
+  `;
+}
+
+// Toggle node selection
+window.toggleNodeSelection = function(index) {
+  if (!window.currentCreateMachineData) return;
+  
+  const selectedSteps = window.currentCreateMachineData.selectedSteps;
+  if (selectedSteps.has(index)) {
+    selectedSteps.delete(index);
+  } else {
+    selectedSteps.add(index);
+  }
+};
+
+// Select all nodes
+window.selectAllNodes = function() {
+  if (!window.currentCreateMachineData) return;
+  
+  const steps = window.currentCreateMachineData.dockerSteps.steps || [];
+  window.currentCreateMachineData.selectedSteps = new Set(steps.map((_, index) => index));
+  
+  // Update checkboxes
+  steps.forEach((_, index) => {
+    const checkbox = document.getElementById(`node-${index}`);
+    if (checkbox) checkbox.checked = true;
+  });
+};
+
+// Deselect all nodes
+window.deselectAllNodes = function() {
+  if (!window.currentCreateMachineData) return;
+  
+  const steps = window.currentCreateMachineData.dockerSteps.steps || [];
+  window.currentCreateMachineData.selectedSteps.clear();
+  
+  // Update checkboxes
+  steps.forEach((_, index) => {
+    const checkbox = document.getElementById(`node-${index}`);
+    if (checkbox) checkbox.checked = false;
+  });
+};
+
+// Create machine
+window.createMachine = async function() {
+  if (!window.currentCreateMachineData) return;
+  
+  const nameInput = document.getElementById("machine-name-input");
+  const machineName = nameInput?.value.trim() || "Local Machine";
+  
+  // Get create button and show loading state
+  const createBtn = document.getElementById("create-machine-btn");
+  let originalButtonContent = null;
+  
+  if (createBtn) {
+    originalButtonContent = createBtn.innerHTML;
+    createBtn.disabled = true;
+    createBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin" style="margin-right: 6px;">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+      </svg>
+      Creating...
+    `;
+    createBtn.style.background = '#555';
+    createBtn.style.cursor = 'not-allowed';
+  }
+  
+  try {
+    // Get selected docker steps
+    const allSteps = window.currentCreateMachineData.dockerSteps.steps || [];
+    const selectedSteps = Array.from(window.currentCreateMachineData.selectedSteps)
+      .map(index => allSteps[index])
+      .filter(step => step);
+    
+    const dockerCommandSteps = {
+      steps: selectedSteps
+    };
+    
+    const data = window.comfyDeployGetData();
+    
+    // Create machine via API
+    const response = await fetch("/comfyui-deploy/machine/create", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${data.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: machineName,
+        docker_command_steps: dockerCommandSteps,
+        comfyui_version: window.currentCreateMachineData.snapshot.comfyui,
+        api_url: data.apiUrl || "https://api.comfydeploy.com"
+      })
+    }).then(response => response.json());
+    
+    // Close dialog
+    closeCreateMachineDialog();
+    
+    if (response.id) {
+      // Save machine ID to localStorage
+      localStorage.setItem(MACHINE_STORAGE_KEY, response.id);
+      
+      // Show success message
+      window.app.extensionManager.toast.add({
+        severity: 'success',
+        summary: 'Machine created successfully',
+        detail: `Machine "${machineName}" has been created and linked`,
+        life: 3000
+      });
+      
+      // Refresh machine manager
+      const machineLoading = document.querySelector("#machine-loading");
+      const machineList = document.querySelector("#machine-list");
+      
+      if (machineLoading && machineList) {
+        machineLoading.style.display = "flex";
+        machineList.style.display = "none";
+      }
+      
+      // Find the correct parent element and reinitialize
+      let element = document.querySelector(".comfy-menu");
+      if (!element || !element.querySelector("#machine-container")) {
+        const machineContainer = document.querySelector("#machine-container");
+        if (machineContainer) {
+          element = machineContainer.parentElement;
+        }
+      }
+      
+      if (element && window.comfyDeployGetData) {
+        setTimeout(() => {
+          initializeMachineManager(element, window.comfyDeployGetData);
+        }, 100);
+      }
+      
+    } else {
+      window.app.extensionManager.toast.add({
+        severity: 'error',
+        summary: 'Failed to create machine',
+        detail: result.error || 'Please try again',
+        life: 5000
+      });
+    }
+    
+  } catch (error) {
+    console.error("Error creating machine:", error);
+    
+    // Restore button if there was an error and dialog is still open
+    if (createBtn && originalButtonContent) {
+      createBtn.disabled = false;
+      createBtn.innerHTML = originalButtonContent;
+      createBtn.style.background = "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
+      createBtn.style.cursor = 'pointer';
+    }
+    
+    window.app.extensionManager.toast.add({
+      severity: 'error',
+      summary: 'Network error',
+      detail: 'Failed to connect to server. Please try again.',
+      life: 5000
+    });
   }
 };
 
