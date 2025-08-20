@@ -326,10 +326,8 @@ async function fetchMachineDetails(machineId, getData) {
 }
 
 // Remove machine from localStorage
-window.removeMachine = function (machineId) {
-  if (
-    confirm("Are you sure you want to remove this machine from local storage?")
-  ) {
+window.removeMachine = function () {
+  if (confirm("Are you sure you want to unlink this machine?")) {
     localStorage.removeItem(MACHINE_STORAGE_KEY);
 
     // Show success message temporarily
