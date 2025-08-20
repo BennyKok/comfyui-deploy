@@ -338,7 +338,9 @@ window.syncMachine = async function (machineId) {
     }
 
     // Update the sync button to show loading state
-    const syncButton = machineList.querySelector('button[onclick*="syncMachine"]');
+    const syncButton = machineList.querySelector(
+      'button[onclick*="syncMachine"]'
+    );
     let originalButtonContent = null;
     if (syncButton) {
       originalButtonContent = syncButton.innerHTML;
@@ -353,7 +355,7 @@ window.syncMachine = async function (machineId) {
         Loading...
       `;
       // Add spinning animation
-      const style = document.createElement('style');
+      const style = document.createElement("style");
       style.textContent = `
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -375,10 +377,19 @@ window.syncMachine = async function (machineId) {
 
     const data = window.comfyDeployGetData();
 
+    // Helper function to fetch snapshot with error handling
+    const fetchSnapshot = async () => {
+      const response = await fetch("/snapshot/get_current");
+      if (!response.ok) {
+        throw new Error(`Snapshot fetch failed: ${response.status}`);
+      }
+      return response.json();
+    };
+
     // Fetch machine data and snapshot docker steps in parallel
     const [machineData, snapshot] = await Promise.all([
       fetchMachineDetails(machineId, window.comfyDeployGetData),
-      fetch("/snapshot/get_current").then((x) => x.json())
+      fetchSnapshot(),
     ]);
 
     if (!machineData || machineData.error) {
@@ -418,20 +429,61 @@ window.syncMachine = async function (machineId) {
     // Store data globally for version comparison
     window.lastMachineData = machineData;
     window.lastSnapshotData = snapshot;
-    
+
     // Show the sync dialog with comparison
     showSyncComparisonDialog(
       machineData.docker_command_steps || { steps: [] },
       dockerSteps || { steps: [] },
       machineId
     );
-
   } catch (error) {
     console.error("Error syncing machine:", error);
     const machineList = document.querySelector("#machine-list");
     const machineLoading = document.querySelector("#machine-loading");
+
+    // Restore the sync button if it was modified
+    const syncButton = machineList?.querySelector(
+      'button[onclick*="syncMachine"]'
+    );
+    if (syncButton) {
+      syncButton.disabled = false;
+      // Try to restore original button content or use default
+      syncButton.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
+        </svg>
+        Sync Local Machine
+      `;
+    }
+
     if (machineList && machineLoading) {
-      showMachineError(machineLoading, machineList, "Error syncing machine");
+      // Check if the error is related to snapshot fetch
+      if (error.message && error.message.includes("Snapshot fetch failed")) {
+        // Show toast notification to install ComfyUI Manager
+        if (
+          window.app &&
+          window.app.extensionManager &&
+          window.app.extensionManager.toast
+        ) {
+          window.app.extensionManager.toast.add({
+            severity: "error",
+            summary: "ComfyUI Manager Required",
+            detail:
+              "Please install ComfyUI Manager to sync machine configurations",
+            life: 8000,
+          });
+        }
+        showMachineError(
+          machineLoading,
+          machineList,
+          "ComfyUI Manager is required to sync machine configurations"
+        );
+      } else {
+        showMachineError(machineLoading, machineList, "Error syncing machine");
+      }
     }
   }
 };
@@ -440,20 +492,21 @@ window.syncMachine = async function (machineId) {
 function normalizeRepoUrl(url) {
   if (!url) return null;
   // Remove protocol, www, .git extension, and trailing slashes
-  return url.toLowerCase()
-    .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '')
-    .replace(/\.git$/, '')
-    .replace(/\/$/, '');
+  return url
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\.git$/, "")
+    .replace(/\/$/, "");
 }
 
 // Get a unique key for comparison based on the step type
 function getComparisonKey(step) {
-  if (step.type === 'custom-node') {
+  if (step.type === "custom-node") {
     // Use normalized URL as key for custom nodes
     const url = step.data?.url;
     return normalizeRepoUrl(url) || step.id;
-  } else if (step.type === 'custom-node-manager') {
+  } else if (step.type === "custom-node-manager") {
     // Use node_id as key for custom-node-manager
     return step.data?.node_id || step.id;
   }
@@ -467,12 +520,12 @@ function compareDockerSteps(machineSteps, snapshotSteps) {
   const comparisonResults = [];
 
   // Build maps using comparison keys
-  machineSteps.steps?.forEach(step => {
+  machineSteps.steps?.forEach((step) => {
     const key = getComparisonKey(step);
     machineMap.set(key, step);
   });
 
-  snapshotSteps.steps?.forEach(step => {
+  snapshotSteps.steps?.forEach((step) => {
     const key = getComparisonKey(step);
     snapshotMap.set(key, step);
   });
@@ -480,97 +533,107 @@ function compareDockerSteps(machineSteps, snapshotSteps) {
   // Process all unique keys
   const allKeys = new Set([...machineMap.keys(), ...snapshotMap.keys()]);
 
-  allKeys.forEach(key => {
+  allKeys.forEach((key) => {
     const machineStep = machineMap.get(key);
     const snapshotStep = snapshotMap.get(key);
 
     if (machineStep && snapshotStep) {
       // Both exist - check if they match
       let isMatch = false;
-      
-      if (machineStep.type === 'custom-node' && snapshotStep.type === 'custom-node') {
+
+      if (
+        machineStep.type === "custom-node" &&
+        snapshotStep.type === "custom-node"
+      ) {
         isMatch = machineStep.data?.hash === snapshotStep.data?.hash;
-      } else if (machineStep.type === 'custom-node-manager' && snapshotStep.type === 'custom-node-manager') {
+      } else if (
+        machineStep.type === "custom-node-manager" &&
+        snapshotStep.type === "custom-node-manager"
+      ) {
         isMatch = machineStep.data?.version === snapshotStep.data?.version;
       }
 
       if (isMatch) {
         // Identical - no action needed
         comparisonResults.push({
-          type: 'unchanged',
+          type: "unchanged",
           key: key,
           step: snapshotStep,
-          name: snapshotStep.data?.name || snapshotStep.id
+          name: snapshotStep.data?.name || snapshotStep.id,
         });
       } else {
         // Version conflict - user needs to choose
         comparisonResults.push({
-          type: 'conflict',
+          type: "conflict",
           key: key,
           machineStep: machineStep,
           snapshotStep: snapshotStep,
-          selectedVersion: 'snapshot', // Default to snapshot version
-          name: snapshotStep.data?.name || machineStep.data?.name || key
+          selectedVersion: "snapshot", // Default to snapshot version
+          name: snapshotStep.data?.name || machineStep.data?.name || key,
         });
       }
     } else if (snapshotStep && !machineStep) {
       // Only in snapshot - new addition
       comparisonResults.push({
-        type: 'new',
+        type: "new",
         key: key,
         step: snapshotStep,
         selected: true, // Default selected for addition
-        name: snapshotStep.data?.name || snapshotStep.id
+        name: snapshotStep.data?.name || snapshotStep.id,
       });
     } else if (machineStep && !snapshotStep) {
       // Only in machine - might be removed
       comparisonResults.push({
-        type: 'removed',
+        type: "removed",
         key: key,
         step: machineStep,
         selected: false, // Default not selected for removal
-        name: machineStep.data?.name || machineStep.id
+        name: machineStep.data?.name || machineStep.id,
       });
     }
   });
 
   // Sort results: conflicts first, then new, then removed, then unchanged
-  const typeOrder = { 'conflict': 0, 'new': 1, 'removed': 2, 'unchanged': 3 };
+  const typeOrder = { conflict: 0, new: 1, removed: 2, unchanged: 3 };
   comparisonResults.sort((a, b) => {
     const orderDiff = typeOrder[a.type] - typeOrder[b.type];
     if (orderDiff !== 0) return orderDiff;
     // Within same type, sort by name
-    return (a.name || '').localeCompare(b.name || '');
+    return (a.name || "").localeCompare(b.name || "");
   });
 
   return comparisonResults;
 }
 
 // Show sync comparison dialog
-window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineId) {
+window.showSyncComparisonDialog = function (
+  machineSteps,
+  snapshotSteps,
+  machineId
+) {
   // Compare the steps
   const comparisonResults = compareDockerSteps(machineSteps, snapshotSteps);
-  
+
   // Get ComfyUI version comparison data from global storage
   const machineData = window.lastMachineData;
   const snapshotData = window.lastSnapshotData;
-  
+
   let comfyuiComparison = null;
   if (machineData && snapshotData) {
     const machineVersion = machineData.comfyui_version;
     const localVersion = snapshotData.comfyui;
-    
+
     if (machineVersion && localVersion) {
       const versionsMatch = machineVersion === localVersion;
       comfyuiComparison = {
         machineVersion,
         localVersion,
         versionsMatch,
-        selectedVersion: versionsMatch ? 'same' : 'local' // Default to local version if different
+        selectedVersion: versionsMatch ? "same" : "local", // Default to local version if different
       };
     }
   }
-  
+
   // Create dialog overlay
   const overlay = document.createElement("div");
   overlay.id = "sync-dialog-overlay";
@@ -604,11 +667,13 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
   `;
 
   // Count different types
-  const conflicts = comparisonResults.filter(r => r.type === 'conflict');
-  const newItems = comparisonResults.filter(r => r.type === 'new');
-  const removedItems = comparisonResults.filter(r => r.type === 'removed');
-  const unchangedItems = comparisonResults.filter(r => r.type === 'unchanged');
-  
+  const conflicts = comparisonResults.filter((r) => r.type === "conflict");
+  const newItems = comparisonResults.filter((r) => r.type === "new");
+  const removedItems = comparisonResults.filter((r) => r.type === "removed");
+  const unchangedItems = comparisonResults.filter(
+    (r) => r.type === "unchanged"
+  );
+
   // Create dialog content
   let dialogContent = `
     <div style="
@@ -620,7 +685,15 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
         <div>
           <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Dependencies Sync</h3>
           <p style="margin: 4px 0 0 0; font-size: 12px; color: #999;">
-            ${comfyuiComparison ? (comfyuiComparison.versionsMatch ? '1 ComfyUI (same), ' : '1 ComfyUI version, ') : ''}${conflicts.length} conflicts, ${newItems.length} new, ${removedItems.length} removed, ${unchangedItems.length} unchanged
+            ${
+              comfyuiComparison
+                ? comfyuiComparison.versionsMatch
+                  ? "1 ComfyUI (same), "
+                  : "1 ComfyUI version, "
+                : ""
+            }${conflicts.length} conflicts, ${newItems.length} new, ${
+    removedItems.length
+  } removed, ${unchangedItems.length} unchanged
           </p>
         </div>
         <button onclick="closeSyncDialog()" style="
@@ -653,14 +726,14 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
   const renderCompactItem = (item, index) => {
     const step = item.step || item.snapshotStep || item.machineStep;
     const name = item.name;
-    
-    if (item.type === 'conflict') {
+
+    if (item.type === "conflict") {
       // Version conflict - show radio buttons for selection
       const machineHash = item.machineStep.data?.hash;
       const snapshotHash = item.snapshotStep.data?.hash;
       const machineVersion = item.machineStep.data?.version;
       const snapshotVersion = item.snapshotStep.data?.version;
-      
+
       return `
         <div style="
           display: flex;
@@ -705,13 +778,17 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
                   type="radio" 
                   name="conflict-${item.key}"
                   value="machine"
-                  ${item.selectedVersion === 'machine' ? 'checked' : ''}
+                  ${item.selectedVersion === "machine" ? "checked" : ""}
                   onchange="updateConflictSelection('${item.key}', 'machine')"
                   style="margin-right: 6px; cursor: pointer;"
                 />
                 <span style="color: #e74c3c;">Machine:</span>
                 <span style="margin-left: 4px; font-family: monospace; color: #999;">
-                  ${machineHash ? machineHash.substring(0, 8) : machineVersion || 'unknown'}
+                  ${
+                    machineHash
+                      ? machineHash.substring(0, 8)
+                      : machineVersion || "unknown"
+                  }
                 </span>
               </label>
               
@@ -729,20 +806,24 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
                   type="radio" 
                   name="conflict-${item.key}"
                   value="snapshot"
-                  ${item.selectedVersion === 'snapshot' ? 'checked' : ''}
+                  ${item.selectedVersion === "snapshot" ? "checked" : ""}
                   onchange="updateConflictSelection('${item.key}', 'snapshot')"
                   style="margin-right: 6px; cursor: pointer;"
                 />
                 <span style="color: #27ae60;">Local:</span>
                 <span style="margin-left: 4px; font-family: monospace; color: #999;">
-                  ${snapshotHash ? snapshotHash.substring(0, 8) : snapshotVersion || 'unknown'}
+                  ${
+                    snapshotHash
+                      ? snapshotHash.substring(0, 8)
+                      : snapshotVersion || "unknown"
+                  }
                 </span>
               </label>
             </div>
           </div>
         </div>
       `;
-    } else if (item.type === 'new') {
+    } else if (item.type === "new") {
       // New item - show checkbox
       return `
         <div style="
@@ -757,7 +838,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           <input 
             type="checkbox" 
             id="new-${item.key}" 
-            ${item.selected ? 'checked' : ''}
+            ${item.selected ? "checked" : ""}
             onchange="updateItemSelection('${item.key}', 'new', this.checked)"
             style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
           />
@@ -779,15 +860,20 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
             <div style="font-weight: 500; font-size: 13px; color: #fff;">
               ${name}
             </div>
-            ${step.type === 'custom-node' && step.data?.hash ? 
-              `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
-              step.type === 'custom-node-manager' && step.data?.version ? 
-              `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+            ${
+              step.type === "custom-node" && step.data?.hash
+                ? `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(
+                    0,
+                    8
+                  )}</div>`
+                : step.type === "custom-node-manager" && step.data?.version
+                ? `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>`
+                : ""
             }
           </div>
         </div>
       `;
-    } else if (item.type === 'removed') {
+    } else if (item.type === "removed") {
       // Removed item - show checkbox (unchecked by default)
       return `
         <div style="
@@ -798,13 +884,15 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           border-radius: 6px;
           margin-bottom: 6px;
           border: 1px solid #333;
-          opacity: ${item.selected ? '1' : '0.6'};
+          opacity: ${item.selected ? "1" : "0.6"};
         ">
           <input 
             type="checkbox" 
             id="remove-${item.key}" 
-            ${item.selected ? 'checked' : ''}
-            onchange="updateItemSelection('${item.key}', 'removed', this.checked)"
+            ${item.selected ? "checked" : ""}
+            onchange="updateItemSelection('${
+              item.key
+            }', 'removed', this.checked)"
             style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
           />
           <div style="
@@ -825,10 +913,15 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
             <div style="font-weight: 500; font-size: 13px; color: #fff;">
               ${name}
             </div>
-            ${step.type === 'custom-node' && step.data?.hash ? 
-              `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
-              step.type === 'custom-node-manager' && step.data?.version ? 
-              `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+            ${
+              step.type === "custom-node" && step.data?.hash
+                ? `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(
+                    0,
+                    8
+                  )}</div>`
+                : step.type === "custom-node-manager" && step.data?.version
+                ? `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>`
+                : ""
             }
           </div>
         </div>
@@ -870,7 +963,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
 
   // Store comfyui comparison globally
   window.currentComfyUIComparison = comfyuiComparison;
-  
+
   // Render ComfyUI version section - always show if we have version data
   if (comfyuiComparison) {
     if (comfyuiComparison.versionsMatch) {
@@ -975,7 +1068,11 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
                     type="radio" 
                     name="comfyui-version"
                     value="machine"
-                    ${comfyuiComparison.selectedVersion === 'machine' ? 'checked' : ''}
+                    ${
+                      comfyuiComparison.selectedVersion === "machine"
+                        ? "checked"
+                        : ""
+                    }
                     onchange="updateComfyUIVersionSelection('machine')"
                     style="margin-right: 6px; cursor: pointer;"
                   />
@@ -999,7 +1096,11 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
                     type="radio" 
                     name="comfyui-version"
                     value="local"
-                    ${comfyuiComparison.selectedVersion === 'local' ? 'checked' : ''}
+                    ${
+                      comfyuiComparison.selectedVersion === "local"
+                        ? "checked"
+                        : ""
+                    }
                     onchange="updateComfyUIVersionSelection('local')"
                     style="margin-right: 6px; cursor: pointer;"
                   />
@@ -1029,7 +1130,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           letter-spacing: 0.5px;
         ">Version Conflicts (${conflicts.length})</h4>
         <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Choose which version to use:</div>
-        ${conflicts.map((item, i) => renderCompactItem(item, i)).join('')}
+        ${conflicts.map((item, i) => renderCompactItem(item, i)).join("")}
       </div>
     `;
   }
@@ -1045,7 +1146,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           text-transform: uppercase;
           letter-spacing: 0.5px;
         ">New Dependencies (${newItems.length})</h4>
-        ${newItems.map((item, i) => renderCompactItem(item, i)).join('')}
+        ${newItems.map((item, i) => renderCompactItem(item, i)).join("")}
       </div>
     `;
   }
@@ -1062,7 +1163,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           letter-spacing: 0.5px;
         ">Not in Local Snapshot (${removedItems.length})</h4>
         <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Select to remove from machine:</div>
-        ${removedItems.map((item, i) => renderCompactItem(item, i)).join('')}
+        ${removedItems.map((item, i) => renderCompactItem(item, i)).join("")}
       </div>
     `;
   }
@@ -1079,13 +1180,14 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           letter-spacing: 0.5px;
           margin-bottom: 8px;
         ">Unchanged (${unchangedItems.length})</summary>
-        ${unchangedItems.map((item, i) => renderCompactItem(item, i)).join('')}
+        ${unchangedItems.map((item, i) => renderCompactItem(item, i)).join("")}
       </details>
     `;
   }
 
-  const hasChanges = conflicts.length > 0 || newItems.length > 0 || removedItems.length > 0;
-  
+  const hasChanges =
+    conflicts.length > 0 || newItems.length > 0 || removedItems.length > 0;
+
   if (!hasChanges) {
     dialogContent += `
       <div style="
@@ -1112,7 +1214,11 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
       align-items: center;
     ">
       <div id="sync-selected-count" style="font-size: 12px; color: #999;">
-        ${hasChanges ? `${getSelectedCount(comparisonResults)} changes selected` : ''}
+        ${
+          hasChanges
+            ? `${getSelectedCount(comparisonResults)} changes selected`
+            : ""
+        }
       </div>
       <div style="display: flex; gap: 12px;">
         <button onclick="closeSyncDialog()" style="
@@ -1128,7 +1234,9 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
         " onmouseover="this.style.background='#555'" onmouseout="this.style.background='#404040'">
           Cancel
         </button>
-        ${hasChanges ? `
+        ${
+          hasChanges
+            ? `
           <button onclick="applySyncChanges('${machineId}')" style="
             background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             color: white;
@@ -1143,7 +1251,9 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
           " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
             Apply Changes
           </button>
-        ` : ''}
+        `
+            : ""
+        }
       </div>
     </div>
   `;
@@ -1166,18 +1276,21 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
 // Helper function to get selected count
 function getSelectedCount(comparisonResults) {
   let count = 0;
-  
+
   // Count ComfyUI version if there's a difference (not if they match)
-  if (window.currentComfyUIComparison && !window.currentComfyUIComparison.versionsMatch) {
+  if (
+    window.currentComfyUIComparison &&
+    !window.currentComfyUIComparison.versionsMatch
+  ) {
     count++;
   }
-  
-  comparisonResults.forEach(item => {
-    if (item.type === 'conflict') {
+
+  comparisonResults.forEach((item) => {
+    if (item.type === "conflict") {
       count++; // Conflicts always need resolution
-    } else if (item.type === 'new' && item.selected) {
+    } else if (item.type === "new" && item.selected) {
       count++;
-    } else if (item.type === 'removed' && item.selected) {
+    } else if (item.type === "removed" && item.selected) {
       count++;
     }
   });
@@ -1187,16 +1300,16 @@ function getSelectedCount(comparisonResults) {
 // Update selected count in dialog
 function updateSelectedCountDisplay() {
   if (!window.currentComparisonResults) return;
-  
+
   const selectedCount = getSelectedCount(window.currentComparisonResults);
-  const countElement = document.querySelector('#sync-selected-count');
+  const countElement = document.querySelector("#sync-selected-count");
   if (countElement) {
     countElement.textContent = `${selectedCount} changes selected`;
   }
 }
 
 // Update ComfyUI version selection
-window.updateComfyUIVersionSelection = function(version) {
+window.updateComfyUIVersionSelection = function (version) {
   if (window.currentComfyUIComparison) {
     window.currentComfyUIComparison.selectedVersion = version;
     updateSelectedCountDisplay();
@@ -1204,10 +1317,12 @@ window.updateComfyUIVersionSelection = function(version) {
 };
 
 // Update conflict selection
-window.updateConflictSelection = function(key, version) {
+window.updateConflictSelection = function (key, version) {
   if (!window.currentComparisonResults) return;
-  
-  const item = window.currentComparisonResults.find(r => r.key === key && r.type === 'conflict');
+
+  const item = window.currentComparisonResults.find(
+    (r) => r.key === key && r.type === "conflict"
+  );
   if (item) {
     item.selectedVersion = version;
     updateSelectedCountDisplay();
@@ -1215,10 +1330,12 @@ window.updateConflictSelection = function(key, version) {
 };
 
 // Update item selection (for new and removed items)
-window.updateItemSelection = function(key, type, selected) {
+window.updateItemSelection = function (key, type, selected) {
   if (!window.currentComparisonResults) return;
-  
-  const item = window.currentComparisonResults.find(r => r.key === key && r.type === type);
+
+  const item = window.currentComparisonResults.find(
+    (r) => r.key === key && r.type === type
+  );
   if (item) {
     item.selected = selected;
     updateSelectedCountDisplay();
@@ -1226,7 +1343,7 @@ window.updateItemSelection = function(key, type, selected) {
 };
 
 // Close sync dialog
-window.closeSyncDialog = function() {
+window.closeSyncDialog = function () {
   const overlay = document.getElementById("sync-dialog-overlay");
   if (overlay) {
     overlay.remove();
@@ -1236,13 +1353,15 @@ window.closeSyncDialog = function() {
 };
 
 // Apply sync changes
-window.applySyncChanges = async function(machineId) {
+window.applySyncChanges = async function (machineId) {
   if (!window.currentComparisonResults) return;
-  
+
   // Get the apply button and show loading state
-  const applyButton = document.querySelector('button[onclick*="applySyncChanges"]');
+  const applyButton = document.querySelector(
+    'button[onclick*="applySyncChanges"]'
+  );
   let originalButtonContent = null;
-  
+
   if (applyButton) {
     originalButtonContent = applyButton.innerHTML;
     applyButton.disabled = true;
@@ -1255,38 +1374,38 @@ window.applySyncChanges = async function(machineId) {
       </svg>
       Applying...
     `;
-    applyButton.style.background = '#555';
-    applyButton.style.cursor = 'not-allowed';
+    applyButton.style.background = "#555";
+    applyButton.style.cursor = "not-allowed";
   }
-  
+
   try {
     const finalSteps = [];
-    
-    window.currentComparisonResults.forEach(item => {
-      if (item.type === 'conflict') {
+
+    window.currentComparisonResults.forEach((item) => {
+      if (item.type === "conflict") {
         // Use the selected version for conflicts
-        if (item.selectedVersion === 'machine') {
+        if (item.selectedVersion === "machine") {
           finalSteps.push(item.machineStep);
         } else {
           finalSteps.push(item.snapshotStep);
         }
-      } else if (item.type === 'new' && item.selected) {
+      } else if (item.type === "new" && item.selected) {
         // Add selected new items
         finalSteps.push(item.step);
-      } else if (item.type === 'removed' && !item.selected) {
+      } else if (item.type === "removed" && !item.selected) {
         // Keep items that are NOT selected for removal
         finalSteps.push(item.step);
-      } else if (item.type === 'unchanged') {
+      } else if (item.type === "unchanged") {
         // Always include unchanged items
         finalSteps.push(item.step);
       }
     });
-    
+
     // Format as docker steps
     const dockerSteps = {
-      steps: finalSteps
+      steps: finalSteps,
     };
-    
+
     // Add ComfyUI version if there's a comparison (whether matching or not)
     let selectedComfyUIVersion = null;
     if (window.currentComfyUIComparison) {
@@ -1295,69 +1414,71 @@ window.applySyncChanges = async function(machineId) {
         selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
       } else {
         // If versions differ, use the selected one
-        if (window.currentComfyUIComparison.selectedVersion === 'machine') {
-          selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
+        if (window.currentComfyUIComparison.selectedVersion === "machine") {
+          selectedComfyUIVersion =
+            window.currentComfyUIComparison.machineVersion;
         } else {
           selectedComfyUIVersion = window.currentComfyUIComparison.localVersion;
         }
       }
       dockerSteps.comfyui_version = selectedComfyUIVersion;
     }
-    
+
     // Send these docker steps to the backend to update the machine
     const body = {
       machine_id: machineId,
       docker_steps: dockerSteps,
       api_url: window.comfyDeployGetData().apiUrl,
-    }
+    };
 
     if (selectedComfyUIVersion) {
       body.comfyui_version = selectedComfyUIVersion;
     }
-    
+
     const response = await fetch(`/comfyui-deploy/machine/update`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${window.comfyDeployGetData().apiKey}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(body)
-    }).then(response => response.json());
+      body: JSON.stringify(body),
+    }).then((response) => response.json());
 
     // Close the dialog
     closeSyncDialog();
 
     if (response.ok) {
       window.app.extensionManager.toast.add({
-        severity: 'success',
-        summary: 'Machine updated successfully',
-        detail: 'Your machine has been updated successfully',
-        life: 3000
+        severity: "success",
+        summary: "Machine updated successfully",
+        detail: "Your machine has been updated successfully",
+        life: 3000,
       });
     } else {
       window.app.extensionManager.toast.add({
-        severity: 'error',
-        summary: 'Failed to update machine',
-        detail: response.error || 'Please try again',
-        life: 5000
+        severity: "error",
+        summary: "Failed to update machine",
+        detail: response.error || "Please try again",
+        life: 5000,
       });
     }
   } catch (error) {
-    console.error('Error updating machine:', error);
-    
+    console.error("Error updating machine:", error);
+
     // Restore button if there was an error and dialog is still open
     if (applyButton && originalButtonContent) {
       applyButton.disabled = false;
       applyButton.innerHTML = originalButtonContent;
-      applyButton.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
-      applyButton.style.cursor = 'pointer';
+      applyButton.style.background =
+        "linear-gradient(135deg, #27ae60 0%, #229954 100%)";
+      applyButton.style.cursor = "pointer";
     }
-    
+
     window.app.extensionManager.toast.add({
-      severity: 'error',
-      summary: 'Network error',
-      detail: 'Failed to connect to server. Please try again.',
-      life: 5000
+      severity: "error",
+      summary: "Network error",
+      detail: "Failed to connect to server. Please try again.",
+      life: 5000,
     });
   }
 };
@@ -1646,7 +1767,7 @@ window.addMachine = function (machineId) {
 };
 
 // Show create machine dialog
-window.showCreateMachineDialog = function() {
+window.showCreateMachineDialog = function () {
   // Create dialog overlay
   const overlay = document.createElement("div");
   overlay.id = "create-machine-dialog-overlay";
@@ -1778,7 +1899,7 @@ window.showCreateMachineDialog = function() {
 };
 
 // Close create machine dialog
-window.closeCreateMachineDialog = function() {
+window.closeCreateMachineDialog = function () {
   const overlay = document.getElementById("create-machine-dialog-overlay");
   if (overlay) {
     overlay.remove();
@@ -1789,39 +1910,67 @@ window.closeCreateMachineDialog = function() {
 // Load data for machine creation
 async function loadCreateMachineData() {
   try {
+    // Helper function to fetch snapshot with error handling
+    const fetchSnapshot = async () => {
+      const response = await fetch("/snapshot/get_current");
+      if (!response.ok) {
+        throw new Error(`Snapshot fetch failed: ${response.status}`);
+      }
+      return response.json();
+    };
+
     // Get current snapshot and convert to docker steps
     const [snapshot, dockerStepsResponse] = await Promise.all([
-      fetch("/snapshot/get_current").then(x => x.json()),
-      fetch("/snapshot/get_current")
-        .then(x => x.json())
-        .then(snapshot => 
-          fetch("/comfyui-deploy/snapshot-to-docker", {
-            method: "POST",
-            body: JSON.stringify({
-              api_url: window.comfyDeployGetData().apiUrl,
-              snapshot: snapshot,
-            }),
-            headers: {
-              Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
-              "Content-Type": "application/json",
-            },
-          }).then(x => x.json())
-        )
+      fetchSnapshot(),
+      fetchSnapshot().then((snapshot) =>
+        fetch("/comfyui-deploy/snapshot-to-docker", {
+          method: "POST",
+          body: JSON.stringify({
+            api_url: window.comfyDeployGetData().apiUrl,
+            snapshot: snapshot,
+          }),
+          headers: {
+            Authorization: `Bearer ${window.comfyDeployGetData().apiKey}`,
+            "Content-Type": "application/json",
+          },
+        }).then((x) => x.json())
+      ),
     ]);
 
     // Store data globally
     window.currentCreateMachineData = {
       snapshot,
       dockerSteps: dockerStepsResponse,
-      selectedSteps: new Set() // Track selected docker steps
+      selectedSteps: new Set(), // Track selected docker steps
     };
 
     // Render the machine creation form
     renderCreateMachineForm(snapshot, dockerStepsResponse);
-
   } catch (error) {
     console.error("Error loading machine creation data:", error);
-    renderCreateMachineError("Failed to load local setup data");
+
+    // Check if the error is related to snapshot fetch
+    if (error.message && error.message.includes("Snapshot fetch failed")) {
+      // Show toast notification to install ComfyUI Manager
+      if (
+        window.app &&
+        window.app.extensionManager &&
+        window.app.extensionManager.toast
+      ) {
+        window.app.extensionManager.toast.add({
+          severity: "error",
+          summary: "ComfyUI Manager Required",
+          detail:
+            "Please install ComfyUI Manager to enable machine creation features",
+          life: 8000,
+        });
+      }
+      renderCreateMachineError(
+        "ComfyUI Manager is required. Please install ComfyUI Manager to continue."
+      );
+    } else {
+      renderCreateMachineError("Failed to load local setup data");
+    }
   }
 }
 
@@ -1835,7 +1984,9 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
 
   // Initialize all steps as selected by default
   if (window.currentCreateMachineData) {
-    window.currentCreateMachineData.selectedSteps = new Set(steps.map((_, index) => index));
+    window.currentCreateMachineData.selectedSteps = new Set(
+      steps.map((_, index) => index)
+    );
   }
 
   content.innerHTML = `
@@ -1903,7 +2054,9 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
       </div>
     </div>
 
-    ${steps.length > 0 ? `
+    ${
+      steps.length > 0
+        ? `
       <div style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <h4 style="
@@ -1938,10 +2091,11 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
           </div>
         </div>
         <div style="max-height: 300px; overflow-y: auto; border: 1px solid #333; border-radius: 6px; background: #252525;">
-          ${steps.map((step, index) => renderNodeStep(step, index)).join('')}
+          ${steps.map((step, index) => renderNodeStep(step, index)).join("")}
         </div>
       </div>
-    ` : `
+    `
+        : `
       <div style="
         text-align: center;
         padding: 20px;
@@ -1954,14 +2108,16 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
         <div style="font-size: 16px; margin-bottom: 8px;">📦</div>
         <div style="font-size: 13px;">No custom nodes detected</div>
       </div>
-    `}
+    `
+    }
   `;
 
   // Enable the create button
   const createBtn = document.getElementById("create-machine-btn");
   if (createBtn) {
     createBtn.disabled = false;
-    createBtn.style.background = "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
+    createBtn.style.background =
+      "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
     createBtn.style.color = "white";
     createBtn.style.cursor = "pointer";
     createBtn.style.boxShadow = "0 2px 8px rgba(52, 152, 219, 0.3)";
@@ -1971,8 +2127,9 @@ function renderCreateMachineForm(snapshot, dockerSteps) {
 // Render individual node step
 function renderNodeStep(step, index) {
   const name = step.data?.name || step.id || "Unknown Node";
-  const isSelected = window.currentCreateMachineData?.selectedSteps.has(index) || false;
-  
+  const isSelected =
+    window.currentCreateMachineData?.selectedSteps.has(index) || false;
+
   return `
     <div style="
       display: flex;
@@ -1983,7 +2140,7 @@ function renderNodeStep(step, index) {
       <input 
         type="checkbox" 
         id="node-${index}" 
-        ${isSelected ? 'checked' : ''}
+        ${isSelected ? "checked" : ""}
         onchange="toggleNodeSelection(${index})"
         style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
       />
@@ -1991,10 +2148,15 @@ function renderNodeStep(step, index) {
         <div style="font-weight: 500; font-size: 13px; color: #fff;">
           ${name}
         </div>
-        ${step.type === 'custom-node' && step.data?.hash ? 
-          `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(0, 8)}</div>` : 
-          step.type === 'custom-node-manager' && step.data?.version ? 
-          `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>` : ''
+        ${
+          step.type === "custom-node" && step.data?.hash
+            ? `<div style="font-size: 11px; color: #666; font-family: monospace;">${step.data.hash.substring(
+                0,
+                8
+              )}</div>`
+            : step.type === "custom-node-manager" && step.data?.version
+            ? `<div style="font-size: 11px; color: #666;">v${step.data.version}</div>`
+            : ""
         }
       </div>
     </div>
@@ -2016,9 +2178,9 @@ function renderCreateMachineError(message) {
 }
 
 // Toggle node selection
-window.toggleNodeSelection = function(index) {
+window.toggleNodeSelection = function (index) {
   if (!window.currentCreateMachineData) return;
-  
+
   const selectedSteps = window.currentCreateMachineData.selectedSteps;
   if (selectedSteps.has(index)) {
     selectedSteps.delete(index);
@@ -2028,12 +2190,14 @@ window.toggleNodeSelection = function(index) {
 };
 
 // Select all nodes
-window.selectAllNodes = function() {
+window.selectAllNodes = function () {
   if (!window.currentCreateMachineData) return;
-  
+
   const steps = window.currentCreateMachineData.dockerSteps.steps || [];
-  window.currentCreateMachineData.selectedSteps = new Set(steps.map((_, index) => index));
-  
+  window.currentCreateMachineData.selectedSteps = new Set(
+    steps.map((_, index) => index)
+  );
+
   // Update checkboxes
   steps.forEach((_, index) => {
     const checkbox = document.getElementById(`node-${index}`);
@@ -2042,12 +2206,12 @@ window.selectAllNodes = function() {
 };
 
 // Deselect all nodes
-window.deselectAllNodes = function() {
+window.deselectAllNodes = function () {
   if (!window.currentCreateMachineData) return;
-  
+
   const steps = window.currentCreateMachineData.dockerSteps.steps || [];
   window.currentCreateMachineData.selectedSteps.clear();
-  
+
   // Update checkboxes
   steps.forEach((_, index) => {
     const checkbox = document.getElementById(`node-${index}`);
@@ -2056,16 +2220,16 @@ window.deselectAllNodes = function() {
 };
 
 // Create machine
-window.createMachine = async function() {
+window.createMachine = async function () {
   if (!window.currentCreateMachineData) return;
-  
+
   const nameInput = document.getElementById("machine-name-input");
   const machineName = nameInput?.value.trim() || "Local Machine";
-  
+
   // Get create button and show loading state
   const createBtn = document.getElementById("create-machine-btn");
   let originalButtonContent = null;
-  
+
   if (createBtn) {
     originalButtonContent = createBtn.innerHTML;
     createBtn.disabled = true;
@@ -2078,23 +2242,25 @@ window.createMachine = async function() {
       </svg>
       Creating...
     `;
-    createBtn.style.background = '#555';
-    createBtn.style.cursor = 'not-allowed';
+    createBtn.style.background = "#555";
+    createBtn.style.cursor = "not-allowed";
   }
-  
+
   try {
     // Get selected docker steps
     const allSteps = window.currentCreateMachineData.dockerSteps.steps || [];
-    const selectedSteps = Array.from(window.currentCreateMachineData.selectedSteps)
-      .map(index => allSteps[index])
-      .filter(step => step);
-    
+    const selectedSteps = Array.from(
+      window.currentCreateMachineData.selectedSteps
+    )
+      .map((index) => allSteps[index])
+      .filter((step) => step);
+
     const dockerCommandSteps = {
-      steps: selectedSteps
+      steps: selectedSteps,
     };
-    
+
     const data = window.comfyDeployGetData();
-    
+
     // Create machine via API
     const response = await fetch("/comfyui-deploy/machine/create", {
       method: "POST",
@@ -2106,34 +2272,34 @@ window.createMachine = async function() {
         name: machineName,
         docker_command_steps: dockerCommandSteps,
         comfyui_version: window.currentCreateMachineData.snapshot.comfyui,
-        api_url: data.apiUrl || "https://api.comfydeploy.com"
-      })
-    }).then(response => response.json());
-    
+        api_url: data.apiUrl || "https://api.comfydeploy.com",
+      }),
+    }).then((response) => response.json());
+
     // Close dialog
     closeCreateMachineDialog();
-    
+
     if (response.id) {
       // Save machine ID to localStorage
       localStorage.setItem(MACHINE_STORAGE_KEY, response.id);
-      
+
       // Show success message
       window.app.extensionManager.toast.add({
-        severity: 'success',
-        summary: 'Machine created successfully',
+        severity: "success",
+        summary: "Machine created successfully",
         detail: `Machine "${machineName}" has been created and linked`,
-        life: 3000
+        life: 3000,
       });
-      
+
       // Refresh machine manager
       const machineLoading = document.querySelector("#machine-loading");
       const machineList = document.querySelector("#machine-list");
-      
+
       if (machineLoading && machineList) {
         machineLoading.style.display = "flex";
         machineList.style.display = "none";
       }
-      
+
       // Find the correct parent element and reinitialize
       let element = document.querySelector(".comfy-menu");
       if (!element || !element.querySelector("#machine-container")) {
@@ -2142,38 +2308,37 @@ window.createMachine = async function() {
           element = machineContainer.parentElement;
         }
       }
-      
+
       if (element && window.comfyDeployGetData) {
         setTimeout(() => {
           initializeMachineManager(element, window.comfyDeployGetData);
         }, 100);
       }
-      
     } else {
       window.app.extensionManager.toast.add({
-        severity: 'error',
-        summary: 'Failed to create machine',
-        detail: result.error || 'Please try again',
-        life: 5000
+        severity: "error",
+        summary: "Failed to create machine",
+        detail: result.error || "Please try again",
+        life: 5000,
       });
     }
-    
   } catch (error) {
     console.error("Error creating machine:", error);
-    
+
     // Restore button if there was an error and dialog is still open
     if (createBtn && originalButtonContent) {
       createBtn.disabled = false;
       createBtn.innerHTML = originalButtonContent;
-      createBtn.style.background = "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
-      createBtn.style.cursor = 'pointer';
+      createBtn.style.background =
+        "linear-gradient(135deg, #3498db 0%, #2980b9 100%)";
+      createBtn.style.cursor = "pointer";
     }
-    
+
     window.app.extensionManager.toast.add({
-      severity: 'error',
-      summary: 'Network error',
-      detail: 'Failed to connect to server. Please try again.',
-      life: 5000
+      severity: "error",
+      summary: "Network error",
+      detail: "Failed to connect to server. Please try again.",
+      life: 5000,
     });
   }
 };
