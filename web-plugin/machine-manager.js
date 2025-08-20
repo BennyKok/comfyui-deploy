@@ -397,9 +397,6 @@ window.syncMachine = async function (machineId) {
     // Update display with fresh data
     displayMachine(machineData, machineLoading, machineList, endpoint);
 
-    console.log("🚀 ~ machineData docker command steps:", machineData.docker_command_steps);
-    console.log("🚀 ~ snapshot dockerSteps:", dockerSteps);
-
     // Store data globally for version comparison
     window.lastMachineData = machineData;
     window.lastSnapshotData = snapshot;
@@ -543,10 +540,7 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
   let comfyuiComparison = null;
   if (machineData && snapshotData) {
     const machineVersion = machineData.comfyui_version;
-    console.log("machine: ", machineData.comfyui_version);
     const localVersion = snapshotData.comfyui;
-    console.log("local: ",snapshotData.comfyui);
-
     
     if (machineVersion && localVersion) {
       const versionsMatch = machineVersion === localVersion;
@@ -1151,71 +1145,6 @@ window.showSyncComparisonDialog = function(machineSteps, snapshotSteps, machineI
   });
 };
 
-// Helper function to get step details
-function getStepDetails(step) {
-  if (step.type === 'custom-node') {
-    const hash = step.data?.hash;
-    const url = step.data?.url;
-    const meta = step.data?.meta;
-    
-    return `
-      <div style="font-size: 12px; color: #999;">
-        ${url ? `<div style="margin-bottom: 2px;">📦 ${url.split('/').slice(-1)[0]}</div>` : ''}
-        ${hash ? `<div style="font-family: monospace; font-size: 11px;">Hash: ${hash.substring(0, 8)}...</div>` : ''}
-        ${meta?.stargazers_count ? `<div>⭐ ${meta.stargazers_count} stars</div>` : ''}
-      </div>
-    `;
-  } else if (step.type === 'custom-node-manager') {
-    return `
-      <div style="font-size: 12px; color: #999;">
-        <div>📦 Node ID: ${step.data?.node_id || 'Unknown'}</div>
-        <div>Version: ${step.data?.version || 'Unknown'}</div>
-      </div>
-    `;
-  }
-  return '';
-}
-
-// Helper function to get update details
-function getUpdateDetails(machineStep, snapshotStep) {
-  let details = '<div style="font-size: 12px; color: #999;">';
-  
-  if (snapshotStep.type === 'custom-node') {
-    const oldHash = machineStep.data?.hash;
-    const newHash = snapshotStep.data?.hash;
-    
-    if (oldHash !== newHash) {
-      details += `
-        <div style="margin-bottom: 4px;">
-          <span style="color: #e74c3c;">Old:</span> 
-          <span style="font-family: monospace; font-size: 11px;">${oldHash ? oldHash.substring(0, 8) : 'None'}...</span>
-        </div>
-        <div>
-          <span style="color: #27ae60;">New:</span> 
-          <span style="font-family: monospace; font-size: 11px;">${newHash ? newHash.substring(0, 8) : 'None'}...</span>
-        </div>
-      `;
-    }
-  } else if (snapshotStep.type === 'custom-node-manager') {
-    const oldVersion = machineStep.data?.version;
-    const newVersion = snapshotStep.data?.version;
-    
-    if (oldVersion !== newVersion) {
-      details += `
-        <div style="margin-bottom: 2px;">
-          <span style="color: #e74c3c;">Old:</span> v${oldVersion || 'Unknown'}
-        </div>
-        <div>
-          <span style="color: #27ae60;">New:</span> v${newVersion || 'Unknown'}
-        </div>
-      `;
-    }
-  }
-  
-  details += '</div>';
-  return details;
-}
-
 // Helper function to get selected count
 function getSelectedCount(comparisonResults) {
   let count = 0;
@@ -1289,61 +1218,130 @@ window.closeSyncDialog = function() {
 };
 
 // Apply sync changes
-window.applySyncChanges = function(machineId) {
+window.applySyncChanges = async function(machineId) {
   if (!window.currentComparisonResults) return;
   
-  const finalSteps = [];
+  // Get the apply button and show loading state
+  const applyButton = document.querySelector('button[onclick*="applySyncChanges"]');
+  let originalButtonContent = null;
   
-  window.currentComparisonResults.forEach(item => {
-    if (item.type === 'conflict') {
-      // Use the selected version for conflicts
-      if (item.selectedVersion === 'machine') {
-        finalSteps.push(item.machineStep);
-      } else {
-        finalSteps.push(item.snapshotStep);
-      }
-    } else if (item.type === 'new' && item.selected) {
-      // Add selected new items
-      finalSteps.push(item.step);
-    } else if (item.type === 'removed' && !item.selected) {
-      // Keep items that are NOT selected for removal
-      finalSteps.push(item.step);
-    } else if (item.type === 'unchanged') {
-      // Always include unchanged items
-      finalSteps.push(item.step);
-    }
-  });
-  
-  // Format as docker steps
-  const dockerSteps = {
-    steps: finalSteps
-  };
-  
-  // Add ComfyUI version if there's a comparison (whether matching or not)
-  let selectedComfyUIVersion = null;
-  if (window.currentComfyUIComparison) {
-    if (window.currentComfyUIComparison.versionsMatch) {
-      // If versions match, use the common version
-      selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
-    } else {
-      // If versions differ, use the selected one
-      if (window.currentComfyUIComparison.selectedVersion === 'machine') {
-        selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
-      } else {
-        selectedComfyUIVersion = window.currentComfyUIComparison.localVersion;
-      }
-    }
-    dockerSteps.comfyui_version = selectedComfyUIVersion;
+  if (applyButton) {
+    originalButtonContent = applyButton.innerHTML;
+    applyButton.disabled = true;
+    applyButton.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin" style="margin-right: 6px;">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+      </svg>
+      Applying...
+    `;
+    applyButton.style.background = '#555';
+    applyButton.style.cursor = 'not-allowed';
   }
   
-  // Log the final docker steps
-  console.log("🚀 Final docker steps to apply:", dockerSteps);
+  try {
+    const finalSteps = [];
+    
+    window.currentComparisonResults.forEach(item => {
+      if (item.type === 'conflict') {
+        // Use the selected version for conflicts
+        if (item.selectedVersion === 'machine') {
+          finalSteps.push(item.machineStep);
+        } else {
+          finalSteps.push(item.snapshotStep);
+        }
+      } else if (item.type === 'new' && item.selected) {
+        // Add selected new items
+        finalSteps.push(item.step);
+      } else if (item.type === 'removed' && !item.selected) {
+        // Keep items that are NOT selected for removal
+        finalSteps.push(item.step);
+      } else if (item.type === 'unchanged') {
+        // Always include unchanged items
+        finalSteps.push(item.step);
+      }
+    });
+    
+    // Format as docker steps
+    const dockerSteps = {
+      steps: finalSteps
+    };
+    
+    // Add ComfyUI version if there's a comparison (whether matching or not)
+    let selectedComfyUIVersion = null;
+    if (window.currentComfyUIComparison) {
+      if (window.currentComfyUIComparison.versionsMatch) {
+        // If versions match, use the common version
+        selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
+      } else {
+        // If versions differ, use the selected one
+        if (window.currentComfyUIComparison.selectedVersion === 'machine') {
+          selectedComfyUIVersion = window.currentComfyUIComparison.machineVersion;
+        } else {
+          selectedComfyUIVersion = window.currentComfyUIComparison.localVersion;
+        }
+      }
+      dockerSteps.comfyui_version = selectedComfyUIVersion;
+    }
+    
+    // Send these docker steps to the backend to update the machine
+    const body = {
+      machine_id: machineId,
+      docker_steps: dockerSteps,
+      api_url: window.comfyDeployGetData().apiUrl,
+    }
 
-  // Close the dialog
-  closeSyncDialog();
-  
-  // TODO: Send these docker steps to the backend to update the machine
-  // This would be implemented based on your backend API
+    if (selectedComfyUIVersion) {
+      body.comfyui_version = selectedComfyUIVersion;
+    }
+    
+    const response = await fetch(`/comfyui-deploy/machine/update`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${window.comfyDeployGetData().apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    }).then(response => response.json());
+
+    // Close the dialog
+    closeSyncDialog();
+
+    if (response.ok) {
+      window.app.extensionManager.toast.add({
+        severity: 'success',
+        summary: 'Machine updated successfully',
+        detail: 'Your machine has been updated successfully',
+        life: 3000
+      });
+    } else {
+      window.app.extensionManager.toast.add({
+        severity: 'error',
+        summary: 'Failed to update machine',
+        detail: response.error || 'Please try again',
+        life: 5000
+      });
+    }
+  } catch (error) {
+    console.error('Error updating machine:', error);
+    
+    // Restore button if there was an error and dialog is still open
+    if (applyButton && originalButtonContent) {
+      applyButton.disabled = false;
+      applyButton.innerHTML = originalButtonContent;
+      applyButton.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+      applyButton.style.cursor = 'pointer';
+    }
+    
+    window.app.extensionManager.toast.add({
+      severity: 'error',
+      summary: 'Network error',
+      detail: 'Failed to connect to server. Please try again.',
+      life: 5000
+    });
+  }
 };
 
 // Show add machine dialog
