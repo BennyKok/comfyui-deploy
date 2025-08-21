@@ -4,6 +4,8 @@ import { api } from "../../scripts/api.js";
 LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
+import { initializeMachineManager } from "./machine-manager.js";
+import { fetchSnapshotSimple } from "./snapshot-utils.js";
 
 import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
 // import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
@@ -1171,24 +1173,12 @@ async function deployWorkflow() {
     <br>
     <button style="font-size: 18px;">${endpoint}</button>
 
-    <br><br>
-    <label>
-    <input id="include-deps" type="checkbox">Include dependency</input>
-    </label>
-    <br>
-    <label>
-    <input id="reuse-hash" type="checkbox" checked>Reuse hash from last version</input>
-    </label>
     </div>
     `
   );
   if (!ok) return;
 
-  const includeDeps = document.getElementById("include-deps").checked;
-  const reuseHash = document.getElementById("reuse-hash").checked;
-
   const prompt = await app.graphToPrompt();
-  let deps = undefined;
 
   console.log(prompt);
 
@@ -1244,7 +1234,7 @@ async function deployWorkflow() {
   }
   loadingDialog.showLoading("Generating snapshot");
 
-  const snapshot = await fetch("/snapshot/get_current").then((x) => x.json());
+  const snapshot = await fetchSnapshotSimple();
   console.log(snapshot);
   loadingDialog.close();
 
@@ -1258,136 +1248,6 @@ async function deployWorkflow() {
 
   const title = deploy.querySelector("#button-title");
 
-  if (includeDeps) {
-    loadingDialog.showLoading("Fetching existing version");
-
-    const existing_workflow = await fetch(
-      apiUrl + "/api/workflow/" + workflow_id,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + apiKey,
-        },
-      }
-    )
-      .then((x) => x.json())
-      .catch(() => {
-        return {};
-      });
-
-    console.log("workflow", existing_workflow);
-
-    loadingDialog.close();
-
-    loadingDialog.showLoading("Generating dependency graph");
-    deps = await generateDependencyGraph({
-      workflow_api: prompt.output,
-      snapshot: snapshot,
-      computeFileHash: async (file) => {
-        console.log(existing_workflow?.dependencies?.models);
-
-        // Match previous hash for models
-        if (reuseHash && existing_workflow?.dependencies?.models) {
-          const previousModelHash = Object.entries(
-            existing_workflow?.dependencies?.models
-          ).flatMap(([key, value]) => {
-            return Object.values(value).map((x) => ({
-              ...x,
-              name: "models/" + key + "/" + x.name,
-            }));
-          });
-          console.log(previousModelHash);
-
-          const match = previousModelHash.find((x) => {
-            console.log(file, x.name);
-            return file == x.name;
-          });
-          console.log(match);
-          if (match && match.hash) {
-            console.log("cached hash used");
-            return match.hash;
-          }
-        }
-        console.log(file);
-        loadingDialog.showLoading("Generating hash", file);
-        const hash = await fetch(
-          `/comfyui-deploy/get-file-hash?file_path=${encodeURIComponent(file)}`
-        ).then((x) => x.json());
-        loadingDialog.showLoading("Generating hash", file);
-        console.log(hash);
-        return hash.file_hash;
-      },
-      //   handleFileUpload: async (file, hash, prevhash) => {
-      //     console.log("Uploading ", file);
-      //     loadingDialog.showLoading("Uploading file", file);
-      //     try {
-      //       const { download_url } = await fetch(`/comfyui-deploy/upload-file`, {
-      //         method: "POST",
-      //         body: JSON.stringify({
-      //           file_path: file,
-      //           token: apiKey,
-      //           url: endpoint + "/api/upload-url",
-      //         }),
-      //       })
-      //         .then((x) => x.json())
-      //         .catch(() => {
-      //           loadingDialog.close();
-      //           confirmDialog.confirm("Error", "Unable to upload file " + file);
-      //         });
-      //       loadingDialog.showLoading("Uploaded file", file);
-      //       console.log(download_url);
-      //       return download_url;
-      //     } catch (error) {
-      //       return undefined;
-      //     }
-      //   },
-      existingDependencies: existing_workflow.dependencies,
-    });
-
-    // Need to find a way to include this if this is not included in comfyui-json level
-    if (
-      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] &&
-      !deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy.git"]
-    )
-      deps.custom_nodes["https://github.com/BennyKok/comfyui-deploy"] = {
-        url: "https://github.com/BennyKok/comfyui-deploy",
-        install_type: "git-clone",
-        hash:
-          snapshot?.git_custom_nodes?.[
-            "https://github.com/BennyKok/comfyui-deploy"
-          ]?.hash ?? "HEAD",
-        name: "ComfyUI Deploy",
-      };
-
-    loadingDialog.close();
-    console.log(deps);
-
-    const depsOk = await confirmDialog.confirm(
-      "Check dependencies",
-      // JSON.stringify(deps, null, 2),
-      `
-      <div>
-        You will need to create a cloud machine with the following configuration on ComfyDeploy
-        <ol style="text-align: left; margin-top: 10px;">
-            <li>Review the dependencies listed in the graph below</li>
-            <li>Create a new cloud machine with the required configuration</li>
-            <li>Install missing models and check missing files</li>
-            <li>Deploy your workflow to the newly created machine</li>
-        </ol>
-      </div>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${loadingIcon}</div>
-      <iframe 
-      style="z-index: 10; min-width: 600px; max-width: 1024px; min-height: 600px; border: none; background-color: transparent;"
-      src="https://www.comfydeploy.com/dependency-graph?deps=${encodeURIComponent(
-        JSON.stringify(deps)
-      )}" />`
-      // createDynamicUIHtml(deps),
-    );
-
-    if (!depsOk) return;
-  }
-
   loadingDialog.showLoading("Deploying...");
 
   title.innerText = "Deploying...";
@@ -1400,6 +1260,10 @@ async function deployWorkflow() {
       workflow_api: prompt.output,
       api_url: apiUrl,
     };
+    const machineId = localStorage.getItem("comfy_deploy_machine_id");
+    if (machineId) {
+      body.machine_id = machineId;
+    }
     console.log(body);
     let data = await fetch("/comfyui-deploy/workflow", {
       method: "POST",
@@ -2018,6 +1882,13 @@ if (!isComfyDeployDashboard) {
         <div style="padding: 20px;">
           <h3>Comfy Deploy</h3>
           <div id="deploy-container" style="margin-bottom: 20px;"></div>
+          <div id="machine-container" style="margin-bottom: 20px;">
+            <h4>Serverless Machine</h4>
+            <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+              ${loadingIcon}
+            </div>
+            <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+          </div>
           <div id="workflows-container" style="display: none;">
             <h4>Your Workflows</h4>
             <div id="workflows-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
@@ -2077,6 +1948,9 @@ if (!isComfyDeployDashboard) {
       // Fetch and display workflows
       const workflowsList = el.querySelector("#workflows-list");
       const workflowsLoading = el.querySelector("#workflows-loading");
+
+      // Initialize machine manager
+      await initializeMachineManager(el, getData);
 
       // Initialize workflows list and search
       const data = getData();
