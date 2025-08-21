@@ -1475,7 +1475,7 @@ window.applySyncChanges = async function (machineId) {
     // Close the dialog
     closeSyncDialog();
 
-    if (response.ok) {
+    if (response.id) {
       window.app.extensionManager.toast.add({
         severity: "success",
         summary: "Machine updated successfully",
