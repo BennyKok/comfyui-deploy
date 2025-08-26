@@ -1743,8 +1743,9 @@ export class ConfigDialog extends ComfyDialog {
       environment: deployOption,
     });
 
-    // Refresh workflow list after saving configuration
+    // Refresh workflow list and machine manager after saving configuration
     await refreshWorkflowListIfOpen();
+    await refreshMachineManagerIfOpen();
   }
 
   show() {
@@ -1950,10 +1951,18 @@ if (!isComfyDeployDashboard) {
       const workflowsLoading = el.querySelector("#workflows-loading");
 
       // Initialize machine manager
-      await initializeMachineManager(el, getData);
+      const data = getData();
+      if (data.apiKey) {
+        await initializeMachineManager(el, getData);
+      } else {
+        // Hide machine container when no API key
+        const machineContainer = el.querySelector("#machine-container");
+        if (machineContainer) {
+          machineContainer.style.display = "none";
+        }
+      }
 
       // Initialize workflows list and search
-      const data = getData();
       if (data.apiKey) {
         addWorkflowSearch(el, getData, getTimeAgo);
         await initializeWorkflowsList(el, getData, getTimeAgo);
@@ -2369,5 +2378,41 @@ async function refreshWorkflowListIfOpen() {
     console.log("Workflow list refreshed successfully");
   } catch (error) {
     console.error("Error refreshing workflow list:", error);
+  }
+}
+
+// Function to refresh machine manager if sidebar is open
+async function refreshMachineManagerIfOpen() {
+  try {
+    const machineContainer = document.querySelector("#machine-container");
+
+    // Only refresh if machine container exists
+    if (!machineContainer) {
+      return;
+    }
+
+    const data = getData();
+
+    if (data.apiKey) {
+      // Show machine container if it was hidden
+      machineContainer.style.display = "block";
+
+      // Find the parent element that contains the machine elements
+      let element = document.querySelector(".comfy-menu");
+      if (!element || !element.querySelector("#machine-container")) {
+        element = machineContainer.parentElement;
+      }
+
+      // Import and reinitialize machine manager
+      const { initializeMachineManager } = await import("./machine-manager.js");
+      await initializeMachineManager(element, getData);
+
+      console.log("Machine manager refreshed successfully");
+    } else {
+      // Hide machine container when no API key
+      machineContainer.style.display = "none";
+    }
+  } catch (error) {
+    console.error("Error refreshing machine manager:", error);
   }
 }
