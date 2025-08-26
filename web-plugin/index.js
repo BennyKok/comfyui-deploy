@@ -1032,94 +1032,60 @@ const ext = {
 
 function showError(title, message) {
   infoDialog.show(
-    `<h3 style="margin: 0px; color: red;">${title}</h3><br><span>${message}</span> `
-  );
-}
-
-function createDynamicUIHtml(data) {
-  console.log(data);
-  let html =
-    '<div style="min-width: 600px; max-width: 1024px; margin: 14px auto; display: flex; flex-direction: column; gap: 24px;">';
-  const bgcolor = "var(--comfy-input-bg)";
-  const evenBg = "var(--border-color)";
-  const textColor = "var(--input-text)";
-
-  // Custom Nodes
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Custom Nodes</h2>';
-
-  if (data.missing_nodes?.length > 0) {
-    html += `
-      <div style="border-bottom: 1px solid #e2e8f0; padding: 4px 12px; background-color: ${evenBg}">
-          <h3 style="font-size: 14px; font-weight: semibold; margin-bottom: 8px;">Missing Nodes</h3>
-          <p style="font-size: 12px;">These nodes are not found with any matching custom_nodes in the ComfyUI Manager Database</p>
-          ${data.missing_nodes
-            .map((node) => {
-              return `<p style="font-size: 14px; color: #d69e2e;">${node}</p>`;
-            })
-            .join("")}
+    `<div style="
+      padding: 20px;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+      border-radius: 12px;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 480px;
+    ">
+      <div style="
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #404040;
+      ">
+        <div style="
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #e74c3c, #c0392b);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 12px;
+        ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+            ${title}
+          </h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+            Something went wrong
+          </p>
+        </div>
       </div>
-  `;
-  }
-
-  Object.values(data.custom_nodes).forEach((node) => {
-    html += `
-          <div style="border-bottom: 1px solid #e2e8f0; padding-top: 16px;">
-              <a href="${
-                node.url
-              }" target="_blank" style="font-size: 18px; font-weight: semibold; color: white; text-decoration: none;">${
-      node.name
-    }</a>
-              <p style="font-size: 14px; color: #4b5563;">${node.hash}</p>
-              ${
-                node.warning
-                  ? `<p style="font-size: 14px; color: #d69e2e;">${node.warning}</p>`
-                  : ""
-              }
-          </div>
-      `;
-  });
-  html += "</div>";
-
-  // Models
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Models</h2>';
-
-  Object.entries(data.models).forEach(([section, items]) => {
-    html += `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
-    items.forEach((item) => {
-      html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
-    });
-    html += "</div>";
-  });
-  html += "</div>";
-
-  // Models
-  html += `<div style="background-color: ${bgcolor}; padding: 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">`;
-  html +=
-    '<h2 style="margin-top: 0px; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Files</h2>';
-
-  Object.entries(data.files).forEach(([section, items]) => {
-    html += `
-    <div style="border-bottom: 1px solid #e2e8f0; padding-top: 8px; padding-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: semibold; margin-bottom: 8px;">${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        }</h3>`;
-    items.forEach((item) => {
-      html += `<p style="font-size: 14px; color: ${textColor};">${item.name}</p>`;
-    });
-    html += "</div>";
-  });
-  html += "</div>";
-
-  html += "</div>";
-  return html;
+      
+      <div style="
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      ">
+        <p style="margin: 0; font-size: 14px; color: #e5e5e5; line-height: 1.5;">
+          ${message}
+        </p>
+      </div>
+    </div>`
+  );
 }
 
 // Modify the existing deployWorkflow function
@@ -1162,17 +1128,75 @@ async function deployWorkflow() {
   const workflow_id = deployMetaNode.widgets[1].value;
 
   const ok = await confirmDialog.confirm(
-    `Confirm deployment`,
+    `Confirm Deployment`,
     `
-    <div>
-
-    A new version of <button style="font-size: 18px;">${workflow_name}</button> will be deployed, do you confirm? 
-    <br><br>
-
-    <button style="font-size: 18px;">${displayName}</button>
-    <br>
-    <button style="font-size: 18px;">${endpoint}</button>
-
+    <div style="
+      padding: 20px;
+      background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+      border-radius: 12px;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 480px;
+    ">
+      <div style="
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #404040;
+      ">
+        <div style="
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #f39c12, #e67e22);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 12px;
+        ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M7 17L17 7"/>
+            <path d="M17 17H7V7"/>
+          </svg>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+            Deploy New Version
+          </h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+            Confirm your deployment settings
+          </p>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <p style="font-size: 14px; color: #e5e5e5; margin-bottom: 16px; line-height: 1.5;">
+          A new version will be deployed with the following details:
+        </p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="
+            background: #1a1a1a;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+          ">
+            <div style="font-size: 12px; color: #999; margin-bottom: 4px;">WORKFLOW</div>
+            <div style="font-size: 14px; font-weight: 600; color: #ffffff;">${workflow_name}</div>
+          </div>
+          
+          <div style="
+            background: #1a1a1a;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #8b5cf6;
+          ">
+            <div style="font-size: 12px; color: #999; margin-bottom: 4px;">ENDPOINT</div>
+            <div style="font-size: 14px; font-weight: 600; color: #ffffff;">${endpoint}</div>
+          </div>
+        </div>
+      </div>
     </div>
     `
   );
@@ -1214,7 +1238,96 @@ async function deployWorkflow() {
         console.log(data);
 
         infoDialog.show(
-          `<span style="color:green;">New version created!</span> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: ${data.version} <br/>`
+          `<div style="
+            padding: 20px;
+            background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 480px;
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              margin-bottom: 20px;
+              padding-bottom: 16px;
+              border-bottom: 1px solid #404040;
+            ">
+              <div style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, #27ae60, #229954);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 12px;
+              ">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+              </div>
+              <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+                  Deployment Successful
+                </h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+                  New version created successfully
+                </p>
+              </div>
+            </div>
+            
+            <div style="
+              background: rgba(39, 174, 96, 0.1);
+              border: 1px solid rgba(39, 174, 96, 0.3);
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 16px;
+            ">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 8px 0;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                ">
+                  <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Workflow ID</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #ffffff; font-family: monospace;">${data.workflow_id}</span>
+                </div>
+                
+                <div style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 8px 0;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                ">
+                  <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Workflow Name</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #ffffff;">${workflow_name}</span>
+                </div>
+                
+                <div style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 8px 0;
+                ">
+                  <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Version</span>
+                  <span style="
+                    font-size: 14px; 
+                    font-weight: 600; 
+                    color: #27ae60;
+                    background: rgba(39, 174, 96, 0.2);
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-family: monospace;
+                  ">v${data.version}</span>
+                </div>
+              </div>
+            </div>
+          </div>`
         );
 
         deployMetaNode.widgets[2].value = data.version;
@@ -1317,7 +1430,130 @@ async function deployWorkflow() {
     }
 
     infoDialog.show(
-      `<span style="color:green;">Deployed successfully!</span>  <a style="color:white;" target="_blank" href=${endpoint}/workflows/${data.workflow_id}>-> View here</a> <br/> <br/> Workflow ID: ${data.workflow_id} <br/> Workflow Name: ${workflow_name} <br/> Workflow Version: 2 <br/>`
+      `<div style="
+        padding: 20px;
+        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 480px;
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #404040;
+        ">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M7 17L17 7"/>
+              <path d="M17 17H7V7"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+              Deployed Successfully!
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+              Your workflow is now live
+            </p>
+          </div>
+        </div>
+        
+        <div style="
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 16px;
+        ">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            ">
+              <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Workflow ID</span>
+              <span style="font-size: 14px; font-weight: 600; color: #ffffff; font-family: monospace;">${data.workflow_id}</span>
+            </div>
+            
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            ">
+              <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Workflow Name</span>
+              <span style="font-size: 14px; font-weight: 600; color: #ffffff;">${workflow_name}</span>
+            </div>
+            
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            ">
+              <span style="font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Version</span>
+              <span style="
+                font-size: 14px; 
+                font-weight: 600; 
+                color: #10b981;
+                background: rgba(16, 185, 129, 0.2);
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-family: monospace;
+              ">v2</span>
+            </div>
+            
+            <div style="
+              display: flex;
+              justify-content: center;
+              padding-top: 12px;
+            ">
+              <a 
+                href="${endpoint}/workflows/${data.workflow_id}" 
+                target="_blank" 
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                  background: linear-gradient(135deg, #10b981, #059669);
+                  color: white;
+                  padding: 10px 20px;
+                  border-radius: 8px;
+                  text-decoration: none;
+                  font-size: 14px;
+                  font-weight: 600;
+                  transition: all 0.2s ease;
+                "
+                onmouseover="this.style.background='linear-gradient(135deg, #059669, #047857)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'"
+                onmouseout="this.style.background='linear-gradient(135deg, #10b981, #059669)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15,3 21,3 21,9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                View Workflow
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>`
     );
 
     setTimeout(() => {
@@ -1512,18 +1748,41 @@ export class InputDialog extends InfoDialog {
           type: "div",
           style: {
             display: "flex",
-            gap: "6px",
+            gap: "12px",
             justifyContent: "flex-end",
             width: "100%",
+            marginTop: "24px",
+            paddingTop: "20px",
+            borderTop: "1px solid #404040",
           },
         },
         [
           $el("button", {
             type: "button",
-            textContent: "Close",
+            textContent: "Cancel",
             onclick: () => {
               this.callback?.(undefined);
               this.close();
+            },
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "1.5px solid #525252",
+              background: "transparent",
+              color: "#e5e5e5",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.borderColor = "#6b7280";
+              e.target.style.background = "#374151";
+            },
+            onmouseleave: (e) => {
+              e.target.style.borderColor = "#525252";
+              e.target.style.background = "transparent";
             },
           }),
           $el("button", {
@@ -1539,6 +1798,30 @@ export class InputDialog extends InfoDialog {
                 this.textElement.querySelector("#input").value = "";
               }
             },
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #2563eb, #1d4ed8)";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.3)";
+            },
+            onmouseleave: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #3b82f6, #2563eb)";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "none";
+            },
           }),
         ]
       ),
@@ -1549,13 +1832,80 @@ export class InputDialog extends InfoDialog {
     return new Promise((resolve, reject) => {
       this.callback = resolve;
       this.show(`
-      <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
-        <h3 style="margin: 0px;">${title}</h3>
-        <label>
-          ${message}
-          <input id="input" style="margin-top: 8px; width: 100%; height:40px; padding: 0px 6px; box-sizing: border-box; outline-offset: -1px;">
-        </label>
+      <div style="
+        width: 480px;
+        padding: 24px;
+        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #404040;
+        ">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+              ${title}
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+              Enter the required information
+            </p>
+          </div>
         </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          ">${message}</label>
+          <input 
+            id="input" 
+            type="text" 
+            placeholder="Enter your input here..."
+            style="
+              width: 100%;
+              height: 48px;
+              padding: 0 16px;
+              border: 1px solid #404040;
+              border-radius: 8px;
+              background: #1a1a1a;
+              color: #ffffff;
+              font-size: 14px;
+              transition: all 0.2s ease;
+              box-sizing: border-box;
+            "
+            onfocus="this.style.borderColor='#3b82f6'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'"
+            onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'"
+            onmouseover="this.style.borderColor='#525252'"
+            onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'"
+          >
+        </div>
+      </div>
       `);
     });
   }
@@ -1576,29 +1926,73 @@ export class ConfirmDialog extends InfoDialog {
           type: "div",
           style: {
             display: "flex",
-            gap: "6px",
+            gap: "12px",
             justifyContent: "flex-end",
             width: "100%",
+            marginTop: "24px",
+            paddingTop: "20px",
+            borderTop: "1px solid #404040",
           },
         },
         [
           $el("button", {
             type: "button",
-            textContent: "Close",
+            textContent: "Cancel",
             onclick: () => {
               this.callback?.(false);
               this.close();
+            },
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "1.5px solid #525252",
+              background: "transparent",
+              color: "#e5e5e5",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.borderColor = "#6b7280";
+              e.target.style.background = "#374151";
+            },
+            onmouseleave: (e) => {
+              e.target.style.borderColor = "#525252";
+              e.target.style.background = "transparent";
             },
           }),
           $el("button", {
             type: "button",
             textContent: "Confirm",
-            style: {
-              color: "green",
-            },
             onclick: () => {
               this.callback?.(true);
               this.close();
+            },
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #d97706, #b45309)";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.3)";
+            },
+            onmouseleave: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #f59e0b, #d97706)";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "none";
             },
           }),
         ]
@@ -1610,10 +2004,59 @@ export class ConfirmDialog extends InfoDialog {
     return new Promise((resolve, reject) => {
       this.callback = resolve;
       this.show(`
-      <div style="width: 100%; max-width: 600px; display: flex; gap: 18px; flex-direction: column; overflow: unset; position: relative;">
-        <h3 style="margin: 0px;">${title}</h3>
-        ${message}
+      <div style="
+        width: 100%;
+        max-width: 600px;
+        padding: 24px;
+        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #404040;
+        ">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;">
+              ${title}
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #999;">
+              Please confirm your action
+            </p>
+          </div>
         </div>
+        
+        <div style="
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 16px;
+        ">
+          ${message}
+        </div>
+      </div>
       `);
     });
   }
@@ -1686,13 +2129,12 @@ export class ConfigDialog extends ComfyDialog {
           type: "div",
           style: {
             display: "flex",
-            gap: "6px",
+            gap: "12px",
             justifyContent: "flex-end",
             width: "100%",
-          },
-          onclick: () => {
-            this.save();
-            this.close();
+            // marginTop: "24px",
+            paddingTop: "20px",
+            borderTop: "1px solid #404040",
           },
         },
         [
@@ -1700,6 +2142,26 @@ export class ConfigDialog extends ComfyDialog {
             type: "button",
             textContent: "Close",
             onclick: () => this.close(),
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "1.5px solid #525252",
+              background: "transparent",
+              color: "#e5e5e5",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.borderColor = "#6b7280";
+              e.target.style.background = "#374151";
+            },
+            onmouseleave: (e) => {
+              e.target.style.borderColor = "#525252";
+              e.target.style.background = "transparent";
+            },
           }),
           $el("button", {
             type: "button",
@@ -1707,6 +2169,30 @@ export class ConfigDialog extends ComfyDialog {
             onclick: () => {
               this.save();
               this.close();
+            },
+            style: {
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              minWidth: "80px",
+            },
+            onmouseenter: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #0284c7, #2563eb)";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(14, 165, 233, 0.3)";
+            },
+            onmouseleave: (e) => {
+              e.target.style.background =
+                "linear-gradient(135deg, #0ea5e9, #3b82f6)";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "none";
             },
           }),
         ]
@@ -1743,8 +2229,9 @@ export class ConfigDialog extends ComfyDialog {
       environment: deployOption,
     });
 
-    // Refresh workflow list after saving configuration
+    // Refresh workflow list and machine manager after saving configuration
     await refreshWorkflowListIfOpen();
+    await refreshMachineManagerIfOpen();
   }
 
   show() {
@@ -1753,39 +2240,224 @@ export class ConfigDialog extends ComfyDialog {
     const data = getData();
 
     this.container.innerHTML = `
-    <div style="width: 400px; display: flex; gap: 18px; flex-direction: column;">
-    <h3 style="margin: 0px;">Comfy Deploy Config</h3>
-    <label style="color: white; width: 100%;">
-      <select id="deployOption" style="margin: 8px 0px; width: 100%; height:30px; box-sizing: border-box;" >
-        <option value="cloud" ${
-          data.environment === "cloud" ? "selected" : ""
-        }>Cloud</option>
-        <option value="local" ${
-          data.environment === "local" ? "selected" : ""
-        }>Local</option>
-      </select>
-    </label>
-      <label style="color: white; width: 100%;">
-        Endpoint:
-        <input id="endpoint" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="text" value="${
-          data.endpoint
-        }">
-      </label>
-      <div style="color: white;">
-        API Key: User / Org ${
-          data.displayName
-            ? `<button style="font-size: 18px;">${data.displayName}</button>`
-            : ""
-        }
-        <input id="apiKey" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;" type="password" value="${
-          data.apiKey
-        }">
-        <button id="loginButton" style="margin-top: 8px; width: 100%; height:40px; box-sizing: border-box; padding: 0px 6px;">
-          ${
-            data.apiKey ? "Re-login with ComfyDeploy" : "Login with ComfyDeploy"
-          }
-        </button>
-      </div>
+      <div style="
+        width: 480px;
+        padding: 24px;
+        background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #404040;
+        ">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10,9 9,9 8,9"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #ffffff;">
+              ComfyDeploy Configuration
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #999; font-weight: 400;">
+              Configure your deployment settings
+            </p>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div>
+            <label style="
+              display: block;
+              font-size: 13px;
+              font-weight: 600;
+              color: #e5e5e5;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            ">Environment</label>
+            <div style="position: relative;">
+              <select id="deployOption" style="
+                width: 100%;
+                height: 48px;
+                padding: 0 40px 0 16px;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                background: #1a1a1a;
+                color: #ffffff;
+                font-size: 14px;
+                cursor: pointer;
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+              " onfocus="this.style.borderColor='#0ea5e9'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)'" onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'" onmouseover="this.style.borderColor='#525252'" onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'">
+                <option value="cloud" ${
+                  data.environment === "cloud" ? "selected" : ""
+                }>☁️ Cloud Deployment</option>
+                <option value="local" ${
+                  data.environment === "local" ? "selected" : ""
+                }>🏠 Local Development</option>
+              </select>
+              <div style="
+                position: absolute;
+                right: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                pointer-events: none;
+                color: #999;
+              ">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6,9 12,15 18,9"></polyline>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <label style="
+              display: block;
+              font-size: 13px;
+              font-weight: 600;
+              color: #e5e5e5;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            ">Endpoint URL</label>
+            <input 
+              id="endpoint" 
+              type="text" 
+              value="${data.endpoint}"
+              placeholder="https://api.comfydeploy.com"
+              style="
+                width: 100%;
+                height: 48px;
+                padding: 0 16px;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                background: #1a1a1a;
+                color: #ffffff;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+              "
+              onfocus="this.style.borderColor='#0ea5e9'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)'"
+              onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'"
+              onmouseover="this.style.borderColor='#525252'"
+              onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'"
+            >
+          </div>
+          
+          <div>
+            <div style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            ">
+              <label style="
+                font-size: 13px;
+                font-weight: 600;
+                color: #e5e5e5;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              ">API Key</label>
+              ${
+                data.displayName
+                  ? `
+                <div style="
+                  background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+                  color: white;
+                  padding: 4px 10px;
+                  border-radius: 12px;
+                  font-size: 11px;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                ">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  ${data.displayName}
+                </div>
+              `
+                  : ""
+              }
+            </div>
+            <input 
+              id="apiKey" 
+              type="password" 
+              value="${data.apiKey}"
+              placeholder="Enter your API key"
+              style="
+                width: 100%;
+                height: 48px;
+                padding: 0 16px;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                background: #1a1a1a;
+                color: #ffffff;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+                margin-bottom: 12px;
+              "
+              onfocus="this.style.borderColor='#0ea5e9'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)'"
+              onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'"
+              onmouseover="this.style.borderColor='#525252'"
+              onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'"
+            >
+            <button id="loginButton" style="
+              width: 100%;
+              height: 48px;
+              background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            " onmouseover="this.style.background='linear-gradient(135deg, #0284c7, #2563eb)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(14, 165, 233, 0.3)'" onmouseout="this.style.background='linear-gradient(135deg, #0ea5e9, #3b82f6)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'" onmousedown="this.style.transform='translateY(0)'" onmouseup="this.style.transform='translateY(-1px)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10,17 15,12 10,7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              ${
+                data.apiKey
+                  ? "Re-authenticate with ComfyDeploy"
+                  : "Login with ComfyDeploy"
+              }
+            </button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -1950,10 +2622,18 @@ if (!isComfyDeployDashboard) {
       const workflowsLoading = el.querySelector("#workflows-loading");
 
       // Initialize machine manager
-      await initializeMachineManager(el, getData);
+      const data = getData();
+      if (data.apiKey) {
+        await initializeMachineManager(el, getData);
+      } else {
+        // Hide machine container when no API key
+        const machineContainer = el.querySelector("#machine-container");
+        if (machineContainer) {
+          machineContainer.style.display = "none";
+        }
+      }
 
       // Initialize workflows list and search
-      const data = getData();
       if (data.apiKey) {
         addWorkflowSearch(el, getData, getTimeAgo);
         await initializeWorkflowsList(el, getData, getTimeAgo);
@@ -2369,5 +3049,41 @@ async function refreshWorkflowListIfOpen() {
     console.log("Workflow list refreshed successfully");
   } catch (error) {
     console.error("Error refreshing workflow list:", error);
+  }
+}
+
+// Function to refresh machine manager if sidebar is open
+async function refreshMachineManagerIfOpen() {
+  try {
+    const machineContainer = document.querySelector("#machine-container");
+
+    // Only refresh if machine container exists
+    if (!machineContainer) {
+      return;
+    }
+
+    const data = getData();
+
+    if (data.apiKey) {
+      // Show machine container if it was hidden
+      machineContainer.style.display = "block";
+
+      // Find the parent element that contains the machine elements
+      let element = document.querySelector(".comfy-menu");
+      if (!element || !element.querySelector("#machine-container")) {
+        element = machineContainer.parentElement;
+      }
+
+      // Import and reinitialize machine manager
+      const { initializeMachineManager } = await import("./machine-manager.js");
+      await initializeMachineManager(element, getData);
+
+      console.log("Machine manager refreshed successfully");
+    } else {
+      // Hide machine container when no API key
+      machineContainer.style.display = "none";
+    }
+  } catch (error) {
+    console.error("Error refreshing machine manager:", error);
   }
 }
