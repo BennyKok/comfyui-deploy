@@ -49,6 +49,7 @@ async function fetchWorkflows(getData, offset = 0, limit = 20, search = "") {
 
 function createWorkflowItem(workflow, getTimeAgo, getData) {
   const li = document.createElement("li");
+  let loadingToast = null;
   li.style.cssText = `
       border-bottom: 1px solid #444;
       background: transparent;
@@ -74,7 +75,7 @@ function createWorkflowItem(workflow, getTimeAgo, getData) {
       }
 
       // Show loading toast
-      const loadingToast = window.app.extensionManager.toast.add({
+      loadingToast = window.app.extensionManager.toast.add({
         severity: "info",
         summary: "Loading workflow...",
         detail: `Loading "${workflow.name}"`,
@@ -108,6 +109,33 @@ function createWorkflowItem(workflow, getTimeAgo, getData) {
           // Load the workflow
           window.app.loadGraphData(latestVersion.workflow);
 
+          // Wait a bit for the graph to fully load before checking for ComfyDeploy node
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Check if ComfyDeploy node exists, if not add it back
+          const graph = window.app.graph;
+          let deployMeta = graph.findNodesByType("ComfyDeploy");
+
+          if (deployMeta.length === 0) {
+            // Add ComfyDeploy node with workflow metadata
+            graph.beforeChange();
+            const node = LiteGraph.createNode("ComfyDeploy");
+            node.configure({
+              widgets_values: [
+                workflow.name, // workflow_name
+                workflow.id, // workflow_id
+                latestVersion.version, // version
+              ],
+            });
+            node.pos = [0, 0];
+            graph.add(node);
+            graph.afterChange();
+
+            console.log(
+              `Added ComfyDeploy node with: name="${workflow.name}", id="${workflow.id}", version="${latestVersion.version}"`
+            );
+          }
+
           // Show success toast
           window.app.extensionManager.toast.add({
             severity: "success",
@@ -127,7 +155,9 @@ function createWorkflowItem(workflow, getTimeAgo, getData) {
         life: 5000,
       });
     } finally {
-      loadingToast.close();
+      if (loadingToast) {
+        loadingToast.close();
+      }
     }
   });
 
