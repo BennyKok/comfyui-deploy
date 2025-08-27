@@ -538,9 +538,7 @@ const ext = {
         }
         if (toInput.length) {
           if (true) {
-            options.push();
-
-            let optionIndex = options.findIndex((o) => o.content === "Outputs");
+            let optionIndex = options.findIndex((o) => o && o.content === "Outputs");
             if (optionIndex === -1) optionIndex = options.length;
             else optionIndex++;
             options.splice(
@@ -737,7 +735,7 @@ const ext = {
           "string",
           inputName,
           /* value=*/ "",
-          () => {},
+          () => { },
           { serialize: true }
         );
 
@@ -1720,14 +1718,12 @@ export class LoadingDialog extends ComfyDialog {
   showLoading(title, message) {
     this.show(`
       <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
-        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${
-      this.loadingIcon
-    }</h3>
-          ${
-            message
-              ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
-              : ""
-          }
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${this.loadingIcon
+      }</h3>
+          ${message
+        ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
+        : ""
+      }
         </div>
       `);
   }
@@ -2312,12 +2308,10 @@ export class ConfigDialog extends ComfyDialog {
                 transition: all 0.2s ease;
                 box-sizing: border-box;
               " onfocus="this.style.borderColor='#0ea5e9'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)'" onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'" onmouseover="this.style.borderColor='#525252'" onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'">
-                <option value="cloud" ${
-                  data.environment === "cloud" ? "selected" : ""
-                }>☁️ Cloud Deployment</option>
-                <option value="local" ${
-                  data.environment === "local" ? "selected" : ""
-                }>🏠 Local Development</option>
+                <option value="cloud" ${data.environment === "cloud" ? "selected" : ""
+      }>☁️ Cloud Deployment</option>
+                <option value="local" ${data.environment === "local" ? "selected" : ""
+      }>🏠 Local Development</option>
               </select>
               <div style="
                 position: absolute;
@@ -2382,9 +2376,8 @@ export class ConfigDialog extends ComfyDialog {
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
               ">API Key</label>
-              ${
-                data.displayName
-                  ? `
+              ${data.displayName
+        ? `
                 <div style="
                   background: linear-gradient(135deg, #0ea5e9, #3b82f6);
                   color: white;
@@ -2403,8 +2396,8 @@ export class ConfigDialog extends ComfyDialog {
                   ${data.displayName}
                 </div>
               `
-                  : ""
-              }
+        : ""
+      }
             </div>
             <input 
               id="apiKey" 
@@ -2450,11 +2443,10 @@ export class ConfigDialog extends ComfyDialog {
                 <polyline points="10,17 15,12 10,7"/>
                 <line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
-              ${
-                data.apiKey
-                  ? "Re-authenticate with ComfyDeploy"
-                  : "Login with ComfyDeploy"
-              }
+              ${data.apiKey
+        ? "Re-authenticate with ComfyDeploy"
+        : "Login with ComfyDeploy"
+      }
             </button>
           </div>
         </div>
