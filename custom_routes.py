@@ -672,6 +672,14 @@ async def comfy_deploy_run(request):
     return web.json_response(res, status=status)
 
 
+@server.PromptServer.instance.routes.post("/comfyui-deploy/interrupt")
+async def interrupt_prompt(request):
+    data = await request.json()
+    prompt_id = data.get("prompt_id")
+    await update_run(prompt_id, Status.CANCELLED)
+    return web.json_response({"message": "Prompt interrupted"}, status=200)
+
+
 async def stream_prompt(data, token):
     # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
     workflow_api = data.get("workflow_api_raw")
