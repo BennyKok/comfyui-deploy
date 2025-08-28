@@ -2672,31 +2672,53 @@ const orginal_fetch_api = api.fetchApi;
 api.fetchApi = async (route, options) => {
   // console.log("Fetch API called with args:", route, options, ext.native_mode);
 
-  if (route.startsWith("/prompt") && ext.native_mode) {
-    const info = await getSelectedWorkflowInfo();
+  if (ext.native_mode) {
+    if (route.startsWith("/prompt")) {
+      const info = await getSelectedWorkflowInfo();
 
-    if (!info.workflow_id) {
-      console.log("No workflow id found, fallback to original fetch");
-      return await orginal_fetch_api.call(api, route, options);
-    }
+      if (!info.workflow_id) {
+        console.log("No workflow id found, fallback to original fetch");
+        return await orginal_fetch_api.call(api, route, options);
+      }
 
-    console.log("info", info);
-    if (info) {
+      console.log("info", info);
+      if (info) {
+        const body = JSON.parse(options.body);
+
+        const data = {
+          client_id: body.client_id,
+          workflow_api_json: body.prompt,
+          workflow: body?.extra_data?.extra_pnginfo?.workflow,
+          is_native_run: true,
+          machine_id: info.machine_id,
+          workflow_id: info.workflow_id,
+          native_run_api_endpoint: info.native_run_api_endpoint,
+          gpu_event_id: info.gpu_event_id,
+          gpu: info.gpu,
+        };
+
+        return await fetch("/comfyui-deploy/run", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${info.cd_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+      }
+    } else if (route.startsWith("/interrupt")) {
+      const info = await getSelectedWorkflowInfo();
+
+      if (!info.workflow_id) {
+        console.log("No workflow id found, fallback to original fetch");
+        return await orginal_fetch_api.call(api, route, options);
+      }
       const body = JSON.parse(options.body);
-
       const data = {
-        client_id: body.client_id,
-        workflow_api_json: body.prompt,
-        workflow: body?.extra_data?.extra_pnginfo?.workflow,
-        is_native_run: true,
-        machine_id: info.machine_id,
-        workflow_id: info.workflow_id,
-        native_run_api_endpoint: info.native_run_api_endpoint,
-        gpu_event_id: info.gpu_event_id,
-        gpu: info.gpu,
+        prompt_id: body.prompt_id,
       };
-
-      return await fetch("/comfyui-deploy/run", {
+      const original_response = await orginal_fetch_api.call(api, route, options);
+      await fetch("/comfyui-deploy/interrupt", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${info.cd_token}`,
@@ -2704,6 +2726,7 @@ api.fetchApi = async (route, options) => {
         },
         body: JSON.stringify(data),
       });
+      return original_response;
     }
   }
 

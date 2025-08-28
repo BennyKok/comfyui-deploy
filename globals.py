@@ -18,6 +18,7 @@ class Status(Enum):
     SUCCESS = "success"
     FAILED = "failed"
     UPLOADING = "uploading"
+    CANCELLED = "cancelled"
 
 
 class StreamingPrompt(BaseModel):
