@@ -2,6 +2,8 @@
 
 Open source comfyui deployment platform, a `vercel` for generative workflow infra. (serverless hosted gpu with vertical intergation with comfyui)
 
+Check out our latest lcoal demo -> https://github.com/comfy-deploy/comfyui-api-comfydeploy
+
 > [!NOTE]  
 > Im looking for creative hacker to join ComfyDeploy's core team! DM me on [twitter](https://x.com/BennyKokMusic)
 
