@@ -593,6 +593,7 @@ async def comfy_deploy_run(request):
     # We proxy the request to Comfy Deploy, this is a native run
     if "is_native_run" in data:
         async with aiohttp.ClientSession() as session:
+            data.pop("cd_token", None)
             # pprint(data)
             # headers = request.headers.copy()
             # headers['Content-Type'] = 'application/json'
