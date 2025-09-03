@@ -602,7 +602,7 @@ async def comfy_deploy_run(request):
                 json=data,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": token,
+                    "Authorization": "Bearer " + token,
                 },
             ) as response:
                 data = await response.json()
