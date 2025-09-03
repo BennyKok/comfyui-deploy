@@ -579,6 +579,17 @@ async def comfy_deploy_run(request):
     data = await request.json()
 
     client_id = data.get("client_id")
+
+    if "cd_token" in data:
+        token = data["cd_token"]
+    else:
+        auth_header = request.headers.get("Authorization")
+        token = None
+        if auth_header:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0].lower() == "bearer":
+                token = parts[1]
+
     # We proxy the request to Comfy Deploy, this is a native run
     if "is_native_run" in data:
         async with aiohttp.ClientSession() as session:
@@ -590,21 +601,11 @@ async def comfy_deploy_run(request):
                 json=data,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": request.headers.get("Authorization"),
+                    "Authorization": token,
                 },
             ) as response:
                 data = await response.json()
                 # print(data)
-
-    if "cd_token" in data:
-        token = data["cd_token"]
-    else:
-        auth_header = request.headers.get("Authorization")
-        token = None
-        if auth_header:
-            parts = auth_header.split()
-            if len(parts) == 2 and parts[0].lower() == "bearer":
-                token = parts[1]
 
     # In older version, we use workflow_api, but this has inputs already swapped in nextjs frontend, which is tricky
     workflow_api = data.get("workflow_api_raw")
