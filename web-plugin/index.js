@@ -2695,12 +2695,13 @@ api.fetchApi = async (route, options) => {
           native_run_api_endpoint: info.native_run_api_endpoint,
           gpu_event_id: info.gpu_event_id,
           gpu: info.gpu,
+          cd_token: info.cd_token,
         };
 
         return await fetch("/comfyui-deploy/run", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${info.cd_token}`,
+            // Authorization: `Bearer ${info.cd_token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
@@ -2716,12 +2717,13 @@ api.fetchApi = async (route, options) => {
       const body = JSON.parse(options.body);
       const data = {
         prompt_id: body.prompt_id,
+        cd_token: info.cd_token,
       };
       const original_response = await orginal_fetch_api.call(api, route, options);
       await fetch("/comfyui-deploy/interrupt", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${info.cd_token}`,
+          // Authorization: `Bearer ${info.cd_token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
