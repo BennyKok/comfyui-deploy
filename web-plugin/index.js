@@ -2532,16 +2532,12 @@ export class ConfigDialog extends ComfyDialog {
 export const configDialog = new ConfigDialog();
 
 const currentOrigin = window.location.origin;
-// const client = new ComfyDeploy({
-//   bearerAuth: getData().apiKey,
-//   serverURL: `${currentOrigin}/comfydeploy/api/`,
-// });
+console.log("🚀 ~ currentOrigin:", currentOrigin);
 
 const isComfyDeployDashboard = currentOrigin.includes("comfydeploy.com");
 
 // Only register the sidebar tab if we're on localhost
 if (!isComfyDeployDashboard) {
-  console.log("currentOrigin", currentOrigin);
   app.extensionManager.registerSidebarTab({
     id: "search",
     icon: "pi pi-cloud-upload",

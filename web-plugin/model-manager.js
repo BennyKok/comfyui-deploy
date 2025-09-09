@@ -176,7 +176,7 @@ window.showModelSyncDialog = function () {
         0 models selected
       </div>
       <div style="display: flex; gap: 12px;">
-        <button onclick="closeModelSyncDialog()" style="
+        <button id="close-models-btn" onclick="closeModelSyncDialog()" style="
           background: #404040;
           color: white;
           border: none;
@@ -216,8 +216,18 @@ window.showModelSyncDialog = function () {
     }
   });
 
-  // Load model data (placeholder for now)
-  loadModelSyncData();
+  // If an upload is in progress, show progress view instead of selection list
+  if (
+    window.__modelSyncUploading &&
+    Array.isArray(window.__modelSyncUploadingModels)
+  ) {
+    const syncBtnEl = document.getElementById("sync-models-btn");
+    if (syncBtnEl) syncBtnEl.style.display = "none";
+    showProgressView(window.__modelSyncUploadingModels);
+  } else {
+    // Load model data (placeholder for now)
+    loadModelSyncData();
+  }
 };
 
 // Close model sync dialog
@@ -521,6 +531,25 @@ function renderModelItem(model, isNested = false) {
 
   const indentStyle = isNested ? "padding-left: 24px;" : "";
   const fileName = model.displayName || model.name;
+  // Try to show size by probing the first valid path quickly (non-blocking)
+  if (!model._sizeProbeRequested) {
+    model._sizeProbeRequested = true;
+    const basePath =
+      (model.paths || []).find((p) => p.includes("/models/")) ||
+      model.paths?.[0];
+    if (basePath) {
+      const absolutePath = `${basePath}/${model.name}`;
+      fetch(`/comfyui-deploy/fs/stat?path=${encodeURIComponent(absolutePath)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j && j.size) {
+            const sizeEl = document.querySelector(`#size-list-${model.index}`);
+            if (sizeEl) sizeEl.textContent = ` — ${bytesToSize(j.size)}`;
+          }
+        })
+        .catch(() => {});
+    }
+  }
 
   return `
     <div style="
@@ -542,7 +571,9 @@ function renderModelItem(model, isNested = false) {
         <span style="font-size: 12px;">📄</span>
         <div style="flex: 1;">
           <div style="font-weight: 500; font-size: 12px; color: #fff;">
-            ${fileName}
+            ${fileName}<span id="size-list-${
+    model.index
+  }" style="font-size: 10px; color: #aaa;"></span>
           </div>
           ${
             model.size && model.size !== "Unknown"
@@ -649,28 +680,338 @@ function updateModelSelectedCount() {
 // Sync selected models (placeholder)
 window.syncSelectedModels = async function () {
   if (!window.currentModelSyncData) return;
+  if (window.__modelSyncUploading) return; // prevent re-entry during upload
 
   const selectedModels = Array.from(
     window.currentModelSyncData.selectedModels
   ).map((index) => window.currentModelSyncData.models[index]);
 
-  console.log("Syncing models:", selectedModels);
+  // Support all model types (files only). We'll map the target folder by type.
+  const modelsToUpload = selectedModels;
 
-  // Show toast (placeholder)
+  // Switch dialog to progress view
+  showProgressView(modelsToUpload);
+
+  // Hide Sync button during upload and set beforeunload warning
+  const syncBtnEl = document.getElementById("sync-models-btn");
+  if (syncBtnEl) syncBtnEl.style.display = "none";
+  const closeBtnEl = document.getElementById("close-models-btn");
+  if (closeBtnEl) {
+    closeBtnEl.disabled = false;
+    closeBtnEl.textContent = "Cancel";
+    closeBtnEl.onclick = () => cancelActiveUpload();
+  }
+
+  window.__modelSyncUploading = true;
+  window.__modelSyncUploadingModels = modelsToUpload;
+  window.__modelSyncCancelRequested = false;
+  window.__modelSyncCurrent = null;
+  const beforeUnloadHandler = (e) => {
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  };
+  window.addEventListener("beforeunload", beforeUnloadHandler);
+
+  // Start sequential upload
+  const data =
+    (typeof window.comfyDeployGetModelData === "function"
+      ? window.comfyDeployGetModelData()
+      : {}) || {};
+  const apiUrl = data.apiUrl || "https://api.comfydeploy.com";
+  const authHeader = { Authorization: `Bearer ${data.apiKey}` };
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < modelsToUpload.length; i++) {
+    if (window.__modelSyncCancelRequested) break;
+    const model = modelsToUpload[i];
+    try {
+      setProgress(i, 0, "Preparing...");
+
+      // Resolve absolute path: choose a base path that contains /models/
+      const basePath =
+        (model.paths || []).find((p) => p.includes("/models/")) ||
+        model.paths?.[0];
+      if (!basePath) throw new Error("No valid base path found for model");
+      const absolutePath = `${basePath}/${model.name}`;
+
+      // Stat file size
+      const statResp = await fetch(
+        `/comfyui-deploy/fs/stat?path=${encodeURIComponent(absolutePath)}`
+      );
+      if (!statResp.ok) throw new Error(`stat failed: ${statResp.status}`);
+      const { size } = await statResp.json();
+      if (!size || size <= 0) throw new Error("Invalid file size");
+      setSize(i, size);
+
+      // Multipart init
+      const filenameOnly = model.name.includes("/")
+        ? model.name.split("/").pop()
+        : model.name;
+      const initResp = await fetch(
+        `/comfyui-deploy/volume/file/initiate-multipart-upload`,
+        {
+          method: "POST",
+          headers: { ...authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: filenameOnly,
+            contentType: "application/octet-stream",
+            size,
+            api_url: apiUrl,
+          }),
+        }
+      );
+      const initData = await initResp.json();
+      if (!initResp.ok)
+        throw new Error(initData?.detail || JSON.stringify(initData));
+
+      const uploadId = initData.uploadId;
+      const key = initData.key;
+      window.__modelSyncCurrent = { index: i, uploadId, key };
+      const partSize = initData.partSize || 50 * 1024 * 1024;
+      const totalParts = Math.ceil(size / partSize);
+      const parts = [];
+
+      let uploaded = 0;
+
+      for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+        if (window.__modelSyncCancelRequested) break;
+        const start = (partNumber - 1) * partSize;
+        const end = Math.min(start + partSize, size);
+
+        // Get part upload URL via proxy
+        const urlResp = await fetch(
+          `/comfyui-deploy/volume/file/generate-part-upload-url`,
+          {
+            method: "POST",
+            headers: { ...authHeader, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              uploadId,
+              key,
+              partNumber,
+              api_url: apiUrl,
+            }),
+          }
+        );
+        const urlData = await urlResp.json();
+        if (!urlResp.ok)
+          throw new Error(urlData?.detail || JSON.stringify(urlData));
+
+        // Upload this part from machine
+        const upResp = await fetch(
+          `/comfyui-deploy/volume/file/upload-part-from-path`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filePath: absolutePath,
+              uploadUrl: urlData.uploadUrl,
+              start,
+              end,
+            }),
+          }
+        );
+        const upData = await upResp.json();
+        if (!upResp.ok)
+          throw new Error(upData?.error || JSON.stringify(upData));
+
+        parts.push({ partNumber, eTag: upData.eTag });
+        uploaded = end;
+        const pct = Math.round((uploaded / size) * 100);
+        setProgress(i, pct, `${bytesToSize(uploaded)} / ${bytesToSize(size)}`);
+      }
+
+      if (window.__modelSyncCancelRequested) {
+        try {
+          await fetch(`/comfyui-deploy/volume/file/abort-multipart-upload`, {
+            method: "POST",
+            headers: { ...authHeader, "Content-Type": "application/json" },
+            body: JSON.stringify({ uploadId, key, api_url: apiUrl }),
+          });
+        } catch (_) {}
+        setStatus(i, "Cancelled", true);
+        break;
+      }
+
+      // Complete multipart
+      const compResp = await fetch(
+        `/comfyui-deploy/volume/file/complete-multipart-upload`,
+        {
+          method: "POST",
+          headers: { ...authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({ uploadId, key, parts, api_url: apiUrl }),
+        }
+      );
+      const compData = await compResp.json();
+      if (!compResp.ok)
+        throw new Error(compData?.detail || JSON.stringify(compData));
+
+      // Register model in backend (source=link from temp upload)
+      const rel = model.name;
+      const slash = rel.lastIndexOf("/");
+      const fileName = slash >= 0 ? rel.slice(slash + 1) : rel;
+      const subDir = slash >= 0 ? rel.slice(0, slash) : "";
+      const folderRoot = model.type;
+      const folderPath = `/${folderRoot}${subDir ? `/${subDir}` : ""}`;
+
+      const addResp = await fetch(`/comfyui-deploy/volume/model`, {
+        method: "POST",
+        headers: { ...authHeader, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "link",
+          folderPath,
+          filename: fileName,
+          downloadLink: `s3://${key}`,
+          isTemporaryUpload: true,
+          s3ObjectKey: key,
+          api_url: apiUrl,
+        }),
+      });
+      const addData = await addResp.json();
+      if (!addResp.ok)
+        throw new Error(addData?.detail || JSON.stringify(addData));
+
+      setProgress(i, 100, "Uploaded");
+      setStatus(i, "Success", false);
+      successCount++;
+    } catch (err) {
+      console.error("Upload failed for", model, err);
+      setStatus(i, (err && err.message) || "Failed", true);
+      failCount++;
+      // Try best-effort abort if we had an initialized upload; ignored if not available
+      // (No state kept here to simplify; continuing with next file.)
+    }
+  }
+
+  // Show summary toast
   if (window.app?.extensionManager?.toast) {
     window.app.extensionManager.toast.add({
-      severity: "info",
-      summary: "Model sync started",
-      detail: `Starting sync for ${selectedModels.length} models`,
-      life: 3000,
+      severity: window.__modelSyncCancelRequested
+        ? "warn"
+        : failCount > 0
+        ? "warn"
+        : "success",
+      summary: window.__modelSyncCancelRequested
+        ? "Model sync cancelled"
+        : "Model sync completed",
+      detail: window.__modelSyncCancelRequested
+        ? `Cancelled. ${successCount} completed, ${failCount} failed`
+        : `${successCount} succeeded, ${failCount} failed`,
+      life: 4000,
     });
   }
 
-  // Close dialog
-  closeModelSyncDialog();
-
-  // TODO: Implement actual sync logic
+  // Cleanup UI state
+  window.removeEventListener("beforeunload", beforeUnloadHandler);
+  window.__modelSyncUploading = false;
+  window.__modelSyncUploadingModels = null;
+  window.__modelSyncCancelRequested = false;
+  window.__modelSyncCurrent = null;
+  // Replace Sync with Done button
+  if (syncBtnEl) {
+    syncBtnEl.textContent = "Done";
+    syncBtnEl.onclick = () => closeModelSyncDialog();
+    syncBtnEl.style.display = "";
+    syncBtnEl.style.cursor = "pointer";
+    syncBtnEl.disabled = false;
+  }
+  if (closeBtnEl) {
+    closeBtnEl.disabled = false;
+    closeBtnEl.textContent = "Close";
+    closeBtnEl.onclick = () => closeModelSyncDialog();
+  }
 };
 
 // Export the main function
 export { initializeModelManager };
+
+// -------------------- Progress UI helpers --------------------
+function bytesToSize(bytes) {
+  if (!bytes && bytes !== 0) return "-";
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  if (bytes === 0) return "0 B";
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+}
+
+// Cancel current upload gracefully
+async function cancelActiveUpload() {
+  if (!window.__modelSyncUploading) return;
+  window.__modelSyncCancelRequested = true;
+  // Visual feedback on Cancel button
+  const closeBtnEl = document.getElementById("close-models-btn");
+  if (closeBtnEl) {
+    closeBtnEl.disabled = true;
+    closeBtnEl.textContent = "Cancelling...";
+    closeBtnEl.style.opacity = "0.7";
+    closeBtnEl.style.cursor = "not-allowed";
+  }
+  // Mark current item as cancelling, if known
+  const curr = window.__modelSyncCurrent;
+  if (curr && typeof curr.index === "number") {
+    const status = document.getElementById(`status-${curr.index}`);
+    if (status) {
+      status.textContent = "Cancelling...";
+      status.style.color = "#e67e22";
+    }
+  }
+}
+
+function showProgressView(models) {
+  const content = document.getElementById("model-sync-content");
+  if (!content) return;
+  let html = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style=\"font-size: 13px; color: #ccc;\">Uploading ${models.length} item(s) sequentially</div>
+    </div>
+    <div style=\"font-size: 11px; color: #ff0000; margin: -6px 0 10px 0;\">Do not close this window or tab while uploads are in progress.</div>
+    <div id="upload-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  `;
+  content.innerHTML = html;
+
+  const list = content.querySelector("#upload-list");
+  models.forEach((m, idx) => {
+    const displayName = m.name;
+    const row = document.createElement("div");
+    row.id = `upload-row-${idx}`;
+    row.style.cssText =
+      "border: 1px solid #333; border-radius: 6px; background: #252525; padding: 10px;";
+    row.innerHTML = `
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div style="font-size: 12px; color: #fff;">${displayName}<span id="size-${idx}" style="font-size: 10px; color: #aaa; margin-left: 8px;"></span></div>
+        <div id="status-${idx}" style="font-size: 11px; color: #888;">Waiting</div>
+      </div>
+      <div style="height: 8px; background: #1a1a1a; border-radius: 999px; overflow: hidden;">
+        <div id="bar-${idx}" style="height:100%; width:0%; background: linear-gradient(90deg, #3498db, #2ecc71);"></div>
+      </div>
+      <div id="detail-${idx}" style="font-size: 10px; color: #888; margin-top: 6px;">0%</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function setProgress(idx, pct, detailText) {
+  const bar = document.getElementById(`bar-${idx}`);
+  const detail = document.getElementById(`detail-${idx}`);
+  const status = document.getElementById(`status-${idx}`);
+  if (bar) bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+  if (detail) detail.textContent = `${pct}% • ${detailText || ""}`;
+  if (status) status.textContent = pct >= 100 ? "Uploaded" : "Uploading";
+}
+
+function setStatus(idx, text, isError) {
+  const status = document.getElementById(`status-${idx}`);
+  if (status) {
+    status.textContent = text;
+    status.style.color = isError ? "#e74c3c" : "#27ae60";
+  }
+}
+
+function setSize(idx, size) {
+  const el = document.getElementById(`size-${idx}`);
+  if (el) {
+    el.textContent = `— ${bytesToSize(size)}`;
+  }
+}

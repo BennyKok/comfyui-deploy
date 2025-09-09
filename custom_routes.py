@@ -3290,3 +3290,292 @@ async def get_comfyui_version_proxy(request):
             return web.json_response(json_data, status=response.status)
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: generate single-part upload URL
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/generate-upload-url"
+)
+async def proxy_generate_upload_url(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/file/generate-upload-url"
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json={
+                "filename": data.get("filename"),
+                "contentType": data.get("contentType"),
+                "size": data.get("size"),
+            },
+            headers={"Authorization": auth_header},
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: initiate multipart upload
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/initiate-multipart-upload"
+)
+async def proxy_initiate_multipart_upload(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/file/initiate-multipart-upload"
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json={
+                "filename": data.get("filename"),
+                "contentType": data.get("contentType"),
+                "size": data.get("size"),
+            },
+            headers={"Authorization": auth_header},
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: generate part upload URL
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/generate-part-upload-url"
+)
+async def proxy_generate_part_upload_url(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/file/generate-part-upload-url"
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json={
+                "uploadId": data.get("uploadId"),
+                "key": data.get("key"),
+                "partNumber": data.get("partNumber"),
+            },
+            headers={"Authorization": auth_header},
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: complete multipart upload
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/complete-multipart-upload"
+)
+async def proxy_complete_multipart_upload(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/file/complete-multipart-upload"
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json={
+                "uploadId": data.get("uploadId"),
+                "key": data.get("key"),
+                "parts": data.get("parts"),
+            },
+            headers={"Authorization": auth_header},
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: abort multipart upload
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/abort-multipart-upload"
+)
+async def proxy_abort_multipart_upload(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/file/abort-multipart-upload"
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url,
+            json={
+                "uploadId": data.get("uploadId"),
+                "key": data.get("key"),
+            },
+            headers={"Authorization": auth_header},
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Proxy: add model (unified endpoint)
+@server.PromptServer.instance.routes.post("/comfyui-deploy/volume/model")
+async def proxy_add_model(request):
+    data = await request.json()
+    api_url = data.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/volume/model"
+
+    # pass body through but remove api_url key
+    forward_body = dict(data)
+    if "api_url" in forward_body:
+        forward_body.pop("api_url")
+
+    try:
+        await ensure_client_session()
+        async with client_session.post(
+            target_url, json=forward_body, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# FS: stat file (size)
+@server.PromptServer.instance.routes.get("/comfyui-deploy/fs/stat")
+async def fs_stat(request):
+    try:
+        import os
+
+        file_path = request.rel_url.query.get("path")
+        if not file_path:
+            return web.json_response({"error": "path is required"}, status=400)
+
+        # Basic safeguard: ensure it's a ComfyUI models path
+        if "/models/" not in file_path:
+            return web.json_response({"error": "invalid path"}, status=400)
+
+        st = os.stat(file_path)
+        return web.json_response({"size": st.st_size})
+    except FileNotFoundError:
+        return web.json_response({"error": "not found"}, status=404)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# Upload a multipart part directly from machine filesystem to S3 upload URL
+@server.PromptServer.instance.routes.post(
+    "/comfyui-deploy/volume/file/upload-part-from-path"
+)
+async def upload_part_from_path(request):
+    try:
+        import os
+        import io
+
+        data = await request.json()
+        file_path = data.get("filePath")
+        upload_url = data.get("uploadUrl")
+        start = int(data.get("start", 0))
+        end = int(data.get("end", 0))
+        if not file_path or not upload_url:
+            return web.json_response(
+                {"error": "filePath and uploadUrl are required"}, status=400
+            )
+        if "/models/" not in file_path:
+            return web.json_response({"error": "invalid filePath"}, status=400)
+        if end <= start:
+            return web.json_response({"error": "invalid byte range"}, status=400)
+
+        size = end - start
+
+        await ensure_client_session()
+
+        # Important: S3 pre-signed part uploads do not support chunked transfer
+        # Buffer the exact part into memory to provide a Content-Length header
+        buffer = bytearray()
+        chunk_size = 4 * 1024 * 1024
+        with open(file_path, "rb") as f:
+            f.seek(start)
+            remaining = size
+            while remaining > 0:
+                to_read = chunk_size if remaining >= chunk_size else remaining
+                chunk = f.read(to_read)
+                if not chunk:
+                    break
+                buffer.extend(chunk)
+                remaining -= len(chunk)
+
+        if len(buffer) != size:
+            return web.json_response(
+                {
+                    "error": "read size mismatch",
+                    "expected": size,
+                    "actual": len(buffer),
+                },
+                status=500,
+            )
+
+        headers = {
+            "Content-Length": str(size),
+            "Content-Type": "application/octet-stream",
+        }
+
+        async with client_session.put(
+            upload_url, data=bytes(buffer), headers=headers
+        ) as resp:
+            text = await resp.text()
+            if resp.status < 200 or resp.status >= 300:
+                return web.json_response(
+                    {"error": f"upload failed: {resp.status}", "body": text},
+                    status=resp.status,
+                )
+            etag = resp.headers.get("ETag") or resp.headers.get("etag") or ""
+            etag = etag.replace('"', "")
+            return web.json_response({"eTag": etag, "bytesSent": size})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
