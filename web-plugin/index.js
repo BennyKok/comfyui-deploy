@@ -2531,7 +2531,12 @@ export class ConfigDialog extends ComfyDialog {
 
 export const configDialog = new ConfigDialog();
 
-const isComfyDeployDashboard = ext.native_mode;
+const currentOrigin = window.location.origin;
+const referrer = document.referrer;
+
+const isComfyDeployDashboard =
+  currentOrigin.includes("comfydeploy.com") ||
+  (referrer && referrer.includes("comfydeploy.com"));
 
 if (!isComfyDeployDashboard) {
   app.extensionManager.registerSidebarTab({
