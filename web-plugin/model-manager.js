@@ -42,21 +42,11 @@ function showModelInitialState(modelLoading, modelList) {
   modelList.style.display = "block";
   modelList.innerHTML = `
     <li style="text-align: center; padding: 16px; color: #666; font-size: 13px;">
-      <div style="margin-bottom: 8px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14,2 14,8 20,8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <line x1="10" y1="9" x2="8" y2="9"/>
-        </svg>
-      </div>
-      <div style="font-weight: 500; margin-bottom: 12px;">Sync Local Models</div>
       <div style="display: flex; gap: 8px; justify-content: center;">
         <button 
           onclick="showModelSyncDialog()"
           style="
-            background: #3498db;
+            background: #f39c12;
             color: white;
             border: none;
             border-radius: 4px;
@@ -64,9 +54,18 @@ function showModelInitialState(modelLoading, modelList) {
             font-size: 12px;
             cursor: pointer;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
           "
           title="Sync local models to cloud"
         >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 16h5v5"/>
+          </svg>
           Sync Models
         </button>
       </div>
