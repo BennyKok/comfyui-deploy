@@ -229,45 +229,94 @@ window.closeModelSyncDialog = function () {
   window.currentModelSyncData = null;
 };
 
-// Load model sync data (placeholder implementation)
+// Load model sync data from API
 async function loadModelSyncData() {
   try {
-    // Simulate loading delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Fetch real model data from your API
+    const response = await fetch("/comfyui-deploy/models");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    // Placeholder model data - you'll replace this with actual model scanning
-    const mockModels = [
-      {
-        name: "sd_xl_base_1.0.safetensors",
-        path: "/models/checkpoints/",
-        size: "6.94 GB",
-        type: "checkpoint",
-      },
-      {
-        name: "sd_xl_refiner_1.0.safetensors",
-        path: "/models/checkpoints/",
-        size: "6.08 GB",
-        type: "checkpoint",
-      },
-      {
-        name: "controlnet_canny.safetensors",
-        path: "/models/controlnet/",
-        size: "1.45 GB",
-        type: "controlnet",
-      },
-    ];
+    const modelsData = await response.json();
+
+    // Process and filter the data
+    const processedModels = processModelsData(modelsData);
 
     // Store data globally
     window.currentModelSyncData = {
-      models: mockModels,
+      models: processedModels,
       selectedModels: new Set(),
     };
 
-    renderModelSyncContent(mockModels);
+    renderModelSyncContent(processedModels);
   } catch (error) {
     console.error("Error loading model sync data:", error);
     renderModelSyncError("Failed to load local models");
   }
+}
+
+// Process models data from API response
+function processModelsData(modelsData) {
+  const processedModels = [];
+  let modelIndex = 0;
+
+  // Filter out unwanted categories
+  const skipCategories = ["custom_nodes", "configs", "download_model_base"];
+
+  Object.entries(modelsData).forEach(([modelType, modelInfo]) => {
+    if (skipCategories.includes(modelType)) {
+      return; // Skip these categories
+    }
+
+    const [paths, extensions, files] = modelInfo;
+
+    // Filter files based on accepted extensions
+    const filteredFiles = filterFilesByExtensions(files, extensions);
+
+    // Process each file
+    filteredFiles.forEach((file) => {
+      processedModels.push({
+        index: modelIndex++,
+        name: file,
+        type: modelType,
+        paths: paths,
+        extensions: extensions,
+        // Parse nested folder structure for display
+        displayPath: getDisplayPath(file),
+        isNested: file.includes("/"),
+        size: "Unknown", // We don't have size info from the API
+      });
+    });
+  });
+
+  return processedModels;
+}
+
+// Filter files by accepted extensions
+function filterFilesByExtensions(files, extensions) {
+  if (!files || files.length === 0) return [];
+  if (!extensions || extensions.length === 0) return files;
+
+  // Handle special case for "folder" extension (like diffusers)
+  if (extensions.includes("folder")) {
+    return files;
+  }
+
+  return files.filter((file) => {
+    const fileExt = "." + file.split(".").pop().toLowerCase();
+    return extensions.some((ext) => ext.toLowerCase() === fileExt);
+  });
+}
+
+// Get display path for file tree
+function getDisplayPath(filePath) {
+  if (!filePath.includes("/")) {
+    return filePath; // Root level file
+  }
+
+  const parts = filePath.split("/");
+  return parts.slice(0, -1).join("/"); // Return path without filename
 }
 
 // Render model sync content
@@ -287,19 +336,31 @@ function renderModelSyncContent(models) {
   }
 
   // Group models by type
-  const groupedModels = models.reduce((acc, model, index) => {
-    model.index = index;
+  const groupedModels = models.reduce((acc, model) => {
     if (!acc[model.type]) acc[model.type] = [];
     acc[model.type].push(model);
     return acc;
   }, {});
 
   const typeColors = {
-    checkpoint: "#3498db",
+    checkpoints: "#3498db",
     controlnet: "#e74c3c",
-    lora: "#f39c12",
+    loras: "#f39c12",
     vae: "#9b59b6",
-    upscale: "#27ae60",
+    upscale_models: "#27ae60",
+    text_encoders: "#e67e22",
+    diffusion_models: "#8e44ad",
+    clip_vision: "#16a085",
+    style_models: "#c0392b",
+    embeddings: "#f1c40f",
+    diffusers: "#34495e",
+    vae_approx: "#95a5a6",
+    gligen: "#2ecc71",
+    hypernetworks: "#e74c3c",
+    photomaker: "#9b59b6",
+    classifiers: "#34495e",
+    model_patches: "#f39c12",
+    audio_encoders: "#e67e22",
   };
 
   let contentHTML = `
@@ -332,6 +393,10 @@ function renderModelSyncContent(models) {
 
   Object.entries(groupedModels).forEach(([type, typeModels]) => {
     const color = typeColors[type] || "#666";
+
+    // Build file tree structure for this type
+    const fileTree = buildFileTree(typeModels);
+
     contentHTML += `
       <div style="margin-bottom: 16px;">
         <h5 style="
@@ -341,9 +406,9 @@ function renderModelSyncContent(models) {
           color: ${color};
           text-transform: uppercase;
           letter-spacing: 0.5px;
-        ">${type} (${typeModels.length})</h5>
+        ">${type.replace("_", " ")} (${typeModels.length})</h5>
         <div style="border: 1px solid #333; border-radius: 6px; background: #252525; overflow: hidden;">
-          ${typeModels.map((model) => renderModelItem(model)).join("")}
+          ${renderFileTree(fileTree)}
         </div>
       </div>
     `;
@@ -363,33 +428,131 @@ function renderModelSyncContent(models) {
   }
 }
 
+// Build file tree structure
+function buildFileTree(models) {
+  const tree = {};
+
+  models.forEach((model) => {
+    if (model.isNested) {
+      const pathParts = model.name.split("/");
+      const fileName = pathParts.pop();
+      const folderPath = pathParts.join("/");
+
+      if (!tree[folderPath]) {
+        tree[folderPath] = [];
+      }
+      tree[folderPath].push({
+        ...model,
+        displayName: fileName,
+      });
+    } else {
+      // Root level files
+      if (!tree["_root"]) {
+        tree["_root"] = [];
+      }
+      tree["_root"].push({
+        ...model,
+        displayName: model.name,
+      });
+    }
+  });
+
+  return tree;
+}
+
+// Render file tree
+function renderFileTree(tree) {
+  let html = "";
+
+  // Render root files first
+  if (tree["_root"]) {
+    tree["_root"].forEach((model) => {
+      html += renderModelItem(model, false);
+    });
+  }
+
+  // Render folders
+  Object.entries(tree).forEach(([folderPath, files]) => {
+    if (folderPath === "_root") return;
+
+    const filesId = `files-${folderPath.replace(/[^a-zA-Z0-9]/g, "-")}`;
+
+    html += `
+      <div 
+        onclick="toggleFolder('${filesId}', this)"
+        style="
+          background: #1a1a1a;
+          border-bottom: 1px solid #333;
+          padding: 8px 12px;
+          font-size: 11px;
+          color: #888;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: background 0.2s;
+        "
+        onmouseover="this.style.background='#222'"
+        onmouseout="this.style.background='#1a1a1a'"
+      >
+        <span class="folder-icon" style="color: #FFFFFF;">▶</span>
+        <span style="color: #f39c12;">📁</span>
+        ${folderPath}
+        <span style="margin-left: auto; font-size: 10px; color: #666;">(${files.length})</span>
+      </div>
+      <div id="${filesId}" style="display: none;">
+    `;
+
+    files.forEach((model) => {
+      html += renderModelItem(model, true);
+    });
+
+    html += `</div>`;
+  });
+
+  return html;
+}
+
 // Render individual model item
-function renderModelItem(model) {
+function renderModelItem(model, isNested = false) {
   const isSelected =
     window.currentModelSyncData?.selectedModels.has(model.index) || false;
+
+  const indentStyle = isNested ? "padding-left: 24px;" : "";
+  const fileName = model.displayName || model.name;
 
   return `
     <div style="
       display: flex;
       align-items: center;
-      padding: 10px 12px;
+      padding: 8px 12px;
       border-bottom: 1px solid #333;
+      ${indentStyle}
+      background: ${isNested ? "#2a2a2a" : "#252525"};
     ">
       <input 
         type="checkbox" 
         id="model-${model.index}" 
         ${isSelected ? "checked" : ""}
         onchange="toggleModelSelection(${model.index})"
-        style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px;"
+        style="margin-right: 10px; cursor: pointer; width: 14px; height: 14px;"
       />
-      <div style="flex: 1;">
-        <div style="font-weight: 500; font-size: 13px; color: #fff; margin-bottom: 2px;">
-          ${model.name}
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #666;">
-          <span>${model.path}</span>
-          <span>•</span>
-          <span>${model.size}</span>
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+        <span style="font-size: 12px;">📄</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 500; font-size: 12px; color: #fff;">
+            ${fileName}
+          </div>
+          ${
+            model.size && model.size !== "Unknown"
+              ? `
+            <div style="font-size: 10px; color: #888; margin-top: 2px;">
+              ${model.size}
+            </div>
+          `
+              : ""
+          }
         </div>
       </div>
     </div>
@@ -409,6 +572,20 @@ function renderModelSyncError(message) {
     </div>
   `;
 }
+
+// Toggle folder visibility
+window.toggleFolder = function (filesId, folderElement) {
+  const filesContainer = document.getElementById(filesId);
+  const folderIcon = folderElement.querySelector(".folder-icon");
+
+  if (filesContainer.style.display === "none") {
+    filesContainer.style.display = "block";
+    folderIcon.textContent = "▼";
+  } else {
+    filesContainer.style.display = "none";
+    folderIcon.textContent = "▶";
+  }
+};
 
 // Toggle model selection
 window.toggleModelSelection = function (index) {

@@ -88,7 +88,7 @@ function showNoMachineMessage(machineLoading, machineList) {
           <line x1="6" x2="6.01" y1="18" y2="18"/>
         </svg>
       </div>
-      <div style="font-weight: 500; margin-bottom: 12px;">No machine found</div>
+      <div style="font-weight: 500; margin-bottom: 12px; font-size: 12px;">No machine found</div>
       <div style="display: flex; gap: 8px; justify-content: center;">
         <button 
           onclick="showAddMachineDialog()"
