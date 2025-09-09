@@ -2531,12 +2531,8 @@ export class ConfigDialog extends ComfyDialog {
 
 export const configDialog = new ConfigDialog();
 
-const currentOrigin = window.location.origin;
-console.log("🚀 ~ currentOrigin:", currentOrigin);
+const isComfyDeployDashboard = ext.native_mode;
 
-const isComfyDeployDashboard = currentOrigin.includes("comfydeploy.com");
-
-// Only register the sidebar tab if we're on localhost
 if (!isComfyDeployDashboard) {
   app.extensionManager.registerSidebarTab({
     id: "search",
