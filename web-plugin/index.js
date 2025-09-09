@@ -5,10 +5,8 @@ LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
 import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
 import { initializeMachineManager } from "./machine-manager.js";
+import { initializeModelManager } from "./model-manager.js";
 import { fetchSnapshotSimple } from "./snapshot-utils.js";
-
-import { generateDependencyGraph } from "https://esm.sh/comfyui-json@0.1.25";
-// import { ComfyDeploy } from "https://esm.sh/comfydeploy@2.0.0-beta.69";
 
 const styles = `
 .comfydeploy-menu-item {
@@ -538,7 +536,9 @@ const ext = {
         }
         if (toInput.length) {
           if (true) {
-            let optionIndex = options.findIndex((o) => o && o.content === "Outputs");
+            let optionIndex = options.findIndex(
+              (o) => o && o.content === "Outputs"
+            );
             if (optionIndex === -1) optionIndex = options.length;
             else optionIndex++;
             options.splice(
@@ -735,7 +735,7 @@ const ext = {
           "string",
           inputName,
           /* value=*/ "",
-          () => { },
+          () => {},
           { serialize: true }
         );
 
@@ -1718,12 +1718,14 @@ export class LoadingDialog extends ComfyDialog {
   showLoading(title, message) {
     this.show(`
       <div style="width: 400px; display: flex; gap: 18px; flex-direction: column; overflow: unset">
-        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${this.loadingIcon
-      }</h3>
-          ${message
-        ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
-        : ""
-      }
+        <h3 style="margin: 0px; display: flex; align-items: center; justify-content: center; gap: 12px;">${title} ${
+      this.loadingIcon
+    }</h3>
+          ${
+            message
+              ? `<label style="max-width: 100%; white-space: pre-wrap; word-wrap: break-word;">${message}</label>`
+              : ""
+          }
         </div>
       `);
   }
@@ -2308,10 +2310,12 @@ export class ConfigDialog extends ComfyDialog {
                 transition: all 0.2s ease;
                 box-sizing: border-box;
               " onfocus="this.style.borderColor='#0ea5e9'; this.style.background='#252525'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)'" onblur="this.style.borderColor='#404040'; this.style.background='#1a1a1a'; this.style.boxShadow='none'" onmouseover="this.style.borderColor='#525252'" onmouseout="if(document.activeElement !== this) this.style.borderColor='#404040'">
-                <option value="cloud" ${data.environment === "cloud" ? "selected" : ""
-      }>☁️ Cloud Deployment</option>
-                <option value="local" ${data.environment === "local" ? "selected" : ""
-      }>🏠 Local Development</option>
+                <option value="cloud" ${
+                  data.environment === "cloud" ? "selected" : ""
+                }>☁️ Cloud Deployment</option>
+                <option value="local" ${
+                  data.environment === "local" ? "selected" : ""
+                }>🏠 Local Development</option>
               </select>
               <div style="
                 position: absolute;
@@ -2376,8 +2380,9 @@ export class ConfigDialog extends ComfyDialog {
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
               ">API Key</label>
-              ${data.displayName
-        ? `
+              ${
+                data.displayName
+                  ? `
                 <div style="
                   background: linear-gradient(135deg, #0ea5e9, #3b82f6);
                   color: white;
@@ -2396,8 +2401,8 @@ export class ConfigDialog extends ComfyDialog {
                   ${data.displayName}
                 </div>
               `
-        : ""
-      }
+                  : ""
+              }
             </div>
             <input 
               id="apiKey" 
@@ -2443,10 +2448,11 @@ export class ConfigDialog extends ComfyDialog {
                 <polyline points="10,17 15,12 10,7"/>
                 <line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
-              ${data.apiKey
-        ? "Re-authenticate with ComfyDeploy"
-        : "Login with ComfyDeploy"
-      }
+              ${
+                data.apiKey
+                  ? "Re-authenticate with ComfyDeploy"
+                  : "Login with ComfyDeploy"
+              }
             </button>
           </div>
         </div>
@@ -2547,11 +2553,67 @@ if (!isComfyDeployDashboard) {
           <h3>Comfy Deploy</h3>
           <div id="deploy-container" style="margin-bottom: 20px;"></div>
           <div id="machine-container" style="margin-bottom: 20px;">
-            <h4>Serverless Machine</h4>
-            <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
-              ${loadingIcon}
+            <div style="
+              display: flex;
+              border-bottom: 1px solid #333;
+              margin-bottom: 16px;
+              position: relative;
+            ">
+              <button 
+                id="machine-tab" 
+                onclick="switchTab('machine')" 
+                style="
+                  background: transparent;
+                  color: white;
+                  border: none;
+                  padding: 12px 16px 8px 16px;
+                  font-size: 13px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  position: relative;
+                  transition: all 0.2s ease;
+                  border-bottom: 2px solid #3498db;
+                "
+                onmouseover="this.style.color='#fff'"
+                onmouseout="if(this.style.borderBottomColor !== 'rgb(52, 152, 219)') this.style.color='#999'"
+              >
+                Machine
+              </button>
+              <button 
+                id="model-tab" 
+                onclick="switchTab('model')" 
+                style="
+                  background: transparent;
+                  color: #999;
+                  border: none;
+                  padding: 12px 16px 8px 16px;
+                  font-size: 13px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  position: relative;
+                  transition: all 0.2s ease;
+                  border-bottom: 2px solid transparent;
+                "
+                onmouseover="this.style.color='#fff'"
+                onmouseout="if(this.style.borderBottomColor !== 'rgb(52, 152, 219)') this.style.color='#999'"
+              >
+                Model
+              </button>
             </div>
-            <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+            
+            <div id="machine-tab-content">
+              <div id="machine-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+                ${loadingIcon}
+              </div>
+              <ul id="machine-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+            </div>
+            
+            <div id="model-tab-content" style="display: none;">
+              <div id="model-loading" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+                ${loadingIcon}
+              </div>
+              <ul id="model-list" style="list-style-type: none; padding: 0; display: none;"></ul>
+            </div>
           </div>
           <div id="workflows-container" style="display: none;">
             <h4>Your Workflows</h4>
@@ -2613,10 +2675,41 @@ if (!isComfyDeployDashboard) {
       const workflowsList = el.querySelector("#workflows-list");
       const workflowsLoading = el.querySelector("#workflows-loading");
 
-      // Initialize machine manager
+      // Initialize machine and model managers
       const data = getData();
       if (data.apiKey) {
         await initializeMachineManager(el, getData);
+        await initializeModelManager(el, getData);
+
+        // Add tab switching functionality
+        window.switchTab = function (tabName) {
+          const machineTab = el.querySelector("#machine-tab");
+          const modelTab = el.querySelector("#model-tab");
+          const machineContent = el.querySelector("#machine-tab-content");
+          const modelContent = el.querySelector("#model-tab-content");
+
+          if (tabName === "machine") {
+            // Active machine tab
+            machineTab.style.color = "white";
+            machineTab.style.borderBottomColor = "#3498db";
+            // Inactive model tab
+            modelTab.style.color = "#999";
+            modelTab.style.borderBottomColor = "transparent";
+            // Show/hide content
+            machineContent.style.display = "block";
+            modelContent.style.display = "none";
+          } else if (tabName === "model") {
+            // Active model tab
+            modelTab.style.color = "white";
+            modelTab.style.borderBottomColor = "#3498db";
+            // Inactive machine tab
+            machineTab.style.color = "#999";
+            machineTab.style.borderBottomColor = "transparent";
+            // Show/hide content
+            modelContent.style.display = "block";
+            machineContent.style.display = "none";
+          }
+        };
       } else {
         // Hide machine container when no API key
         const machineContainer = el.querySelector("#machine-container");
@@ -2717,7 +2810,11 @@ api.fetchApi = async (route, options) => {
       const data = {
         prompt_id: body.prompt_id,
       };
-      const original_response = await orginal_fetch_api.call(api, route, options);
+      const original_response = await orginal_fetch_api.call(
+        api,
+        route,
+        options
+      );
       await fetch("/comfyui-deploy/interrupt", {
         method: "POST",
         headers: {
