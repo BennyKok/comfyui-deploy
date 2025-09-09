@@ -3148,6 +3148,68 @@ async def get_workflow_proxy(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
+# fetch workflow versions (infinite scroll support)
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflow/versions")
+async def get_workflow_versions_proxy(request):
+    workflow_id = request.rel_url.query.get("workflow_id")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    search = request.rel_url.query.get("search", "")
+    limit = request.rel_url.query.get("limit", "20")
+    offset = request.rel_url.query.get("offset", "0")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    # Build target URL with query params
+    params = {"limit": limit, "offset": offset}
+    if search:
+        params["search"] = search
+
+    query = urlencode(params)
+    target_url = f"{api_url}/api/workflow/{workflow_id}/versions"
+    if query:
+        target_url += f"?{query}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# fetch a specific workflow version json
+@server.PromptServer.instance.routes.get("/comfyui-deploy/workflow/version")
+async def get_workflow_version_proxy(request):
+    workflow_id = request.rel_url.query.get("workflow_id")
+    version = request.rel_url.query.get("version")
+    api_url = request.rel_url.query.get("api_url", "https://api.comfydeploy.com")
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return web.json_response(
+            {"error": "Authorization header is required"}, status=401
+        )
+
+    target_url = f"{api_url}/api/workflow/{workflow_id}/version/{version}"
+
+    try:
+        await ensure_client_session()
+        async with client_session.get(
+            target_url, headers={"Authorization": auth_header}
+        ) as response:
+            json_data = await response.json()
+            return web.json_response(json_data, status=response.status)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
 # for getting a machine by id
 @server.PromptServer.instance.routes.get("/comfyui-deploy/machine")
 async def get_machine_proxy(request):

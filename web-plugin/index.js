@@ -3,7 +3,11 @@ import { api } from "../../scripts/api.js";
 // import { LGraphNode } from "../../scripts/widgets.js";
 LGraphNode = LiteGraph.LGraphNode;
 import { ComfyDialog, $el } from "../../scripts/ui.js";
-import { initializeWorkflowsList, addWorkflowSearch } from "./workflow-list.js";
+import {
+  initializeWorkflowsList,
+  addWorkflowSearch,
+  refreshCurrentWorkflowCard,
+} from "./workflow-list.js";
 import { initializeMachineManager } from "./machine-manager.js";
 import { initializeModelManager } from "./model-manager.js";
 import { fetchSnapshotSimple } from "./snapshot-utils.js";
@@ -1330,6 +1334,14 @@ async function deployWorkflow() {
 
         deployMetaNode.widgets[2].value = data.version;
         graph.change();
+
+        if (window.refreshCurrentWorkflowCard) {
+          console.log(
+            "Refreshing current workflow card after version update with version",
+            data.version
+          );
+          window.refreshCurrentWorkflowCard(workflow_id, data.version);
+        }
       }
     } catch (e) {
       infoDialog.showError("Error", e.message);
@@ -1424,6 +1436,20 @@ async function deployWorkflow() {
 
       if (new_version_data.status !== 200) {
         throw new Error(await new_version_data.text());
+      } else {
+        // Parse the JSON response to get the actual version data
+        const versionData = await new_version_data.json();
+
+        if (window.refreshCurrentWorkflowCard) {
+          console.log(
+            "Refreshing current workflow card with new version",
+            versionData.version
+          );
+          window.refreshCurrentWorkflowCard(
+            data.workflow_id,
+            versionData.version
+          );
+        }
       }
     }
 
@@ -3155,6 +3181,9 @@ async function refreshWorkflowListIfOpen() {
     }
     // Reinitialize the workflow list
     await initializeWorkflowsList(document, getData, getTimeAgo);
+
+    // Also refresh the current workflow card
+    refreshCurrentWorkflowCard();
 
     console.log("Workflow list refreshed successfully");
   } catch (error) {
