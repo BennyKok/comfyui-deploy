@@ -12,26 +12,92 @@ let workflowsState = {
 // Make workflowsState accessible globally
 window.workflowsState = workflowsState;
 
-// Helper: ensure a `ComfyDeploy` node exists and is updated
+// Helper: ensure a `ComfyDeploy` node exists and is updated with correct version
 function ensureComfyDeployNode({ name, id, version }) {
-  if (!window.app || !window.app.graph) return;
+  if (!window.app || !window.app.graph) {
+    console.warn("ComfyDeploy: App or graph not available");
+    return;
+  }
+
   const graph = window.app.graph;
   let nodes = graph.findNodesByType("ComfyDeploy");
+
   graph.beforeChange();
+
   if (nodes.length === 0) {
+    // Create new ComfyDeploy node
+    console.log("ComfyDeploy: Creating new ComfyDeploy node", {
+      name,
+      id,
+      version,
+    });
     const node = LiteGraph.createNode("ComfyDeploy");
     node.configure({ widgets_values: [name || "", id || "", version || 1] });
     node.pos = [0, 0];
     graph.add(node);
   } else {
+    // Update existing node - always sync all values to ensure consistency
     const node = nodes[0];
-    const values = node.widgets_values || [];
-    values[0] = name || values[0];
-    values[1] = id || values[1];
-    values[2] = version || values[2];
-    node.widgets_values = values;
+    const currentValues = node.widgets_values || [];
+    const newValues = [
+      name || currentValues[0] || "",
+      id || currentValues[1] || "",
+      version || currentValues[2] || 1,
+    ];
+
+    // Check if any values changed
+    const valuesChanged =
+      JSON.stringify(currentValues) !== JSON.stringify(newValues);
+
+    if (valuesChanged) {
+      console.log("ComfyDeploy: Updating ComfyDeploy node", {
+        from: {
+          name: currentValues[0],
+          id: currentValues[1],
+          version: currentValues[2],
+        },
+        to: { name: newValues[0], id: newValues[1], version: newValues[2] },
+      });
+
+      node.widgets_values = newValues;
+
+      // Force widget updates if they exist
+      if (node.widgets) {
+        node.widgets.forEach((widget, index) => {
+          if (widget && newValues[index] !== undefined) {
+            widget.value = newValues[index];
+          }
+        });
+      }
+    } else {
+      console.log("ComfyDeploy: ComfyDeploy node already up to date", {
+        name,
+        id,
+        version,
+      });
+    }
   }
+
   graph.afterChange();
+}
+
+// Helper: automatically ensure ComfyDeploy node after workflow loading
+async function ensureComfyDeployNodeAfterLoad(
+  { name, id, version },
+  delayMs = 200
+) {
+  // Wait for workflow to be fully loaded
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+  // Ensure the ComfyDeploy node is present and correct
+  ensureComfyDeployNode({ name, id, version });
+
+  // Also refresh the workflow card if it's visible
+  if (window.refreshCurrentWorkflowCard) {
+    setTimeout(() => {
+      window.refreshCurrentWorkflowCard(id, version);
+    }, 100);
+  }
 }
 
 function getComfyDeployMeta() {
@@ -379,8 +445,9 @@ function renderCurrentWorkflowCard(element, getData) {
 
               if (data?.workflow) {
                 window.app.loadGraphData(data.workflow);
-                await new Promise((r) => setTimeout(r, 100));
-                ensureComfyDeployNode({
+
+                // Ensure ComfyDeploy node is correct and refresh UI
+                await ensureComfyDeployNodeAfterLoad({
                   name: meta.name,
                   id: meta.id,
                   version: v.version,
@@ -598,39 +665,12 @@ function createWorkflowItem(workflow, getTimeAgo, getData) {
           // Load the workflow
           window.app.loadGraphData(latestVersion.workflow);
 
-          // Wait a bit for the graph to fully load before checking for ComfyDeploy node
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          // Check if ComfyDeploy node exists, if not add it back
-          const graph = window.app.graph;
-          let deployMeta = graph.findNodesByType("ComfyDeploy");
-
-          if (deployMeta.length === 0) {
-            // Add ComfyDeploy node with workflow metadata
-            graph.beforeChange();
-            const node = LiteGraph.createNode("ComfyDeploy");
-            node.configure({
-              widgets_values: [
-                workflow.name, // workflow_name
-                workflow.id, // workflow_id
-                latestVersion.version, // version
-              ],
-            });
-            node.pos = [0, 0];
-            graph.add(node);
-            graph.afterChange();
-
-            console.log(
-              `Added ComfyDeploy node with: name="${workflow.name}", id="${workflow.id}", version="${latestVersion.version}"`
-            );
-          } else {
-            // Update existing node values
-            ensureComfyDeployNode({
-              name: workflow.name,
-              id: workflow.id,
-              version: latestVersion.version,
-            });
-          }
+          // Ensure ComfyDeploy node is correct with latest version
+          await ensureComfyDeployNodeAfterLoad({
+            name: workflow.name,
+            id: workflow.id,
+            version: latestVersion.version,
+          });
 
           // Show success toast
           window.app.extensionManager.toast.add({
@@ -1274,15 +1314,13 @@ function setupVersionDropdown(
 
               if (data?.workflow) {
                 window.app.loadGraphData(data.workflow);
-                await new Promise((r) => setTimeout(r, 100));
-                ensureComfyDeployNode({
+
+                // Ensure ComfyDeploy node is correct and refresh UI
+                await ensureComfyDeployNodeAfterLoad({
                   name: workflowName,
                   id: workflowId,
                   version: v.version,
                 });
-
-                // Refresh with the new version
-                refreshCurrentWorkflowCard(workflowId, v.version);
 
                 window.app.extensionManager.toast.add({
                   severity: "success",
