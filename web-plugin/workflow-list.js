@@ -156,60 +156,19 @@ async function fetchWorkflowVersionData(getData, workflowId, version) {
   return await res.json();
 }
 
-function renderCurrentWorkflowCard(element, getData) {
-  const container = element.querySelector("#workflows-container");
-  if (!container) return;
-
-  // Remove old card if any
-  const old = container.querySelector("#cd-current-workflow-card");
-  if (old) old.remove();
-
-  const meta = getComfyDeployMeta();
-  if (!meta || !meta.id) {
-    console.log("No ComfyDeploy meta found, not showing workflow card");
-    return; // Only show when node exists
-  }
-
-  console.log("Rendering workflow card with meta:", meta);
-
-  const card = document.createElement("div");
-  card.id = "cd-current-workflow-card";
-  card.style.cssText = `
-    margin: 8px 0 16px 0;
-    padding: 16px;
-    border: 1px solid #374151;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    color: #f9fafb;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    transition: all 0.2s ease;
-    position: relative;
-  `;
-
-  // Add hover effect
-  card.addEventListener("mouseenter", () => {
-    card.style.transform = "translateY(-1px)";
-    card.style.boxShadow = "0 8px 20px rgba(0, 0, 0, 0.5)";
-    card.style.borderColor = "#4b5563";
-  });
-
-  card.addEventListener("mouseleave", () => {
-    card.style.transform = "translateY(0)";
-    card.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.4)";
-    card.style.borderColor = "#374151";
-  });
-
-  card.innerHTML = `
+// Shared function to create workflow card HTML template
+function createWorkflowCardHTML(workflowName, version) {
+  return `
     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
       <div style="flex: 1; min-width: 0;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
           <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
-          <span style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Current Workflow</span>
+          <span style="font-size: 8px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Current Workflow</span>
         </div>
-        <h3 style="font-size: 16px; font-weight: 500; margin: 0 0 6px 0; color: #f9fafb; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          ${meta.name || "Unnamed Workflow"}
+        <h3 style="font-size: 14px; font-weight: 500; margin: 0 0 6px 0; color: #f9fafb; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          ${workflowName}
         </h3>
-        <div id="cd-current-comment" style="font-size: 12px; color: #d1d5db; line-height: 1.4; margin-top: 4px; display: none; font-style: italic;"></div>
+        <div id="cd-current-comment" style="font-size: 10px; color: #d1d5db; line-height: 1.4; margin-top: 4px; display: none; font-style: italic;"></div>
       </div>
       <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
         <div style="position: relative;">
@@ -224,7 +183,7 @@ function renderCurrentWorkflowCard(element, getData) {
             font-weight: 600;
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-          ">v${meta.version || 1}</span>
+          ">v${version}</span>
         </div>
         <button id="cd-version-btn" style="
           padding: 8px 12px; 
@@ -287,6 +246,56 @@ function renderCurrentWorkflowCard(element, getData) {
       </div>
     </div>
   `;
+}
+
+function renderCurrentWorkflowCard(element, getData) {
+  const container = element.querySelector("#workflows-container");
+  if (!container) return;
+
+  // Remove old card if any
+  const old = container.querySelector("#cd-current-workflow-card");
+  if (old) old.remove();
+
+  const meta = getComfyDeployMeta();
+  if (!meta || !meta.id) {
+    console.log("No ComfyDeploy meta found, not showing workflow card");
+    return; // Only show when node exists
+  }
+
+  console.log("Rendering workflow card with meta:", meta);
+
+  const card = document.createElement("div");
+  card.id = "cd-current-workflow-card";
+  card.style.cssText = `
+    margin: 8px 0 16px 0;
+    padding: 16px;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #f9fafb;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+    position: relative;
+  `;
+
+  // Add hover effect
+  card.addEventListener("mouseenter", () => {
+    card.style.transform = "translateY(-1px)";
+    card.style.boxShadow = "0 8px 20px rgba(0, 0, 0, 0.5)";
+    card.style.borderColor = "#4b5563";
+  });
+
+  card.addEventListener("mouseleave", () => {
+    card.style.transform = "translateY(0)";
+    card.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.4)";
+    card.style.borderColor = "#374151";
+  });
+
+  // Use the shared template
+  card.innerHTML = createWorkflowCardHTML(
+    meta.name || "Unnamed Workflow",
+    meta.version || 1
+  );
 
   // Add custom scrollbar styles
   const scrollbarStyle = document.createElement("style");
@@ -1047,94 +1056,8 @@ function renderCurrentWorkflowCardWithData(
     card.style.borderColor = "#374151";
   });
 
-  card.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-      <div style="flex: 1; min-width: 0;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-          <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></div>
-          <span style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Current Workflow</span>
-        </div>
-        <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0; color: #f9fafb; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          ${workflowName}
-        </h3>
-        <div id="cd-current-comment" style="font-size: 12px; color: #d1d5db; line-height: 1.4; margin-top: 4px; display: none; font-style: italic;"></div>
-      </div>
-      <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-        <div style="position: relative;">
-          <span id="cd-version-badge" style="
-            display: inline-flex; 
-            align-items: center; 
-            font-size: 11px; 
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
-            color: white; 
-            padding: 6px 10px; 
-            border-radius: 8px; 
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-          ">v${version}</span>
-        </div>
-        <button id="cd-version-btn" style="
-          padding: 8px 12px; 
-          border: 1px solid #4b5563; 
-          border-radius: 8px; 
-          background: linear-gradient(135deg, #374151, #1f2937); 
-          color: #f3f4f6; 
-          cursor: pointer; 
-          font-size: 12px; 
-          font-weight: 500;
-          transition: all 0.15s ease;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        " onmouseover="this.style.background='linear-gradient(135deg, #4b5563, #374151)'; this.style.borderColor='#6b7280';" onmouseout="this.style.background='linear-gradient(135deg, #374151, #1f2937)'; this.style.borderColor='#4b5563';">
-          <span>Change</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 9l6 6 6-6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    
-    <div id="cd-version-panel" style="display: none; position: absolute; top: 100%; right: 0; z-index: 1000; margin-top: 8px;">
-      <div id="cd-version-dropdown" style="
-        width: 320px; 
-        max-height: 300px; 
-        overflow: hidden;
-        background: #1f2937; 
-        border: 1px solid #4b5563; 
-        border-radius: 12px; 
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(8px);
-      ">
-        <div style="
-          position: sticky; 
-          top: 0; 
-          padding: 12px 16px; 
-          background: linear-gradient(135deg, #374151, #1f2937); 
-          border-bottom: 1px solid #4b5563; 
-          font-size: 12px; 
-          color: #d1d5db; 
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        ">Select Version</div>
-        <div id="cd-version-list" style="
-          max-height: 240px; 
-          overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: #4b5563 transparent;
-        "></div>
-        <div id="cd-version-loading" style="
-          display: none; 
-          padding: 16px; 
-          text-align: center; 
-          color: #9ca3af;
-          font-size: 12px;
-        ">Loading versions...</div>
-      </div>
-    </div>
-  `;
+  // Use the shared template
+  card.innerHTML = createWorkflowCardHTML(workflowName, version);
 
   // Add the same dropdown functionality as the original card
   setupVersionDropdown(card, getData, workflowId, version, workflowName);
