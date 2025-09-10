@@ -66,17 +66,3 @@ export async function fetchSnapshot(getDataFn = null) {
     throw error;
   }
 }
-
-/**
- * Simple snapshot fetch without ComfyUI version fallback
- * Use this when you don't need the ComfyUI version fallback logic
- *
- * @returns {Promise<Object>} - The snapshot data as-is
- */
-export async function fetchSnapshotSimple() {
-  const response = await fetch("/snapshot/get_current");
-  if (!response.ok) {
-    throw new Error(`Snapshot fetch failed: ${response.status}`);
-  }
-  return response.json();
-}

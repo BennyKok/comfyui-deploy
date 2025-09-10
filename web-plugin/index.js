@@ -10,7 +10,6 @@ import {
 } from "./workflow-list.js";
 import { initializeMachineManager } from "./machine-manager.js";
 import { initializeModelManager } from "./model-manager.js";
-import { fetchSnapshotSimple } from "./snapshot-utils.js";
 
 const styles = `
 .comfydeploy-menu-item {
@@ -1354,19 +1353,6 @@ async function deployWorkflow() {
 
   if (endpoint.endsWith("/")) {
     endpoint = endpoint.slice(0, -1);
-  }
-  loadingDialog.showLoading("Generating snapshot");
-
-  const snapshot = await fetchSnapshotSimple();
-  console.log(snapshot);
-  loadingDialog.close();
-
-  if (!snapshot) {
-    showError(
-      "Error when deploying",
-      "Unable to generate snapshot, please install ComfyUI Manager"
-    );
-    return;
   }
 
   const title = deploy.querySelector("#button-title");

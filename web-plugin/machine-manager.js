@@ -1,7 +1,7 @@
 // Machine Manager Script
 // Handles local storage machine ID functionality
 
-import { fetchSnapshot, fetchSnapshotSimple } from "./snapshot-utils.js";
+import { fetchSnapshot } from "./snapshot-utils.js";
 
 const MACHINE_STORAGE_KEY = "comfy_deploy_machine_id";
 
