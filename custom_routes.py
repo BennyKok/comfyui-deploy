@@ -516,6 +516,9 @@ def apply_inputs_to_workflow(workflow_api: Any, inputs: Any, sid: str = None):
                 if value["class_type"] == "ComfyUIDeployExternalEXR":
                     value["inputs"]["exr_file"] = new_value
 
+                if value["class_type"] == "ComfyUIDeployExternalFile":
+                    value["inputs"]["file_url"] = new_value
+
                 if value["class_type"] == "ComfyUIDeployExternalSeed":
                     logger.info(
                         f"Applied random seed {new_value} to {value['class_type']}"
@@ -896,6 +899,10 @@ async def upload_file_endpoint(request):
                 file_type = "image/png"
             elif file_extension == ".webp":
                 file_type = "image/webp"
+            elif file_extension == ".zip":
+                file_type = "application/zip"
+            elif file_extension in [".psd", ".psb"]:
+                file_type = "image/vnd.adobe.photoshop"
             else:
                 file_type = (
                     "application/octet-stream"  # Default to binary file type if unknown
@@ -2098,6 +2105,10 @@ async def handle_upload(
             file_type = "image/png"
         elif file_extension == ".webp":
             file_type = "image/webp"
+        elif file_extension == ".zip":
+            file_type = "application/zip"
+        elif file_extension in [".psd", ".psb"]:
+            file_type = "image/vnd.adobe.photoshop"
 
         upload_tasks.append(
             upload_file(
@@ -2563,6 +2574,10 @@ class UploadQueue:
             content_type = "image/webp"
         elif file_extension == ".gif":
             content_type = "image/gif"
+        elif file_extension == ".zip":
+            content_type = "application/zip"
+        elif file_extension in [".psd", ".psb"]:
+            content_type = "image/vnd.adobe.photoshop"
         else:
             content_type = file_info.get("content_type", "application/octet-stream")
 
