@@ -1,6 +1,7 @@
 import folder_paths
 import os
 import shutil
+import uuid
 
 
 class AnyType(str):
@@ -70,28 +71,31 @@ class ComfyDeployOutputFile:
                 filename = path_parts[-1]
                 file_type = self.type
             else:
-                # File is outside ComfyUI structure - copy to temp for upload
-                temp_dir = folder_paths.get_temp_directory()
-                if not os.path.exists(temp_dir):
-                    os.makedirs(temp_dir)
+                # File is outside ComfyUI structure - copy to output/temp for upload
+                output_temp_dir = os.path.join(self.output_dir, "temp")
+                if not os.path.exists(output_temp_dir):
+                    os.makedirs(output_temp_dir)
 
-                temp_filename = f"external_{original_filename}"
-                temp_path = os.path.join(temp_dir, temp_filename)
+                # Use original filename to preserve extension and avoid conflicts with UUID
+                file_ext = os.path.splitext(original_filename)[1]
+                temp_filename = f"{uuid.uuid4()}{file_ext}"
+                temp_path = os.path.join(output_temp_dir, temp_filename)
 
-                # Copy external file to temp directory
-                shutil.copy2(file_path, temp_path)
-                print(f"External file copied to temp: {temp_path}")
+                # Create symlink to external file in output/temp directory where upload system expects it
+                try:
+                    os.symlink(file_path, temp_path)
+                    print(
+                        f"External file symlinked to output/temp: {temp_path} -> {file_path}"
+                    )
+                except OSError as e:
+                    # Fall back to copying if symlink fails (e.g., on Windows without permissions)
+                    print(f"Symlink failed ({e}), falling back to copy")
+                    shutil.copy2(file_path, temp_path)
+                    print(f"External file copied to output/temp: {temp_path}")
 
-                # Use temp directory structure
-                relative_temp = os.path.relpath(temp_path, base_path)
-                temp_parts = relative_temp.split(os.sep)
-
-                if len(temp_parts) > 1:
-                    subfolder = os.sep.join(temp_parts[:-1])
-                else:
-                    subfolder = ""
-
-                filename = temp_parts[-1]
+                # Use output/temp directory structure for upload
+                subfolder = "temp"
+                filename = temp_filename
                 file_type = self.type  # Use "output" type so it gets uploaded
 
             results.append(
