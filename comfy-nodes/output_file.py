@@ -48,19 +48,46 @@ class ComfyDeployOutputFile:
             print(f"⚠️ File not found: {file_path}")
             return {"ui": {"files": []}}
 
+        # Security checks - ensure file is within safe ComfyUI paths
+        try:
+            # Get absolute paths for comparison
+            file_abs_path = os.path.abspath(file_path)
+            base_path = folder_paths.base_path
+            temp_dir = folder_paths.get_temp_directory()
+
+            # Check if file is within ComfyUI base path or temp directory
+            if not (
+                file_abs_path.startswith(os.path.abspath(base_path))
+                or file_abs_path.startswith(os.path.abspath(temp_dir))
+            ):
+                print(f"⚠️ Security: File outside allowed ComfyUI paths: {file_path}")
+                return {"ui": {"files": []}}
+
+            # Check for path traversal attempts
+            if ".." in file_path or file_path.startswith("/"):
+                print(f"⚠️ Security: Insecure file path detected: {file_path}")
+                return {"ui": {"files": []}}
+
+        except Exception as e:
+            print(f"⚠️ Security check failed: {str(e)}")
+            return {"ui": {"files": []}}
+
         # Get the original filename and extension
         original_filename = os.path.basename(file_path)
         file_extension = os.path.splitext(original_filename)[1]
 
+        # Additional filename security check
+        if original_filename.startswith("/") or ".." in original_filename:
+            print(f"⚠️ Security: Insecure filename: {original_filename}")
+            return {"ui": {"files": []}}
+
         results = []
 
-        # Reference file in place - determine subfolder relative to ComfyUI
+        # Check if file is in output folder, if not, symlink it there
         try:
-            # Try to determine if file is in a ComfyUI directory structure
-            base_path = folder_paths.base_path
-            if file_path.startswith(base_path):
-                # File is within ComfyUI directory structure
-                relative_path = os.path.relpath(file_path, base_path)
+            if file_path.startswith(self.output_dir):
+                # File is already in output directory - use as is
+                relative_path = os.path.relpath(file_path, self.output_dir)
                 path_parts = relative_path.split(os.sep)
 
                 if len(path_parts) > 1:
@@ -71,32 +98,36 @@ class ComfyDeployOutputFile:
                 filename = path_parts[-1]
                 file_type = self.type
             else:
-                # File is outside ComfyUI structure - copy to output/temp for upload
+                # File is not in output folder - symlink it to output/temp
+                print(
+                    f"File is not in output folder, symlinking to output/temp: {file_path}"
+                )
                 output_temp_dir = os.path.join(self.output_dir, "temp")
                 if not os.path.exists(output_temp_dir):
                     os.makedirs(output_temp_dir)
 
-                # Use original filename to preserve extension and avoid conflicts with UUID
+                # Use the existing filename but with UUID prefix to avoid conflicts
                 file_ext = os.path.splitext(original_filename)[1]
                 temp_filename = f"{uuid.uuid4()}{file_ext}"
                 temp_path = os.path.join(output_temp_dir, temp_filename)
 
-                # Create symlink to external file in output/temp directory where upload system expects it
+                # Create symlink to file in output/temp directory where upload system expects it
                 try:
+                    # Remove existing symlink if it exists
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
                     os.symlink(file_path, temp_path)
-                    print(
-                        f"External file symlinked to output/temp: {temp_path} -> {file_path}"
-                    )
+                    print(f"File symlinked to output/temp: {temp_path} -> {file_path}")
                 except OSError as e:
-                    # Fall back to copying if symlink fails (e.g., on Windows without permissions)
+                    # Fall back to copying if symlink fails
                     print(f"Symlink failed ({e}), falling back to copy")
                     shutil.copy2(file_path, temp_path)
-                    print(f"External file copied to output/temp: {temp_path}")
+                    print(f"File copied to output/temp: {temp_path}")
 
                 # Use output/temp directory structure for upload
                 subfolder = "temp"
                 filename = temp_filename
-                file_type = self.type  # Use "output" type so it gets uploaded
+                file_type = self.type
 
             results.append(
                 {
