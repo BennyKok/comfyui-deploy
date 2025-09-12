@@ -63,9 +63,9 @@ class ComfyDeployOutputFile:
                 print(f"⚠️ Security: File outside allowed ComfyUI paths: {file_path}")
                 return {"ui": {"files": []}}
 
-            # Check for path traversal attempts
-            if ".." in file_path or file_path.startswith("/"):
-                print(f"⚠️ Security: Insecure file path detected: {file_path}")
+            # Check for path traversal attempts (but allow absolute paths within ComfyUI)
+            if ".." in file_path:
+                print(f"⚠️ Security: Path traversal attempt detected: {file_path}")
                 return {"ui": {"files": []}}
 
         except Exception as e:
@@ -77,7 +77,7 @@ class ComfyDeployOutputFile:
         file_extension = os.path.splitext(original_filename)[1]
 
         # Additional filename security check
-        if original_filename.startswith("/") or ".." in original_filename:
+        if ".." in original_filename:
             print(f"⚠️ Security: Insecure filename: {original_filename}")
             return {"ui": {"files": []}}
 
