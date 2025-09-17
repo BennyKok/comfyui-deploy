@@ -4,6 +4,8 @@ Open source comfyui deployment platform, a `vercel` for generative workflow infr
 
 Check out our latest lcoal demo -> https://github.com/comfy-deploy/comfyui-api-comfydeploy
 
+Full backend and frontend is here -> https://github.com/comfy-deploy/comfydeploy
+
 > [!NOTE]  
 > Im looking for creative hacker to join ComfyDeploy's core team! DM me on [twitter](https://x.com/BennyKokMusic)
 
