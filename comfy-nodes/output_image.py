@@ -54,7 +54,7 @@ class ComfyDeployOutputImage:
         output_id="output_images",
         prompt=None,
         extra_pnginfo=None,
-        remove_metadata=False,
+        remove_metadata=True,
     ):
         filename_prefix += self.prefix_append
         full_output_folder, filename, counter, subfolder, filename_prefix = (
