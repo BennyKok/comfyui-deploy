@@ -33,7 +33,7 @@ class ComfyDeployOutputImage:
                     "STRING",
                     {"multiline": False, "default": "output_images"},
                 ),
-                "remove_metadata": ("BOOLEAN", {"default": False}),
+                "remove_metadata": ("BOOLEAN", {"default": True}),
             },
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
