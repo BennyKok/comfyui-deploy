@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import folder_paths
+from comfy.cli_args import args
 
 
 class ComfyDeployOutputImage:
@@ -33,7 +34,6 @@ class ComfyDeployOutputImage:
                     "STRING",
                     {"multiline": False, "default": "output_images"},
                 ),
-                "remove_metadata": ("BOOLEAN", {"default": True}),
             },
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
@@ -54,7 +54,6 @@ class ComfyDeployOutputImage:
         output_id="output_images",
         prompt=None,
         extra_pnginfo=None,
-        remove_metadata=True,
     ):
         filename_prefix += self.prefix_append
         full_output_folder, filename, counter, subfolder, filename_prefix = (
@@ -66,8 +65,9 @@ class ComfyDeployOutputImage:
         for batch_number, image in enumerate(images):
             i = 255.0 * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            metadata = PngInfo()
-            if not remove_metadata:
+            metadata = None
+            if not args.disable_metadata:
+                metadata = PngInfo()
                 if prompt is not None:
                     metadata.add_text("prompt", json.dumps(prompt))
                 if extra_pnginfo is not None:
