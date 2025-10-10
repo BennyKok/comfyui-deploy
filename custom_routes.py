@@ -1554,18 +1554,26 @@ async def send_json_override(self, event, data, sid=None):
                     )
 
     if event == "executing" and data.get("node") is not None:
-        node = data.get("node")
+        raw_node = data.get("node")
+        node = str(raw_node)
 
         if prompt_id in prompt_metadata:
-            # if 'progress' not in prompt_metadata[prompt_id]:
-            #     prompt_metadata[prompt_id]["progress"] = set()
+            wf_api = prompt_metadata[prompt_id].workflow_api
+
+            # Normalize dotted display ids like "23.0.0.1" to base "23"
+            if node not in wf_api and "." in node:
+                base = node.split(".")[0]
+                if base in wf_api:
+                    node = base
+
+            # If still unknown, skip safely
+            if node not in wf_api:
+                logger.info(f"Skipping unknown node id in 'executing': {raw_node}")
+                return
 
             prompt_metadata[prompt_id].progress.add(node)
-            calculated_progress = len(prompt_metadata[prompt_id].progress) / len(
-                prompt_metadata[prompt_id].workflow_api
-            )
+            calculated_progress = len(prompt_metadata[prompt_id].progress) / len(wf_api)
             calculated_progress = round(calculated_progress, 2)
-            # logger.info("calculated_progress", calculated_progress)
 
             if (
                 prompt_metadata[prompt_id].last_updated_node is not None
@@ -1573,7 +1581,8 @@ async def send_json_override(self, event, data, sid=None):
             ):
                 return
             prompt_metadata[prompt_id].last_updated_node = node
-            class_type = prompt_metadata[prompt_id].workflow_api[node]["class_type"]
+
+            class_type = wf_api[node]["class_type"]
             logger.info(f"At: {round(calculated_progress * 100)}% - {class_type}")
             asyncio.create_task(
                 send(
