@@ -1,0 +1,55 @@
+version: '3.9'
+services:
+
+  comfy-deploy:
+    build:
+      context: .
+      dockerfile: ./local/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./local/scripts/entrypoint.sh:/comfyui-deploy/web/deploy_entrypoint.sh
+    entrypoint: /comfyui-deploy/web/deploy_entrypoint.sh
+    ports:
+      - 3000:3000
+    depends_on:
+      - postgres
+      - pg_proxy
+      - localstack
+    environment:
+      VSCODE_DEV_CONTAINER: true
+
+
+### comfy-deploy services
+
+  postgres:
+      image: "postgres:15.2-alpine"
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: verceldb
+        POSTGRES_PORT: 5480
+      expose:
+        - 5480
+
+
+  pg_proxy:
+    image: ghcr.io/neondatabase/wsproxy:latest
+    environment:
+      APPEND_PORT: "postgres:5480"
+      ALLOW_ADDR_REGEX: ".*"
+      LOG_TRAFFIC: "true"
+    expose:
+      - 80
+    depends_on:
+      - postgres
+
+
+  localstack:
+    image: localstack/localstack:latest
+    environment:
+      SERVICES: s3
+    ports:
+      - 4566:4566
+    volumes:
+      - ../localstack/aws:/etc/localstack/init/ready.d
+      - ../localstack/aws:/app/web/aws
