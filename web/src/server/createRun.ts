@@ -196,6 +196,9 @@ export const createRun = withServerPromise(
           const _result = await fetch(comfyui_endpoint, {
             method: "POST",
             body: JSON.stringify(body),
+            headers: {
+              ...(machine.auth_token && {Authorization: `Bearer ${machine.auth_token}`}),
+            },
             cache: "no-store",
           });
           // console.log(_result);
