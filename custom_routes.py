@@ -319,13 +319,28 @@ async def post_prompt(json_data):
             extra_data["client_id"] = json_data["client_id"]
         if valid[0]:
             outputs_to_execute = valid[2]
-            sensitive = {}
-            for sensitive_val in execution.SENSITIVE_EXTRA_DATA_KEYS:
-                if sensitive_val in extra_data:
-                    sensitive[sensitive_val] = extra_data.pop(sensitive_val)
-            prompt_server.prompt_queue.put(
-                (number, prompt_id, prompt, extra_data, outputs_to_execute, sensitive)
-            )
+            # Backward compatibility: sensitive data handling added in newer ComfyUI
+            sensitive_keys = getattr(execution, "SENSITIVE_EXTRA_DATA_KEYS", None)
+            if sensitive_keys:
+                sensitive = {}
+                for sensitive_val in sensitive_keys:
+                    if sensitive_val in extra_data:
+                        sensitive[sensitive_val] = extra_data.pop(sensitive_val)
+                prompt_server.prompt_queue.put(
+                    (
+                        number,
+                        prompt_id,
+                        prompt,
+                        extra_data,
+                        outputs_to_execute,
+                        sensitive,
+                    )
+                )
+            else:
+                # Old ComfyUI version without sensitive data support
+                prompt_server.prompt_queue.put(
+                    (number, prompt_id, prompt, extra_data, outputs_to_execute)
+                )
             response = {
                 "prompt_id": prompt_id,
                 "number": number,
