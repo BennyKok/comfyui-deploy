@@ -11,7 +11,7 @@ import traceback
 import uuid
 import asyncio
 import inspect
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 import threading
 import hashlib
 import aiohttp
@@ -580,6 +580,14 @@ def send_prompt(sid: str, inputs: StreamingPrompt):
     #         response['file_upload_endpoint'] = metadata.file_upload_endpoint
 
 
+def prompt_id_taken(prompt_id, token):
+    """A prompt_id registered by another caller can't be re-registered: that would
+    redirect its status updates, uploads and event stream to the new caller.
+    Re-sending with the same token (a retry) is still allowed."""
+    existing = prompt_metadata.get(prompt_id) if prompt_id else None
+    return existing is not None and getattr(existing, "token", None) != token
+
+
 @server.PromptServer.instance.routes.post("/comfyui-deploy/run")
 async def comfy_deploy_run(request):
     # Extract the bearer token from the Authorization header
@@ -620,6 +628,9 @@ async def comfy_deploy_run(request):
     inputs = data.get("inputs")
     gpu_event_id = data.get("gpu_event_id", None)
     workflow = data.get("workflow")
+
+    if prompt_id_taken(prompt_id, token):
+        return web.json_response({"error": "prompt_id already in use"}, status=409)
 
     # Now it handles directly in here
     apply_random_seed_to_workflow(workflow_api, workflow)
@@ -758,11 +769,6 @@ comfy_message_queues: Dict[str, asyncio.Queue] = {}
 
 @server.PromptServer.instance.routes.post("/comfyui-deploy/run/streaming")
 async def stream_response(request):
-    response = web.StreamResponse(
-        status=200, reason="OK", headers={"Content-Type": "text/event-stream"}
-    )
-    await response.prepare(request)
-
     # Extract the bearer token from the Authorization header
     auth_header = request.headers.get("Authorization")
     token = None
@@ -775,6 +781,14 @@ async def stream_response(request):
     data = await request.json()
 
     prompt_id = data.get("prompt_id")
+    if prompt_id_taken(prompt_id, token):
+        return web.json_response({"error": "prompt_id already in use"}, status=409)
+
+    response = web.StreamResponse(
+        status=200, reason="OK", headers={"Content-Type": "text/event-stream"}
+    )
+    await response.prepare(request)
+
     comfy_message_queues[prompt_id] = asyncio.Queue()
 
     with log_span("Streaming Run"):
@@ -869,107 +883,6 @@ async def get_installed_models(request):
         new_dict[key] = value_json_compatible
     # logger.info(new_dict)
     return web.json_response(new_dict)
-
-
-# This is start uploading the files to Comfy Deploy
-@server.PromptServer.instance.routes.post("/comfyui-deploy/upload-file")
-async def upload_file_endpoint(request):
-    data = await request.json()
-
-    file_path = data.get("file_path")
-
-    logger.info("Original file path", file_path)
-
-    file_path = get_comfyui_path_from_file_path(file_path)
-
-    # return web.json_response({
-    #     "error": f"File not uploaded"
-    # }, status=500)
-
-    token = data.get("token")
-    get_url = data.get("url")
-
-    try:
-        base = folder_paths.base_path
-        file_path = os.path.join(base, file_path)
-
-        if os.path.exists(file_path):
-            file_size = os.path.getsize(file_path)
-            file_extension = os.path.splitext(file_path)[1]
-
-            if file_extension in [".jpg", ".jpeg"]:
-                file_type = "image/jpeg"
-            elif file_extension == ".png":
-                file_type = "image/png"
-            elif file_extension == ".webp":
-                file_type = "image/webp"
-            elif file_extension == ".zip":
-                file_type = "application/zip"
-            elif file_extension in [".psd", ".psb"]:
-                file_type = "image/vnd.adobe.photoshop"
-            else:
-                file_type = (
-                    "application/octet-stream"  # Default to binary file type if unknown
-                )
-        else:
-            return web.json_response(
-                {"error": f"File not found: {file_path}"}, status=404
-            )
-
-    except Exception as e:
-        return web.json_response({"error": str(e)}, status=500)
-
-    if get_url:
-        try:
-            headers = {"Authorization": f"Bearer {token}"}
-            params = {"file_size": file_size, "type": file_type}
-            response = await async_request_with_retry(
-                "GET", get_url, params=params, headers=headers
-            )
-            if response.status == 200:
-                content = await response.json()
-                upload_url = content["upload_url"]
-
-                with open(file_path, "rb") as f:
-                    headers = {
-                        "Content-Type": file_type,
-                        # "Content-Length": str(file_size)
-                    }
-                    if content.get("include_acl") is True:
-                        headers["x-amz-acl"] = "public-read"
-                    upload_response = await async_request_with_retry(
-                        "PUT", upload_url, data=f, headers=headers
-                    )
-                    if upload_response.status == 200:
-                        return web.json_response(
-                            {
-                                "message": "File uploaded successfully",
-                                "download_url": content["download_url"],
-                            }
-                        )
-                    else:
-                        return web.json_response(
-                            {
-                                "error": f"Failed to upload file to {upload_url}. Status code: {upload_response.status}"
-                            },
-                            status=upload_response.status,
-                        )
-            else:
-                return web.json_response(
-                    {
-                        "error": f"Failed to fetch data from {get_url}. Status code: {response.status}"
-                    },
-                    status=response.status,
-                )
-        except Exception as e:
-            return web.json_response(
-                {
-                    "error": f"An error occurred while fetching data from {get_url}: {str(e)}"
-                },
-                status=500,
-            )
-
-    return web.json_response({"error": f"File not uploaded"}, status=500)
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -3585,6 +3498,32 @@ async def proxy_add_model(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
+def is_inside_model_dirs(file_path):
+    """True if file_path (after resolving "..") is inside a registered model folder."""
+    path = os.path.abspath(file_path)
+    roots = {os.path.abspath(folder_paths.models_dir)}
+    for paths, _ in folder_paths.folder_names_and_paths.values():
+        roots.update(os.path.abspath(p) for p in paths)
+    for root in roots:
+        try:
+            if os.path.commonpath([path, root]) == root:
+                return True
+        except ValueError:  # different drives on Windows
+            pass
+    return False
+
+
+def is_s3_presigned_url(url):
+    """Model sync only ever uploads to AWS S3 presigned URLs."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    return parsed.scheme == "https" and (parsed.hostname or "").endswith(
+        ".amazonaws.com"
+    )
+
+
 # FS: stat file (size)
 @server.PromptServer.instance.routes.get("/comfyui-deploy/fs/stat")
 async def fs_stat(request):
@@ -3595,8 +3534,7 @@ async def fs_stat(request):
         if not file_path:
             return web.json_response({"error": "path is required"}, status=400)
 
-        # Basic safeguard: ensure it's a ComfyUI models path
-        if "/models/" not in file_path:
+        if not is_inside_model_dirs(file_path):
             return web.json_response({"error": "invalid path"}, status=400)
 
         st = os.stat(file_path)
@@ -3625,8 +3563,10 @@ async def upload_part_from_path(request):
             return web.json_response(
                 {"error": "filePath and uploadUrl are required"}, status=400
             )
-        if "/models/" not in file_path:
+        if not is_inside_model_dirs(file_path):
             return web.json_response({"error": "invalid filePath"}, status=400)
+        if not is_s3_presigned_url(upload_url):
+            return web.json_response({"error": "invalid uploadUrl"}, status=400)
         if end <= start:
             return web.json_response({"error": "invalid byte range"}, status=400)
 

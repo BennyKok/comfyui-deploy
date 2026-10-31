@@ -75,10 +75,17 @@ class ComfyUIDeployExternalFaceModel:
                 face_model_save_name = str(uuid.uuid4()) + ".safetensors"
             print(face_model_save_name)
             print(folder_paths.folder_names_and_paths["reactor/faces"][0][0])
-            destination_path = os.path.join(
-                folder_paths.folder_names_and_paths["reactor/faces"][0][0],
-                face_model_save_name,
+            faces_dir = os.path.abspath(
+                folder_paths.folder_names_and_paths["reactor/faces"][0][0]
             )
+            destination_path = os.path.abspath(
+                os.path.join(faces_dir, face_model_save_name)
+            )
+            # Block "../" and absolute paths escaping the faces folder
+            if os.path.commonpath([faces_dir, destination_path]) != faces_dir:
+                raise ValueError(
+                    f"face_model_save_name must stay inside the faces folder: {face_model_save_name}"
+                )
 
             print(destination_path)
             print(
