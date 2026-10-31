@@ -62,6 +62,29 @@ function sendDirectEventToCD(event, data) {
   window.parent.postMessage(message, "*");
 }
 
+// Only the Comfy Deploy app (or a local dev server) may drive the editor via
+// postMessage; any other page framing ComfyUI could otherwise load and queue workflows.
+function isTrustedCDOrigin(origin) {
+  try {
+    const { protocol, hostname } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    return (
+      protocol === "https:" &&
+      (hostname === "comfydeploy.com" || hostname.endsWith(".comfydeploy.com"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+  );
+}
+
 function dispatchAPIEventData(data) {
   const msg = JSON.parse(data);
 
@@ -144,6 +167,7 @@ async function getSelectedWorkflowInfo() {
   const workflow_info_promise = new Promise((resolve) => {
     try {
       const handleMessage = (event) => {
+        if (!isTrustedCDOrigin(event.origin)) return;
         try {
           const message = JSON.parse(event.data);
           if (message.type === "workflow_info") {
@@ -456,7 +480,7 @@ const ext = {
       console.error("No workflow_version_id provided in query parameters.");
     } else {
       loadingDialog.showLoading(
-        "Loading workflow from " + org_display,
+        "Loading workflow from " + escapeHtml(org_display),
         "Please wait..."
       );
       fetch(endpoint + "/api/workflow-version/" + workflow_version_id, {
@@ -837,6 +861,7 @@ const ext = {
 
     window.addEventListener("message", async (event) => {
       //   console.log("message", event);
+      if (!isTrustedCDOrigin(event.origin)) return;
       try {
         const message = JSON.parse(event.data);
         if (message.type === "graph_load") {

@@ -75,9 +75,17 @@ class ComfyUIDeployExternalLora:
                     lora_save_name = str(uuid.uuid4()) + ".safetensors"
                 print(lora_save_name)
                 print(folder_paths.folder_names_and_paths["loras"][0][0])
-                destination_path = os.path.join(
-                    folder_paths.folder_names_and_paths["loras"][0][0], lora_save_name
+                lora_dir = os.path.abspath(
+                    folder_paths.folder_names_and_paths["loras"][0][0]
                 )
+                destination_path = os.path.abspath(
+                    os.path.join(lora_dir, lora_save_name)
+                )
+                # Block "../" and absolute paths escaping the loras folder
+                if os.path.commonpath([lora_dir, destination_path]) != lora_dir:
+                    raise ValueError(
+                        f"lora_save_name must stay inside the loras folder: {lora_save_name}"
+                    )
                 print(destination_path)
                 print(
                     "Downloading external lora - "
