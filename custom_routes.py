@@ -10,7 +10,6 @@ import random
 import traceback
 import uuid
 import asyncio
-import inspect
 from urllib.parse import quote, urlencode, urlparse
 import threading
 import hashlib
@@ -1237,80 +1236,35 @@ def handle_execute(class_type, last_node_id, prompt_id, server, unique_id):
 
 try:
     origin_execute = execution.execute
-    is_async = asyncio.iscoroutinefunction(origin_execute)
 
-    if is_async:
-        # Check signature for backward compatibility (v0.3.67 has 10 params, v0.3.68+ has 11)
-        sig = inspect.signature(origin_execute)
-        has_ui_outputs = len(sig.parameters) >= 11
+    # Pass ComfyUI's arguments through untouched: newer versions keep appending
+    # parameters (ui_outputs in v0.3.68, asset_manager in v0.44.0). The ones we
+    # read (server, dynprompt, node id, prompt id) have stayed at the same positions.
+    def _node_info(args):
+        try:
+            server, dynprompt, unique_id, prompt_id = args[0], args[1], args[3], args[6]
+            return server, unique_id, prompt_id, dynprompt.get_node(unique_id)["class_type"], server.last_node_id
+        except Exception:
+            return None
 
-        async def swizzle_execute(
-            server,
-            dynprompt,
-            caches,
-            current_item,
-            extra_data,
-            executed,
-            prompt_id,
-            execution_list,
-            pending_subgraph_results,
-            pending_async_nodes,
-            ui_outputs=None,
-        ):
-            unique_id = current_item
-            class_type = dynprompt.get_node(unique_id)["class_type"]
-            last_node_id = server.last_node_id
+    if asyncio.iscoroutinefunction(origin_execute):
 
-            # Build args list - add ui_outputs only for v0.3.68+
-            args = [
-                server,
-                dynprompt,
-                caches,
-                current_item,
-                extra_data,
-                executed,
-                prompt_id,
-                execution_list,
-                pending_subgraph_results,
-                pending_async_nodes,
-            ]
-            if has_ui_outputs:
-                args.append(ui_outputs)
-
-            result = await origin_execute(*args)
-
-            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+        async def swizzle_execute(*args, **kwargs):
+            info = _node_info(args)
+            result = await origin_execute(*args, **kwargs)
+            if info:
+                server, unique_id, prompt_id, class_type, last_node_id = info
+                handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
             return result
+
     else:
         # Sync version for very old ComfyUI versions
-        def swizzle_execute(
-            server,
-            dynprompt,
-            caches,
-            current_item,
-            extra_data,
-            executed,
-            prompt_id,
-            execution_list,
-            pending_subgraph_results,
-        ):
-            unique_id = current_item
-            class_type = dynprompt.get_node(unique_id)["class_type"]
-            last_node_id = server.last_node_id
-
-            result = origin_execute(
-                server,
-                dynprompt,
-                caches,
-                current_item,
-                extra_data,
-                executed,
-                prompt_id,
-                execution_list,
-                pending_subgraph_results,
-            )
-
-            handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
+        def swizzle_execute(*args, **kwargs):
+            info = _node_info(args)
+            result = origin_execute(*args, **kwargs)
+            if info:
+                server, unique_id, prompt_id, class_type, last_node_id = info
+                handle_execute(class_type, last_node_id, prompt_id, server, unique_id)
             return result
 
     execution.execute = swizzle_execute
